@@ -10,9 +10,13 @@ import Dashboard from './pages/Dashboard';
 import DailyLog from './pages/DailyLog';
 import Categories from './pages/Categories';
 import Goals from './pages/Goals';
+import GoalDetail from './pages/GoalDetail';
 import Manifestations from './pages/Manifestations';
+import ManifestationDetail from './pages/ManifestationDetail';
 import Snapshots from './pages/Snapshots';
+import SnapshotDetail from './pages/SnapshotDetail';
 import Growth from './pages/Growth';
+import Profile from './pages/Profile';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,9 +51,13 @@ export default function App() {
             <Route path="log" element={<DailyLog />} />
             <Route path="categories" element={<Categories />} />
             <Route path="goals" element={<Goals />} />
+            <Route path="goals/:goalId" element={<GoalDetail />} />
             <Route path="manifestations" element={<Manifestations />} />
+            <Route path="manifestations/:manifestationId" element={<ManifestationDetail />} />
             <Route path="snapshots" element={<Snapshots />} />
+            <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
             <Route path="growth" element={<Growth />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
         </Routes>
       </BrowserRouter>

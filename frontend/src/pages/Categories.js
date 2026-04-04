@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
@@ -14,6 +15,7 @@ const DEFAULTS = [
 ];
 
 export default function Categories() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [archived, setArchived] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -24,6 +26,7 @@ export default function Categories() {
   const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
   const [loading, setLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
 
   const load = async () => {
     const [active, arch] = await Promise.all([
@@ -67,11 +70,23 @@ export default function Categories() {
     finally { setLoading(false); }
   };
 
-  const handleDelete = async (id, name) => {
+  // Archive (soft delete)
+  const handleArchive = async (id, name) => {
     if (!window.confirm(`Archive "${name}"? You can restore it later.`)) return;
     await API.delete(`/categories/${id}`);
     toast.success('Category archived');
     load();
+  };
+
+  // Permanent delete with confirmation modal
+  const handlePermanentDelete = async () => {
+    if (!confirmDelete) return;
+    try {
+      await API.delete(`/categories/${confirmDelete.id}?permanent=true`);
+      toast.success(`"${confirmDelete.name}" permanently deleted with all its data`);
+      setConfirmDelete(null);
+      load();
+    } catch { toast.error('Failed to delete'); }
   };
 
   const handleRestore = async (id, name) => {
@@ -149,7 +164,7 @@ export default function Categories() {
                   <span style={{ fontSize: 32 }}>{cat.icon}</span>
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)} title="Edit" style={{ color: 'rgba(13,13,13,0.4)' }}>✎</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(cat.id, cat.name)} title="Archive" style={{ color: 'rgba(13,13,13,0.3)' }}>✕</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleArchive(cat.id, cat.name)} title="Archive" style={{ color: 'rgba(13,13,13,0.3)' }}>📦</button>
                   </div>
                 </div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
@@ -162,20 +177,30 @@ export default function Categories() {
           </div>
         )}
 
+        {/* Archived */}
         {showArchived && archived.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <h3 style={{ fontFamily: 'Fraunces', fontSize: 18, marginBottom: 16, color: 'rgba(13,13,13,0.5)' }}>
+            <h3 style={{ fontFamily: 'Fraunces', fontSize: 18, marginBottom: 4, color: 'rgba(13,13,13,0.5)' }}>
               Archived Categories
             </h3>
+            <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', marginBottom: 16 }}>
+              Archived categories can be restored or permanently deleted along with all their data.
+            </p>
             <div className="grid-3">
               {archived.map((cat) => (
-                <div key={cat.id} className="card" style={{ borderTop: `3px solid ${cat.color}`, opacity: 0.65 }}>
+                <div key={cat.id} className="card" style={{ borderTop: `3px solid ${cat.color}`, opacity: 0.75 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <span style={{ fontSize: 32 }}>{cat.icon}</span>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleRestore(cat.id, cat.name)}
-                      style={{ fontSize: 11, color: 'var(--sage)', border: '1px solid var(--sage)', borderRadius: 6, padding: '3px 8px' }}>
-                      Restore
-                    </button>
+                    <div style={{ display: 'flex', gap: 4, flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleRestore(cat.id, cat.name)}
+                        style={{ fontSize: 11, color: 'var(--sage)', border: '1px solid var(--sage)', borderRadius: 6, padding: '3px 8px' }}>
+                        Restore
+                      </button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete({ id: cat.id, name: cat.name })}
+                        style={{ fontSize: 11, color: 'var(--rust)', border: '1px solid var(--rust)', borderRadius: 6, padding: '3px 8px' }}>
+                        Delete Forever
+                      </button>
+                    </div>
                   </div>
                   <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
                   {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>{cat.description}</p>}
@@ -233,6 +258,32 @@ export default function Categories() {
         </div>
       )}
 
+      {/* Permanent Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDelete(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3 style={{ color: 'var(--rust)' }}>⚠️ Permanent Deletion</h3>
+              <button className="modal-close" onClick={() => setConfirmDelete(null)}>✕</button>
+            </div>
+            <div style={{ padding: '16px', background: 'rgba(196,98,58,0.08)', borderRadius: 10, marginBottom: 20 }}>
+              <p style={{ fontSize: 14, color: 'var(--rust)', margin: 0, lineHeight: 1.6 }}>
+                You are about to permanently delete <strong>"{confirmDelete.name}"</strong> and all its associated data including daily log entries and goals.
+                <br /><br />
+                <strong>This action cannot be undone.</strong>
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn" onClick={handlePermanentDelete}
+                style={{ flex: 1, background: 'var(--rust)', color: 'white', border: 'none' }}>
+                Yes, Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* View Category Logs Modal */}
       {viewCat && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewCat(null)}>
@@ -267,9 +318,7 @@ export default function Categories() {
                         <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>
                           <span>Mood {entry.mood}/10</span>
                           <span>Energy {entry.energy}/10</span>
-                          {entry.emotions?.length > 0 && (
-                            <span>{entry.emotions.join(', ')}</span>
-                          )}
+                          {entry.emotions?.length > 0 && <span>{entry.emotions.join(', ')}</span>}
                         </div>
                       </div>
                     ))}

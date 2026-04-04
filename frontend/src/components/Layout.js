@@ -46,9 +46,13 @@ export default function Layout() {
             <span className="streak-num">{user?.streak || 0}</span>
             <span className="streak-label">Day Streak</span>
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.5)', marginBottom: 12 }}>
-            👤 {user?.name}
-          </div>
+          <button
+            onClick={() => navigate('/profile')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(245,240,232,0.6)', fontSize: 13, marginBottom: 10, padding: '6px 8px', borderRadius: 8, width: '100%' }}
+          >
+            <span style={{ fontSize: 18 }}>{user?.avatar_emoji || '👤'}</span>
+            {user?.name}
+          </button>
           <button className="btn btn-ghost" onClick={handleLogout} style={{ color: 'rgba(245,240,232,0.4)', width: '100%', justifyContent: 'center', fontSize: 13 }}>
             Sign out
           </button>

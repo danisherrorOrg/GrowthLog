@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
@@ -11,6 +12,7 @@ const PROGRESS_TYPES = [
 ];
 
 export default function Manifestations() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -18,7 +20,7 @@ export default function Manifestations() {
   const [progressItem, setProgressItem] = useState(null);
   const [viewFilter, setViewFilter] = useState('active');
   const [form, setForm] = useState({ vision: '', target_days: 30, target_date: '', use_custom_date: false, notes: '' });
-  const [progressForm, setProgressForm] = useState({ text: '', type: 'improvement' });
+  const [progressForm, setProgressForm] = useState({ text: '', type: 'improvement', customType: '' });
   const [editForm, setEditForm] = useState({ vision: '', target_date: '', notes: '' });
   const [reflection, setReflection] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,14 +87,16 @@ export default function Manifestations() {
     finally { setLoading(false); }
   };
 
+  const resolveType = (f) => f.type === 'custom' ? (f.customType.trim() || 'custom') : f.type;
+
   const handleAddProgress = async () => {
     if (!progressForm.text.trim()) return toast.error('Write your progress entry');
     setLoading(true);
     try {
-      await API.post(`/manifestations/${progressItem.id}/progress`, progressForm);
+      await API.post(`/manifestations/${progressItem.id}/progress`, { text: progressForm.text, type: resolveType(progressForm) });
       toast.success('Progress added!');
       setProgressItem(null);
-      setProgressForm({ text: '', type: 'improvement' });
+      setProgressForm({ text: '', type: 'improvement', customType: '' });
       load();
     } catch { toast.error('Failed to add progress'); }
     finally { setLoading(false); }
@@ -113,6 +117,8 @@ export default function Manifestations() {
   const active = items.filter(i => i.status === 'active');
   const completed = items.filter(i => i.status === 'completed');
   const archived = items.filter(i => i.status === 'archived');
+
+  const getProgressTypeInfo = (typeVal) => PROGRESS_TYPES.find(t => t.value === typeVal) || { label: typeVal, color: '#888' };
 
   return (
     <div>
@@ -185,6 +191,10 @@ export default function Manifestations() {
                           <button className="btn btn-ghost btn-sm" onClick={() => handleArchive(item)} title="Archive" style={{ color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.3)' }}>📦</button>
                         </>
                       )}
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/manifestations/${item.id}`)} title="View Detail"
+                        style={{ color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.4)', fontSize: 11, border: `1px solid ${isReady ? 'rgba(245,240,232,0.2)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 6, padding: '3px 8px' }}>
+                        ◈ Detail
+                      </button>
                       <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(item)} title="Delete" style={{ color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.3)' }}>🗑</button>
                     </div>
                   </div>
@@ -210,7 +220,7 @@ export default function Manifestations() {
                     </div>
                   )}
 
-                  {/* Progress entries */}
+                  {/* Progress entries preview */}
                   {progressEntries.length > 0 && (
                     <div style={{ marginBottom: 12 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => setExpandedProgress(p => ({ ...p, [item.id]: !p[item.id] }))}
@@ -219,10 +229,10 @@ export default function Manifestations() {
                       </button>
                       {showProg && (
                         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {progressEntries.map((e, i) => {
-                            const pt = PROGRESS_TYPES.find(t => t.value === e.type);
+                          {progressEntries.slice(-3).map((e) => {
+                            const pt = getProgressTypeInfo(e.type);
                             return (
-                              <div key={i} style={{ padding: '8px 12px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, borderLeft: `2px solid ${pt?.color || 'var(--sage)'}` }}>
+                              <div key={e.id || e.date} style={{ padding: '8px 12px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, borderLeft: `2px solid ${pt?.color || 'var(--sage)'}` }}>
                                 <div style={{ fontSize: 10, color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
                                   {pt?.label} · {format(new Date(e.date), 'MMM d, yyyy')}
                                 </div>
@@ -230,6 +240,12 @@ export default function Manifestations() {
                               </div>
                             );
                           })}
+                          {progressEntries.length > 3 && (
+                            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/manifestations/${item.id}`)}
+                              style={{ fontSize: 12, color: isReady ? 'rgba(245,240,232,0.5)' : 'var(--sage)' }}>
+                              View all {progressEntries.length} entries →
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -244,7 +260,7 @@ export default function Manifestations() {
                   {isActive && (
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button className="btn btn-sm" style={{ background: isReady ? 'rgba(255,255,255,0.1)' : 'var(--mist)', color: isReady ? 'var(--paper)' : 'var(--ink)', border: 'none' }}
-                        onClick={() => { setProgressItem(item); setProgressForm({ text: '', type: 'improvement' }); }}>
+                        onClick={() => { setProgressItem(item); setProgressForm({ text: '', type: 'improvement', customType: '' }); }}>
                         + Add Progress
                       </button>
                       {isReady && (
@@ -359,19 +375,28 @@ export default function Manifestations() {
             </div>
             <div className="form-group">
               <label className="form-label">Type</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                 {PROGRESS_TYPES.map(t => (
                   <button key={t.value} className={`btn btn-sm ${progressForm.type === t.value ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => setProgressForm({ ...progressForm, type: t.value })}>
                     {t.label}
                   </button>
                 ))}
+                <button className={`btn btn-sm ${progressForm.type === 'custom' ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setProgressForm({ ...progressForm, type: 'custom' })}>
+                  ✏️ Custom
+                </button>
               </div>
+              {progressForm.type === 'custom' && (
+                <input className="form-input" value={progressForm.customType}
+                  onChange={e => setProgressForm({ ...progressForm, customType: e.target.value })}
+                  placeholder="Name your custom type..." />
+              )}
             </div>
             <div className="form-group">
               <label className="form-label">What happened?</label>
               <textarea className="form-textarea" value={progressForm.text} onChange={(e) => setProgressForm({ ...progressForm, text: e.target.value })}
-                placeholder={progressForm.type === 'improvement' ? 'What got better or what did you improve...' : progressForm.type === 'learning' ? 'What insight or lesson did you discover...' : progressForm.type === 'milestone' ? 'What milestone did you hit...' : 'What challenge are you facing...'}
+                placeholder={progressForm.type === 'improvement' ? 'What got better or what did you improve...' : progressForm.type === 'learning' ? 'What insight or lesson did you discover...' : progressForm.type === 'milestone' ? 'What milestone did you hit...' : progressForm.type === 'challenge' ? 'What challenge are you facing...' : 'Describe what happened...'}
                 style={{ minHeight: 120 }} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
