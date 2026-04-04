@@ -3,34 +3,77 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 
+const SORT_OPTIONS = [
+  { value: 'created_at', label: 'Date Created' },
+  { value: 'current_deadline', label: 'Deadline' },
+  { value: 'title', label: 'Name A–Z' },
+  { value: 'status', label: 'Status' },
+];
+
 export default function Goals() {
   const [goals, setGoals] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editGoal, setEditGoal] = useState(null);
   const [reflectGoal, setReflectGoal] = useState(null);
+  const [addReflectionGoal, setAddReflectionGoal] = useState(null);
+  const [newReflectionText, setNewReflectionText] = useState('');
   const [form, setForm] = useState({ category_id: '', title: '', description: '', deadline: '' });
   const [reflectForm, setReflectForm] = useState({ status: 'completed', reflection: '', new_deadline: '' });
   const [filter, setFilter] = useState('active');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [filterCategory, setFilterCategory] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const load = () => Promise.all([API.get('/goals'), API.get('/categories')])
-    .then(([g, c]) => { setGoals(g.data); setCategories(c.data); });
+  const load = async () => {
+    const params = new URLSearchParams({ sort_by: sortBy, sort_order: sortOrder });
+    if (filterCategory) params.append('category_id', filterCategory);
+    const [g, c] = await Promise.all([API.get(`/goals?${params}`), API.get('/categories')]);
+    setGoals(g.data);
+    setCategories(c.data);
+  };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [sortBy, sortOrder, filterCategory]);
 
   const getCat = (id) => categories.find(c => c.id === id);
 
-  const handleCreate = async () => {
+  const openCreate = () => {
+    setEditGoal(null);
+    setForm({ category_id: '', title: '', description: '', deadline: '' });
+    setShowModal(true);
+  };
+
+  const openEdit = (goal) => {
+    setEditGoal(goal);
+    setForm({ category_id: goal.category_id, title: goal.title, description: goal.description || '', deadline: goal.current_deadline });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
     if (!form.title || !form.category_id || !form.deadline) return toast.error('Fill all required fields');
     setLoading(true);
     try {
-      await API.post('/goals', form);
-      toast.success('◇ Goal created!');
+      if (editGoal) {
+        await API.put(`/goals/${editGoal.id}`, form);
+        toast.success('Goal updated!');
+      } else {
+        await API.post('/goals', form);
+        toast.success('◇ Goal created!');
+      }
       setShowModal(false);
+      setEditGoal(null);
       setForm({ category_id: '', title: '', description: '', deadline: '' });
       load();
-    } catch { toast.error('Failed to create goal'); }
+    } catch { toast.error('Failed to save goal'); }
     finally { setLoading(false); }
+  };
+
+  const handleDelete = async (goal) => {
+    if (!window.confirm(`Delete "${goal.title}"? This cannot be undone.`)) return;
+    await API.delete(`/goals/${goal.id}`);
+    toast.success('Goal deleted');
+    load();
   };
 
   const handleReflect = async () => {
@@ -46,10 +89,24 @@ export default function Goals() {
     finally { setLoading(false); }
   };
 
+  const handleAddReflection = async () => {
+    if (!newReflectionText.trim()) return toast.error('Write your reflection');
+    setLoading(true);
+    try {
+      await API.post(`/goals/${addReflectionGoal.id}/reflections`, { text: newReflectionText });
+      toast.success('Reflection added!');
+      setAddReflectionGoal(null);
+      setNewReflectionText('');
+      load();
+    } catch { toast.error('Failed to add reflection'); }
+    finally { setLoading(false); }
+  };
+
   const filtered = goals.filter(g => {
     if (filter === 'active') return g.status === 'active';
     if (filter === 'completed') return g.status === 'completed';
     if (filter === 'extended') return g.status === 'extended';
+    if (filter === 'abandoned') return g.status === 'abandoned';
     return true;
   });
 
@@ -58,7 +115,7 @@ export default function Goals() {
   return (
     <div>
       <div className="page-header">
-        <h2>Goals</h2>
+        <h2>Goals danish</h2>
         <p>Set meaningful targets. Reflect honestly. Grow deliberately.</p>
       </div>
 
@@ -69,7 +126,8 @@ export default function Goals() {
             <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>These goals need your reflection — complete, extend, or acknowledge them.</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
               {overdue.map(g => (
-                <button key={g.id} className="btn btn-sm" style={{ background: 'var(--rust)', color: 'white' }} onClick={() => { setReflectGoal(g); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
+                <button key={g.id} className="btn btn-sm" style={{ background: 'var(--rust)', color: 'white' }}
+                  onClick={() => { setReflectGoal(g); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
                   {g.title} →
                 </button>
               ))}
@@ -77,15 +135,36 @@ export default function Goals() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {['active', 'completed', 'extended', 'all'].map(f => (
+        {/* Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {['active', 'completed', 'extended', 'abandoned', 'all'].map(f => (
               <button key={f} className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline'}`} onClick={() => setFilter(f)}>
                 {f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
             ))}
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ New Goal</button>
+          <button className="btn btn-primary" onClick={openCreate}>+ New Goal</button>
+        </div>
+
+        {/* Sort + Filter Row */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', textTransform: 'uppercase', letterSpacing: 1 }}>Sort</span>
+            <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '6px 10px', fontSize: 13, height: 'auto' }}>
+              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <button className="btn btn-sm btn-outline" onClick={() => setSortOrder(s => s === 'desc' ? 'asc' : 'desc')}>
+              {sortOrder === 'desc' ? '↓' : '↑'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', textTransform: 'uppercase', letterSpacing: 1 }}>Category</span>
+            <select className="form-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '6px 10px', fontSize: 13, height: 'auto' }}>
+              <option value="">All</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            </select>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -93,7 +172,7 @@ export default function Goals() {
             <div className="empty-icon">◇</div>
             <h3>No goals here</h3>
             <p>Set a meaningful goal. Give it a deadline. Show up.</p>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Create Goal</button>
+            <button className="btn btn-primary" onClick={openCreate}>+ Create Goal</button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -123,17 +202,47 @@ export default function Goals() {
                           {goal.status}
                         </span>
                       </div>
+
+                      {/* Latest reflection */}
                       {goal.reflection && (
                         <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
                           "{goal.reflection}"
                         </div>
                       )}
+
+                      {/* Multiple reflections timeline */}
+                      {goal.reflections?.length > 0 && (
+                        <div style={{ marginTop: 10 }}>
+                          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'rgba(13,13,13,0.35)', marginBottom: 6 }}>
+                            Reflections ({goal.reflections.length})
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {goal.reflections.slice(-3).map((r, i) => (
+                              <div key={i} style={{ padding: '8px 12px', background: 'var(--mist)', borderRadius: 8, fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', borderLeft: '2px solid rgba(13,13,13,0.1)' }}>
+                                <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
+                                  {format(new Date(r.date), 'MMM d, yyyy')}
+                                  {r.status_change && <span style={{ marginLeft: 6 }}>· {r.status_change}</span>}
+                                </div>
+                                "{r.text}"
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {goal.status === 'active' && (
-                      <button className="btn btn-sm btn-outline" onClick={() => { setReflectGoal(goal); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
-                        Reflect
-                      </button>
-                    )}
+
+                    <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0 }}>
+                      <button className="btn btn-sm btn-outline" onClick={() => openEdit(goal)} title="Edit">✎</button>
+                      {goal.status === 'active' && (
+                        <>
+                          <button className="btn btn-sm btn-outline" onClick={() => { setAddReflectionGoal(goal); setNewReflectionText(''); }} title="Add note">+ Note</button>
+                          <button className="btn btn-sm btn-outline" onClick={() => { setReflectGoal(goal); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
+                            Reflect
+                          </button>
+                        </>
+                      )}
+                      <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(goal)} title="Delete" style={{ color: 'rgba(13,13,13,0.3)' }}>🗑</button>
+                    </div>
                   </div>
                 </div>
               );
@@ -142,12 +251,12 @@ export default function Goals() {
         )}
       </div>
 
-      {/* Create Modal */}
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <h3>New Goal</h3>
+              <h3>{editGoal ? 'Edit Goal' : 'New Goal'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="form-group">
@@ -167,19 +276,45 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label className="form-label">Target Deadline</label>
-              <input type="date" className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} min={format(new Date(), 'yyyy-MM-dd')} />
+              <input type="date" className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreate} disabled={loading} style={{ flex: 1 }}>
-                {loading ? 'Creating...' : 'Create Goal'}
+              <button className="btn btn-primary" onClick={handleSave} disabled={loading} style={{ flex: 1 }}>
+                {loading ? 'Saving...' : editGoal ? 'Save Changes' : 'Create Goal'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Reflect Modal */}
+      {/* Add Quick Reflection Modal */}
+      {addReflectionGoal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setAddReflectionGoal(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Add Reflection Note</h3>
+              <button className="modal-close" onClick={() => setAddReflectionGoal(null)}>✕</button>
+            </div>
+            <div style={{ padding: '10px 14px', background: 'var(--mist)', borderRadius: 10, marginBottom: 16, fontSize: 14 }}>
+              <strong>{addReflectionGoal.title}</strong>
+            </div>
+            <div className="form-group">
+              <label className="form-label">What's on your mind about this goal?</label>
+              <textarea className="form-textarea" value={newReflectionText} onChange={(e) => setNewReflectionText(e.target.value)}
+                placeholder="Progress made, obstacles, insights, next steps..." style={{ minHeight: 120 }} />
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" onClick={() => setAddReflectionGoal(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleAddReflection} disabled={loading} style={{ flex: 1 }}>
+                {loading ? 'Saving...' : 'Add Note'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reflect (Complete/Extend/Abandon) Modal */}
       {reflectGoal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setReflectGoal(null)}>
           <div className="modal">
@@ -191,7 +326,6 @@ export default function Goals() {
               <strong>{reflectGoal.title}</strong>
               <div style={{ color: 'rgba(13,13,13,0.5)', fontSize: 12, marginTop: 2 }}>Deadline: {format(parseISO(reflectGoal.current_deadline), 'MMM d, yyyy')}</div>
             </div>
-
             <div className="form-group">
               <label className="form-label">What happened?</label>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -202,21 +336,18 @@ export default function Goals() {
                 ))}
               </div>
             </div>
-
             <div className="form-group">
               <label className="form-label">
                 {reflectForm.status === 'completed' ? 'What did you achieve or learn?' : reflectForm.status === 'extended' ? 'Why do you need more time?' : 'Why are you moving on?'}
               </label>
               <textarea className="form-textarea" value={reflectForm.reflection} onChange={(e) => setReflectForm({ ...reflectForm, reflection: e.target.value })} placeholder="Be honest with yourself..." />
             </div>
-
             {reflectForm.status === 'extended' && (
               <div className="form-group">
                 <label className="form-label">New Deadline</label>
-                <input type="date" className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} min={format(new Date(), 'yyyy-MM-dd')} />
+                <input type="date" className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}
-
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setReflectGoal(null)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleReflect} disabled={loading} style={{ flex: 1 }}>

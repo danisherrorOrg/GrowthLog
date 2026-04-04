@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
+import { format, parseISO } from 'date-fns';
 
 const ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
 const COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
@@ -14,31 +15,79 @@ const DEFAULTS = [
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
+  const [archived, setArchived] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editCat, setEditCat] = useState(null);
+  const [viewCat, setViewCat] = useState(null);
+  const [catLogs, setCatLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
   const [loading, setLoading] = useState(false);
 
-  const load = () => API.get('/categories').then((r) => setCategories(r.data));
+  const load = async () => {
+    const [active, arch] = await Promise.all([
+      API.get('/categories'),
+      API.get('/categories?include_archived=true'),
+    ]);
+    setCategories(active.data);
+    setArchived(arch.data.filter(c => c.archived));
+  };
+
   useEffect(() => { load(); }, []);
 
-  const handleCreate = async () => {
+  const openCreate = () => {
+    setEditCat(null);
+    setForm({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
+    setShowModal(true);
+  };
+
+  const openEdit = (cat) => {
+    setEditCat(cat);
+    setForm({ name: cat.name, icon: cat.icon, color: cat.color, description: cat.description || '' });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
     if (!form.name.trim()) return toast.error('Name is required');
     setLoading(true);
     try {
-      await API.post('/categories', form);
-      toast.success(`${form.icon} ${form.name} created!`);
+      if (editCat) {
+        await API.put(`/categories/${editCat.id}`, form);
+        toast.success(`${form.icon} ${form.name} updated!`);
+      } else {
+        await API.post('/categories', form);
+        toast.success(`${form.icon} ${form.name} created!`);
+      }
       setShowModal(false);
       setForm({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
+      setEditCat(null);
       load();
-    } catch { toast.error('Failed to create category'); }
+    } catch { toast.error('Failed to save category'); }
     finally { setLoading(false); }
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Archive "${name}"? You can always recreate it.`)) return;
+    if (!window.confirm(`Archive "${name}"? You can restore it later.`)) return;
     await API.delete(`/categories/${id}`);
     toast.success('Category archived');
     load();
+  };
+
+  const handleRestore = async (id, name) => {
+    await API.put(`/categories/${id}/restore`);
+    toast.success(`${name} restored!`);
+    load();
+  };
+
+  const handleViewLogs = async (cat) => {
+    setViewCat(cat);
+    setLoadingLogs(true);
+    try {
+      const r = await API.get(`/categories/${cat.id}/logs?days=90`);
+      setCatLogs(r.data);
+    } catch { toast.error('Failed to load logs'); }
+    finally { setLoadingLogs(false); }
   };
 
   const addDefault = async (def) => {
@@ -75,7 +124,15 @@ export default function Categories() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontFamily: 'Fraunces', fontSize: 20 }}>Your Categories ({categories.length})</h3>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Add Category</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {archived.length > 0 && (
+              <button className={`btn btn-sm ${showArchived ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => setShowArchived(!showArchived)}>
+                {showArchived ? 'Hide' : 'Show'} Archived ({archived.length})
+              </button>
+            )}
+            <button className="btn btn-primary" onClick={openCreate}>+ Add Category</button>
+          </div>
         </div>
 
         {categories.length === 0 ? (
@@ -90,37 +147,62 @@ export default function Categories() {
               <div key={cat.id} className="card" style={{ borderTop: `3px solid ${cat.color}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <span style={{ fontSize: 32 }}>{cat.icon}</span>
-                  <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(cat.id, cat.name)} style={{ color: 'rgba(13,13,13,0.3)' }}>✕</button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)} title="Edit" style={{ color: 'rgba(13,13,13,0.4)' }}>✎</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(cat.id, cat.name)} title="Archive" style={{ color: 'rgba(13,13,13,0.3)' }}>✕</button>
+                  </div>
                 </div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
-                {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)' }}>{cat.description}</p>}
-                <div style={{ marginTop: 12 }}>
-                  <span className="tag tag-mist" style={{ fontSize: 11 }}>Active</span>
-                </div>
+                {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>{cat.description}</p>}
+                <button className="btn btn-outline btn-sm" onClick={() => handleViewLogs(cat)} style={{ marginTop: 'auto', width: '100%' }}>
+                  View All Logs →
+                </button>
               </div>
             ))}
           </div>
         )}
+
+        {showArchived && archived.length > 0 && (
+          <div style={{ marginTop: 32 }}>
+            <h3 style={{ fontFamily: 'Fraunces', fontSize: 18, marginBottom: 16, color: 'rgba(13,13,13,0.5)' }}>
+              Archived Categories
+            </h3>
+            <div className="grid-3">
+              {archived.map((cat) => (
+                <div key={cat.id} className="card" style={{ borderTop: `3px solid ${cat.color}`, opacity: 0.65 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <span style={{ fontSize: 32 }}>{cat.icon}</span>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleRestore(cat.id, cat.name)}
+                      style={{ fontSize: 11, color: 'var(--sage)', border: '1px solid var(--sage)', borderRadius: 6, padding: '3px 8px' }}>
+                      Restore
+                    </button>
+                  </div>
+                  <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
+                  {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>{cat.description}</p>}
+                  <span className="tag tag-mist" style={{ fontSize: 11, marginTop: 8, display: 'inline-block' }}>Archived</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Create / Edit Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
             <div className="modal-header">
-              <h3>New Category</h3>
+              <h3>{editCat ? 'Edit Category' : 'New Category'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
-
             <div className="form-group">
               <label className="form-label">Name</label>
               <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Spiritual Growth" />
             </div>
-
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
               <input className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does this area mean to you?" />
             </div>
-
             <div className="form-group">
               <label className="form-label">Icon</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -132,7 +214,6 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-
             <div className="form-group">
               <label className="form-label">Color</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -142,13 +223,60 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-
             <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreate} disabled={loading} style={{ flex: 1 }}>
-                {loading ? 'Creating...' : 'Create Category'}
+              <button className="btn btn-primary" onClick={handleSave} disabled={loading} style={{ flex: 1 }}>
+                {loading ? 'Saving...' : editCat ? 'Save Changes' : 'Create Category'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Category Logs Modal */}
+      {viewCat && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewCat(null)}>
+          <div className="modal" style={{ maxWidth: 680, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 28 }}>{viewCat.icon}</span>
+                <div>
+                  <h3>{viewCat.name} — All Logs</h3>
+                  <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>{catLogs.length} entries in the last 90 days</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setViewCat(null)}>✕</button>
+            </div>
+
+            {loadingLogs ? (
+              <div style={{ textAlign: 'center', padding: 40, color: 'rgba(13,13,13,0.4)' }}>Loading logs...</div>
+            ) : catLogs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <p style={{ color: 'rgba(13,13,13,0.4)' }}>No logs for this category in the past 90 days.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {catLogs.sort((a, b) => b.date.localeCompare(a.date)).map((log) => (
+                  <div key={log.id} style={{ padding: '14px 16px', background: 'var(--mist)', borderRadius: 10, borderLeft: `3px solid ${viewCat.color}` }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 8 }}>
+                      {format(parseISO(log.date), 'EEEE, MMMM d, yyyy')}
+                    </div>
+                    {log.entries.map((entry, i) => (
+                      <div key={i}>
+                        <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink)', margin: 0 }}>{entry.text}</p>
+                        <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>
+                          <span>Mood {entry.mood}/10</span>
+                          <span>Energy {entry.energy}/10</span>
+                          {entry.emotions?.length > 0 && (
+                            <span>{entry.emotions.join(', ')}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
