@@ -1,13 +1,3 @@
 Things to improve:
-- Allow category to be edit and alow all the logs inside the category to be shown at a single page.
-- Show the project that are archived.
-- Allow edit/delete of snapshot
-- Allow compare of snapshot.
-- Allow edit/delete of goal
-- Allow multiple reflection to be added in goal.
-- Allow showing of goal based on sort (like date or by category etc.)
-- Edit/delete of Vision
-- Allow custom date for the vision
-- Allow use to see active / archive vision
-- Allow user to add what improvement they have done for this vision and what they learn etc.
+- Allow deletion of notes in goal/Manifestations
 - 
