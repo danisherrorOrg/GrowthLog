@@ -2,4 +2,15 @@ Things to improve:
 - Allow deletion of notes in goal/Manifestations
 - In the login/signup page need to add sections that will tell user what is the page and how to use it and get the best benifit.
 - Create more graph
-
+- Allow user to validate their email
+- User profile page
+- Create a cache so that it will decrease the load on my database and server
+- If user has create some category then along with default, show these user defined category also.
+- Allow deletion of Archive category(along with it's data.)
+- Day will reset at 12 am, so new entry will added to the task for that particular category. (Like for gym (category physical health) it should allow me to add new log everyday and should allow user to edit/delete of log on a particular day).
+- When creating a new task then user should select the already created category or create a new category
+- Compare snapshot not working.
+- Allow user to choose custom or predefined "Type" in adding progress in Manifestations
+- Allow user to edit/delete the progress in a Manifestations
+- Currently for the category, snapshot, Manifestations, Goal they have only preview page. I want a new page for a particular thing, so that user can focus on that thing only. and can see the whole picture of it instead of preview. But keep the preview also.
+- I want to remove hardcoding as much we can so that, it will be easy to scale for current monolith architecture.
