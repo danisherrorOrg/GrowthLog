@@ -1,0 +1,63 @@
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const NAV = [
+  { to: '/dashboard', icon: '◈', label: 'Dashboard' },
+  { to: '/log', icon: '✦', label: 'Daily Log' },
+  { to: '/growth', icon: '◎', label: 'Growth' },
+  { to: '/goals', icon: '◇', label: 'Goals' },
+  { to: '/manifestations', icon: '✧', label: 'Manifestations' },
+  { to: '/snapshots', icon: '○', label: 'Snapshots' },
+  { to: '/categories', icon: '▦', label: 'Categories' },
+];
+
+export default function Layout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <h1>GrowthLog</h1>
+          <span>Personal Journal</span>
+        </div>
+
+        <nav className="sidebar-nav">
+          {NAV.map(({ to, icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <span className="icon">{icon}</span>
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="streak-badge">
+            <span className="streak-num">{user?.streak || 0}</span>
+            <span className="streak-label">Day Streak</span>
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.5)', marginBottom: 12 }}>
+            👤 {user?.name}
+          </div>
+          <button className="btn btn-ghost" onClick={handleLogout} style={{ color: 'rgba(245,240,232,0.4)', width: '100%', justifyContent: 'center', fontSize: 13 }}>
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      <main className="main-content">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
