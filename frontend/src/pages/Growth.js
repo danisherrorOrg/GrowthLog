@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import API from '../utils/api';
+import toast from 'react-hot-toast';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, RadarChart, Radar, PolarGrid,
@@ -12,19 +13,23 @@ export default function Growth() {
   const [logs, setLogs] = useState([]);
   const [days, setDays] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setLoading(true);
+    setError(false);
     Promise.all([
       API.get(`/dashboard?days=${days}`),
       API.get(`/logs?days=${days}`)
     ]).then(([dash, logsRes]) => {
       setData(dash.data);
       setLogs(logsRes.data);
-    }).catch(console.error).finally(() => setLoading(false));
+    }).catch(() => {
+      setError(true);
+      toast.error('Failed to load growth data');
+    }).finally(() => setLoading(false));
   }, [days]);
 
-  // Mood + energy combined
   const moodEnergyTrend = (data?.mood_trend || []).map((d, i) => ({
     date: format(parseISO(d.date), 'MMM d'),
     mood: d.mood,
@@ -50,7 +55,6 @@ export default function Growth() {
     .slice(0, 10)
     .map(([name, count]) => ({ name, count }));
 
-  // Category mood avg data
   const catMoodData = (data?.category_consistency || []).map(cat => ({
     name: cat.name,
     icon: cat.icon,
@@ -59,7 +63,6 @@ export default function Growth() {
     consistency: cat.percentage,
   })).sort((a, b) => b.avgMood - a.avgMood);
 
-  // Weekly summary
   const weeklyData = (data?.weekly_summary || []).map(w => ({
     week: w.week,
     logs: w.logs,
@@ -82,6 +85,17 @@ export default function Growth() {
     </div>
   );
 
+  if (error) return (
+    <div className="page-body">
+      <div className="empty-state">
+        <div className="empty-icon">⚠</div>
+        <h3>Failed to load growth data</h3>
+        <p>Something went wrong. Please try again.</p>
+        <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <div className="page-header">
@@ -90,7 +104,6 @@ export default function Growth() {
       </div>
 
       <div className="page-body">
-        {/* Time filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
           {[7, 14, 30, 60, 90].map(d => (
             <button key={d} className={`btn btn-sm ${days === d ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDays(d)}>
@@ -99,7 +112,6 @@ export default function Growth() {
           ))}
         </div>
 
-        {/* Summary stats */}
         <div className="grid-4" style={{ marginBottom: 28 }}>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--sage)' }}>{avgMood}</div>
@@ -119,7 +131,6 @@ export default function Growth() {
           </div>
         </div>
 
-        {/* Mood + Energy combined chart */}
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="section-title">
             <span>Mood & Energy Trend</span>
@@ -145,7 +156,6 @@ export default function Growth() {
         </div>
 
         <div className="grid-2" style={{ marginBottom: 24 }}>
-          {/* Category radar */}
           <div className="card">
             <div className="section-title">Life Balance Radar</div>
             {radarData.length < 3 ? (
@@ -164,7 +174,6 @@ export default function Growth() {
             )}
           </div>
 
-          {/* Top emotions */}
           <div className="card">
             <div className="section-title">Top Emotions</div>
             {emotionData.length === 0 ? (
@@ -185,7 +194,6 @@ export default function Growth() {
           </div>
         </div>
 
-        {/* Weekly summary chart */}
         {weeklyData.length >= 2 && (
           <div className="card" style={{ marginBottom: 24 }}>
             <div className="section-title">
@@ -206,27 +214,6 @@ export default function Growth() {
           </div>
         )}
 
-        {/* Category mood comparison */}
-        {catMoodData.length >= 2 && (
-          <div className="card" style={{ marginBottom: 24 }}>
-            <div className="section-title">Category Avg Mood</div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={catMoodData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,13,13,0.05)" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'rgba(13,13,13,0.4)' }} />
-                <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: 'rgba(13,13,13,0.4)' }} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v) => [`${v}/10`, 'Avg Mood']} />
-                <Bar dataKey="avgMood" radius={[4, 4, 0, 0]}>
-                  {catMoodData.map((entry, index) => (
-                    <rect key={index} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Category breakdown */}
         <div className="card">
           <div className="section-title">Category Consistency Deep Dive</div>
           {(data?.category_consistency || []).length === 0 ? (
