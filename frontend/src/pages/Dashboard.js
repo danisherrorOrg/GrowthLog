@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
+import toast from 'react-hot-toast';
 import { format, subDays, eachDayOfInterval } from 'date-fns';
 
 export default function Dashboard() {
@@ -9,12 +10,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [days, setDays] = useState(30);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
     API.get(`/dashboard?days=${days}`)
       .then((res) => setData(res.data))
-      .catch(console.error)
+      .catch(() => {
+        setError(true);
+        toast.error('Failed to load dashboard');
+      })
       .finally(() => setLoading(false));
   }, [days]);
 
@@ -31,6 +38,17 @@ export default function Dashboard() {
         <div className="grid-4" style={{ marginBottom: 24 }}>
           {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
         </div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="page-body">
+      <div className="empty-state">
+        <div className="empty-icon">⚠</div>
+        <h3>Failed to load dashboard</h3>
+        <p>Something went wrong. Please try again.</p>
+        <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ export default function DailyLog() {
   const [highlight, setHighlight] = useState('');
   const [overallRating, setOverallRating] = useState(5);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [prompt] = useState(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
   const today = format(new Date(), 'EEEE, MMMM d');
@@ -48,7 +49,10 @@ export default function DailyLog() {
           setEntries(map);
         }
       })
-      .catch(console.error)
+      .catch(() => {
+        setError(true);
+        toast.error('Failed to load log data');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -80,13 +84,27 @@ export default function DailyLog() {
       if (res.data.streak > 1) toast.success(`🔥 ${res.data.streak} day streak!`);
       else toast.success('✦ Log saved!');
       navigate('/dashboard');
-    } catch { toast.error('Failed to save log'); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save log');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return (
     <div className="page-body">
       {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 180, marginBottom: 16, borderRadius: 16 }} />)}
+    </div>
+  );
+
+  if (error) return (
+    <div className="page-body">
+      <div className="empty-state">
+        <div className="empty-icon">⚠</div>
+        <h3>Failed to load</h3>
+        <p>Something went wrong loading your log data.</p>
+        <button className="btn btn-primary" onClick={() => window.location.reload()}>Retry</button>
+      </div>
     </div>
   );
 

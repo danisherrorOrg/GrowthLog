@@ -31,11 +31,15 @@ export default function Goals() {
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
-    const params = new URLSearchParams({ sort_by: sortBy, sort_order: sortOrder });
-    if (filterCategory) params.append('category_id', filterCategory);
-    const [g, c] = await Promise.all([API.get(`/goals?${params}`), API.get('/categories')]);
-    setGoals(g.data);
-    setCategories(c.data);
+    try {
+      const params = new URLSearchParams({ sort_by: sortBy, sort_order: sortOrder });
+      if (filterCategory) params.append('category_id', filterCategory);
+      const [g, c] = await Promise.all([API.get(`/goals?${params}`), API.get('/categories')]);
+      setGoals(g.data);
+      setCategories(c.data);
+    } catch {
+      toast.error('Failed to load goals');
+    }
   };
 
   useEffect(() => { load(); }, [sortBy, sortOrder, filterCategory]);
@@ -84,15 +88,20 @@ export default function Goals() {
       setEditGoal(null);
       setForm({ category_id: '', title: '', description: '', deadline: '' });
       load();
-    } catch { toast.error('Failed to save goal'); }
-    finally { setLoading(false); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save goal');
+    } finally { setLoading(false); }
   };
 
   const handleDelete = async (goal) => {
     if (!window.confirm(`Delete "${goal.title}"? This cannot be undone.`)) return;
-    await API.delete(`/goals/${goal.id}`);
-    toast.success('Goal deleted');
-    load();
+    try {
+      await API.delete(`/goals/${goal.id}`);
+      toast.success('Goal deleted');
+      load();
+    } catch {
+      toast.error('Failed to delete goal');
+    }
   };
 
   const handleReflect = async () => {
@@ -123,9 +132,13 @@ export default function Goals() {
 
   const handleDeleteReflection = async (goal, reflectionId) => {
     if (!window.confirm('Delete this note?')) return;
-    await API.delete(`/goals/${goal.id}/reflections/${reflectionId}`);
-    toast.success('Note deleted');
-    load();
+    try {
+      await API.delete(`/goals/${goal.id}/reflections/${reflectionId}`);
+      toast.success('Note deleted');
+      load();
+    } catch {
+      toast.error('Failed to delete note');
+    }
   };
 
   const filtered = goals.filter(g => {
@@ -232,14 +245,12 @@ export default function Goals() {
                         </span>
                       </div>
 
-                      {/* Latest reflection preview */}
                       {goal.reflection && (
                         <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
                           "{goal.reflection}"
                         </div>
                       )}
 
-                      {/* Reflections with delete */}
                       {goal.reflections?.length > 0 && (
                         <div style={{ marginTop: 10 }}>
                           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'rgba(13,13,13,0.35)', marginBottom: 6 }}>
