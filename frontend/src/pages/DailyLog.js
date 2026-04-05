@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
 
 const EMOTIONS = ['Motivated', 'Anxious', 'Proud', 'Frustrated', 'Grateful', 'Tired', 'Inspired', 'Calm', 'Overwhelmed', 'Hopeful', 'Focused', 'Distracted'];
 
-const PROMPTS = [
-  'What did you learn today that you didn\'t know yesterday?',
-  'What made you step outside your comfort zone today?',
-  'What are you most proud of from today?',
-  'What would you do differently if you could replay today?',
-  'What pattern are you noticing in yourself lately?',
-  'What relationship needed your attention today?',
-];
+const getPromptForCategory = (categoryName) => {
+  if (!categoryName) return "What was the highlight of your day?";
+  const c = categoryName.toLowerCase();
+  if (c.includes('health') || c.includes('body') || c.includes('fitness')) return "How did you treat your body today? What gave you energy?";
+  if (c.includes('mind') || c.includes('learning') || c.includes('intellect')) return "What did you learn today? Did you challenge your thinking?";
+  if (c.includes('career') || c.includes('work') || c.includes('business')) return "What was your biggest professional win or learning today?";
+  if (c.includes('relation') || c.includes('family') || c.includes('friends') || c.includes('love') || c.includes('social')) return "How did you connect with others today? Who made you smile?";
+  if (c.includes('finance') || c.includes('money') || c.includes('wealth')) return "Did you make any mindful financial choices today?";
+  if (c.includes('spirit') || c.includes('soul') || c.includes('peace') || c.includes('mindfulness')) return "Did you find moments of stillness or gratitude today?";
+  return `How did your ${categoryName} show up today?`;
+};
 
 export default function DailyLog() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const targetDate = dateParam ? parseISO(dateParam) : new Date();
+
+  const { refreshUser } = useAuth();
   const [categories, setCategories] = useState([]);
   const [todayLog, setTodayLog] = useState(null);
   const [entries, setEntries] = useState({});
@@ -25,11 +34,11 @@ export default function DailyLog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [prompt] = useState(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
-  const today = format(new Date(), 'EEEE, MMMM d');
+  const todayDisplay = format(targetDate, 'EEEE, MMMM d');
+  const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
   useEffect(() => {
-    Promise.all([API.get('/categories'), API.get('/logs/today')])
+    Promise.all([API.get('/categories'), API.get(`/logs/${todayDateStr}`)])
       .then(([catsRes, logRes]) => {
         const cats = catsRes.data;
         setCategories(cats);
@@ -80,7 +89,8 @@ export default function DailyLog() {
 
     setSaving(true);
     try {
-      const res = await API.post('/logs', { entries: entryList, highlight, overall_rating: overallRating });
+      const res = await API.post('/logs', { date: todayDateStr, entries: entryList, highlight, overall_rating: overallRating });
+      await refreshUser();
       if (res.data.streak > 1) toast.success(`🔥 ${res.data.streak} day streak!`);
       else toast.success('✦ Log saved!');
       navigate('/dashboard');
@@ -126,16 +136,10 @@ export default function DailyLog() {
     <div>
       <div className="page-header">
         <h2>Daily Log ✦</h2>
-        <p>{today} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
+        <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
       </div>
 
       <div className="page-body">
-        {/* Daily prompt */}
-        <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)', marginBottom: 24 }}>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.4)', marginBottom: 8 }}>Today's Prompt</div>
-          <p style={{ fontFamily: 'Fraunces', fontSize: 18, fontStyle: 'italic', color: 'var(--gold)' }}>"{prompt}"</p>
-        </div>
-
         {/* Category entries */}
         {categories.map((cat) => {
           const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [] };
@@ -147,7 +151,9 @@ export default function DailyLog() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">What happened in this area today?</label>
+                <label className="form-label" style={{ color: 'var(--sage)', fontWeight: 600, fontStyle: 'italic' }}>
+                  "{getPromptForCategory(cat.name)}"
+                </label>
                 <textarea
                   className="form-textarea"
                   value={entry.text}

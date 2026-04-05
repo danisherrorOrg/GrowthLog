@@ -183,6 +183,9 @@ class GoalReflectModel(BaseModel):
     reflection: str
     new_deadline: Optional[str] = None
 
+class MicroGoalModel(BaseModel):
+    text: str
+
 class GoalReflectionAddModel(BaseModel):
     text: str
     date: Optional[str] = None
@@ -205,6 +208,7 @@ class DailyLogEntryModel(BaseModel):
         return v
 
 class DailyLogModel(BaseModel):
+    date: Optional[str] = None
     entries: List[DailyLogEntryModel]
     highlight: Optional[str] = ""
     overall_rating: Optional[int] = 5
@@ -269,8 +273,19 @@ def register(data: RegisterModel):
         "streak": 0, "longest_streak": 0, "last_log_date": None,
         "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
     })
-    return {"token": create_token(str(result.inserted_id)),
-            "user": {"id": str(result.inserted_id), "name": data.name, "email": data.email}}
+    
+    uid_str = str(result.inserted_id)
+    default_categories = [
+        {"user_id": uid_str, "name": "Mind", "icon": "🧠", "color": "#c9a84c", "description": "Learning, intellect, and mental health", "archived": False, "created_at": utcnow()},
+        {"user_id": uid_str, "name": "Body", "icon": "💪", "color": "#6b8c6b", "description": "Physical health, fitness, and nutrition", "archived": False, "created_at": utcnow()},
+        {"user_id": uid_str, "name": "Career", "icon": "💼", "color": "#5b8ba8", "description": "Professional growth and work tasks", "archived": False, "created_at": utcnow()},
+        {"user_id": uid_str, "name": "Finance", "icon": "💰", "color": "#8b6bc4", "description": "Wealth, savings, and investments", "archived": False, "created_at": utcnow()},
+        {"user_id": uid_str, "name": "Spirit", "icon": "🌿", "color": "#c46b8b", "description": "Peace, philosophy, and connection", "archived": False, "created_at": utcnow()}
+    ]
+    db.categories.insert_many(default_categories)
+
+    return {"token": create_token(uid_str),
+            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat()}}
 
 @app.post("/auth/login")
 def login(data: LoginModel):
@@ -278,7 +293,7 @@ def login(data: LoginModel):
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"token": create_token(str(user["_id"])),
-            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"]}}
+            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat()}}
 
 @app.get("/auth/me")
 def me(current_user=Depends(get_current_user)):
@@ -304,6 +319,18 @@ def change_password(data: PasswordChangeModel, current_user=Depends(get_current_
     if not verify_password(data.current_password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {"password": hash_password(data.new_password)}})
+    return {"success": True}
+
+@app.delete("/auth/me")
+def delete_account(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    db.categories.delete_many({"user_id": uid})
+    db.goals.delete_many({"user_id": uid})
+    db.manifestations.delete_many({"user_id": uid})
+    db.snapshots.delete_many({"user_id": uid})
+    db.daily_logs.delete_many({"user_id": uid})
+    db.users.delete_one({"_id": current_user["_id"]})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
 @app.get("/auth/stats")
@@ -433,7 +460,7 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
         "title": data.title, "description": data.description,
         "original_deadline": data.deadline, "current_deadline": data.deadline,
         "status": "active", "reflection": None, "reflections": [],
-        "notes": [], "extension_history": [], "created_at": utcnow(),
+        "notes": [], "micro_goals": [], "extension_history": [], "created_at": utcnow(),
     }
     result = db.goals.insert_one(goal)
     goal["id"] = str(result.inserted_id)
@@ -509,6 +536,40 @@ def delete_goal_note(goal_id: str, note_id: str, current_user=Depends(get_curren
                         {"$pull": {"notes": {"id": note_id}}})
     return {"success": True}
 
+@app.post("/goals/{goal_id}/micro-goals")
+def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
+    mg_id = str(ObjectId())
+    mg = {"id": mg_id, "text": data.text, "completed": False}
+    db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
+        {"$push": {"micro_goals": mg}}
+    )
+    return {"success": True, "id": mg_id}
+
+@app.put("/goals/{goal_id}/micro-goals/{mg_id}/toggle")
+def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    mgs = goal.get("micro_goals", [])
+    for mg in mgs:
+        if mg.get("id") == mg_id:
+            mg["completed"] = not mg.get("completed", False)
+            break
+            
+    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    return {"success": True}
+
+@app.delete("/goals/{goal_id}/micro-goals/{mg_id}")
+def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
+    db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
+        {"$pull": {"micro_goals": {"id": mg_id}}}
+    )
+    return {"success": True}
+
 
 # --- Daily Logs ---
 
@@ -530,7 +591,7 @@ def get_log_by_date(date: str, current_user=Depends(get_current_user)):
 
 @app.post("/logs")
 def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
-    today = utcnow().strftime("%Y-%m-%d")
+    today = data.date if data.date else utcnow().strftime("%Y-%m-%d")
     uid = str(current_user["_id"])
 
     # Validate all category_ids belong to this user
@@ -551,7 +612,7 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     })
     user = db.users.find_one({"_id": ObjectId(uid)})
     last = user.get("last_log_date")
-    yesterday = (utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
     streak = user.get("streak", 0)
     if last == yesterday:
         streak += 1
@@ -562,6 +623,15 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
                         {"$set": {"streak": streak, "longest_streak": longest, "last_log_date": today}})
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True, "streak": streak}
+
+@app.delete("/logs/{date}")
+def delete_log(date: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.daily_logs.delete_one({"user_id": uid, "date": date})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Log not found")
+    cache_invalidate(f"dashboard:{uid}")
+    return {"success": True}
 
 
 # --- Manifestations ---

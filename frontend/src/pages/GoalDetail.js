@@ -19,6 +19,10 @@ export default function GoalDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Micro-goals
+  const [mgText, setMgText] = useState('');
+  const [showMgInput, setShowMgInput] = useState(false);
+
   // Note input
   const [noteText, setNoteText] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -61,6 +65,32 @@ export default function GoalDetail() {
     if (!window.confirm('Delete this note?')) return;
     await API.delete(`/goals/${goalId}/notes/${noteId}`);
     toast.success('Note deleted');
+    load();
+  };
+
+  const handleAddMg = async () => {
+    if (!mgText.trim()) return toast.error('Enter micro-goal');
+    setSaving(true);
+    try {
+      await API.post(`/goals/${goalId}/micro-goals`, { text: mgText });
+      toast.success('Added!');
+      setMgText('');
+      setShowMgInput(false);
+      load();
+    } catch { toast.error('Failed to add'); }
+    finally { setSaving(false); }
+  };
+
+  const handleToggleMg = async (mgId) => {
+    try {
+      await API.put(`/goals/${goalId}/micro-goals/${mgId}/toggle`);
+      load();
+    } catch { toast.error('Failed to update'); }
+  };
+
+  const handleDeleteMg = async (mgId) => {
+    if (!window.confirm('Delete this?')) return;
+    await API.delete(`/goals/${goalId}/micro-goals/${mgId}`);
     load();
   };
 
@@ -114,8 +144,8 @@ export default function GoalDetail() {
 
   const deadline = parseISO(goal.current_deadline);
   const daysLeft = differenceInDays(deadline, new Date());
-  const isOverdue = goal.status === 'active' && isPast(deadline);
-  const isActive = goal.status === 'active';
+  const isOverdue = ['active', 'extended'].includes(goal.status) && isPast(deadline);
+  const isActive = ['active', 'extended'].includes(goal.status);
 
   return (
     <div>
@@ -162,7 +192,41 @@ export default function GoalDetail() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+          {/* Micro-Goals Section */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 17 }}>🎯 Micro-goals</h3>
+              <button className="btn btn-sm btn-outline" onClick={() => setShowMgInput(!showMgInput)}>+ Add</button>
+            </div>
+
+            {showMgInput && (
+              <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
+                <input className="form-input" value={mgText} onChange={e => setMgText(e.target.value)}
+                  placeholder="Small, actionable step..." style={{ marginBottom: 8 }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); }}>Cancel</button>
+                  <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving}>Add Step</button>
+                </div>
+              </div>
+            )}
+
+            {(goal.micro_goals || []).length === 0 && !showMgInput ? (
+              <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>Break this goal down into smaller steps.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(goal.micro_goals || []).map(mg => (
+                  <div key={mg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, position: 'relative', border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : 'none' }}>
+                    <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
+                    <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, flex: 1, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
+                    <button onClick={() => handleDeleteMg(mg.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Notes Section */}
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
