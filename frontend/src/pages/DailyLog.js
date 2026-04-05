@@ -9,18 +9,6 @@ import { getErrorMessage } from '../utils/errors';
 
 const EMOTIONS = ['Motivated', 'Anxious', 'Proud', 'Frustrated', 'Grateful', 'Tired', 'Inspired', 'Calm', 'Overwhelmed', 'Hopeful', 'Focused', 'Distracted'];
 
-const getPromptForCategory = (categoryName) => {
-  if (!categoryName) return "What was the highlight of your day?";
-  const c = categoryName.toLowerCase();
-  if (c.includes('health') || c.includes('body') || c.includes('fitness')) return "How did you treat your body today? What gave you energy?";
-  if (c.includes('mind') || c.includes('learning') || c.includes('intellect')) return "What did you learn today? Did you challenge your thinking?";
-  if (c.includes('career') || c.includes('work') || c.includes('business')) return "What was your biggest professional win or learning today?";
-  if (c.includes('relation') || c.includes('family') || c.includes('friends') || c.includes('love') || c.includes('social')) return "How did you connect with others today? Who made you smile?";
-  if (c.includes('finance') || c.includes('money') || c.includes('wealth')) return "Did you make any mindful financial choices today?";
-  if (c.includes('spirit') || c.includes('soul') || c.includes('peace') || c.includes('mindfulness')) return "Did you find moments of stillness or gratitude today?";
-  return `How did your ${categoryName} show up today?`;
-};
-
 export default function DailyLog() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -36,14 +24,20 @@ export default function DailyLog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [smartPrompts, setSmartPrompts] = useState({});
   const todayDisplay = format(targetDate, 'EEEE, MMMM d');
   const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
   useEffect(() => {
-    Promise.all([API.get('/categories'), API.get(`/logs/${todayDateStr}`)])
-      .then(([catsRes, logRes]) => {
+    Promise.all([
+      API.get('/categories'), 
+      API.get(`/logs/${todayDateStr}`),
+      API.get('/prompts/daily')
+    ])
+      .then(([catsRes, logRes, promptsRes]) => {
         const cats = catsRes.data;
         setCategories(cats);
+        setSmartPrompts(promptsRes.data);
         const existing = logRes.data;
         if (existing) {
           setTodayLog(existing);
@@ -160,7 +154,15 @@ export default function DailyLog() {
 
               <div className="form-group">
                 <label className="form-label" style={{ color: 'var(--sage)', fontWeight: 600, fontStyle: 'italic' }}>
-                  "{getPromptForCategory(cat.name)}"
+                  "{((catName) => {
+                    const c = catName.toLowerCase();
+                    if (c.includes('mind')) return smartPrompts.mind;
+                    if (c.includes('body') || c.includes('fitness')) return smartPrompts.body;
+                    if (c.includes('career') || c.includes('work')) return smartPrompts.career;
+                    if (c.includes('social') || c.includes('relation')) return smartPrompts.social;
+                    if (c.includes('soul') || c.includes('peace')) return smartPrompts.soul;
+                    return smartPrompts.default || "What happened in this category today?";
+                  })(cat.name)}"
                 </label>
                 <textarea
                   className="form-textarea"

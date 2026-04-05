@@ -12,7 +12,13 @@ import bcrypt
 import jwt
 import os
 import secrets
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from fastapi import BackgroundTasks
 from dotenv import load_dotenv
+from prompts import QUOTES, CATEGORY_PROMPTS
+import random
 
 
 load_dotenv()
@@ -39,6 +45,13 @@ def get_env_variable(name):
 
 MONGO_URL = get_env_variable("MONGO_URL")
 JWT_SECRET = get_env_variable("JWT_SECRET")
+
+# SMTP Config (Optional in dev, required for prod)
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASS = os.getenv("SMTP_PASS")
+SMTP_SENDER = os.getenv("SMTP_SENDER", "noreply@growthlog.app")
 
 client = MongoClient(MONGO_URL)
 db = client["growthlog"]
@@ -94,6 +107,30 @@ def create_token(uid: str, version: int = 1) -> str:
         {"user_id": uid, "v": version, "exp": utcnow() + timedelta(days=30)},
         JWT_SECRET, algorithm="HS256"
     )
+
+# --- Email Utility ---
+def send_email(to_email: str, subject: str, body: str):
+    if not all([SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS]):
+        print(f"DEBUG EMAIL (MOCK): To: {to_email}, Subject: {subject}, Body: {body}")
+        return True
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SMTP_SENDER
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"ERROR: Failed to send email: {e}")
+        return False
+
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -155,6 +192,7 @@ class ProfileUpdateModel(BaseModel):
     bio: Optional[str] = None
     avatar_emoji: Optional[str] = None
     timezone: Optional[str] = None
+    email_notifications: Optional[bool] = None
 
 class PasswordChangeModel(BaseModel):
     current_password: str
@@ -289,7 +327,7 @@ class SnapshotUpdateModel(BaseModel):
 # --- Auth ---
 
 @app.post("/auth/register")
-def register(data: RegisterModel):
+def register(data: RegisterModel, background_tasks: BackgroundTasks):
     if db.users.find_one({"email": data.email}):
         raise HTTPException(status_code=400, detail="Email already exists")
     result = db.users.insert_one({
@@ -299,6 +337,7 @@ def register(data: RegisterModel):
         "streak": 0, "longest_streak": 0, "last_log_date": None,
         "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
         "is_verified": False, "verification_token": None,
+        "email_notifications": True,
     })
 
     
@@ -314,6 +353,28 @@ def register(data: RegisterModel):
         {"user_id": uid_str, "name": "Spirit", "icon": "🌿", "color": "#c46b8b", "description": "Peace, philosophy, and connection", "archived": False, "created_at": utcnow()}
     ]
     db.categories.insert_many(default_categories)
+
+    # Email Verification (Background)
+    verify_token = secrets.token_urlsafe(32)
+    db.users.update_one({"_id": ObjectId(uid_str)}, {"$set": {"verification_token": verify_token, "verification_sent_at": utcnow()}})
+    
+    base_url = ALLOWED_ORIGINS[0]
+    verification_link = f"{base_url}/verify/{verify_token}"
+    
+    email_body = f"""
+    <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee; border-radius: 16px; color: #0d0d0d;">
+        <h2 style="font-family: serif; color: #6b8c6b; font-size: 24px;">Welcome to GrowthLog, {data.name}! ✦</h2>
+        <p style="font-size: 15px; line-height: 1.6;">We're thrilled to have you join our community of intentional growth. Your journey starts here.</p>
+        <p style="font-size: 15px; line-height: 1.6;">Please verify your email to unlock your public profile and start your first log:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{verification_link}" style="display: inline-block; background: #6b8c6b; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold;">Verify My Email ○</a>
+        </div>
+        <p style="font-size: 12px; color: #999; text-align: center;">If the button doesn't work, copy this link: <br/>{verification_link}</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 12px; color: #999; text-align: center;">GrowthLog — The Holistic Tracking Platform</p>
+    </div>
+    """
+    background_tasks.add_task(send_email, data.email, "Verify your GrowthLog ✦", email_body)
 
     return {"token": create_token(uid_str, 1),
             "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
@@ -1163,6 +1224,23 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
 
 
 
+@app.get("/prompts/quote")
+def get_quote():
+    # Use the current day as a seed for the daily quote
+    day_of_year = datetime.now().timetuple().tm_yday
+    quote = QUOTES[day_of_year % len(QUOTES)]
+    return quote
+
+@app.get("/prompts/daily")
+def get_daily_prompts():
+    # Provide one random prompt for each category dimension
+    day_seed = datetime.now().timetuple().tm_yday
+    prompts = {}
+    for cat, p_list in CATEGORY_PROMPTS.items():
+        prompts[cat] = p_list[day_seed % len(p_list)]
+    return prompts
+
+
 # --- Dashboard ---
 
 @app.get("/dashboard")
@@ -1216,6 +1294,16 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
                 }},
                 {"$sort": {"_id": 1}}
             ],
+            "emotions": [
+                {"$unwind": "$entries"},
+                {"$unwind": "$entries.emotions"},
+                {"$group": {
+                    "_id": "$entries.emotions",
+                    "count": {"$sum": 1}
+                }},
+                {"$sort": {"count": -1}},
+                {"$limit": 10}
+            ],
             "totals": [
                 {"$unwind": "$entries"},
                 {"$group": {
@@ -1268,6 +1356,51 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     
     manifestations_count = db.manifestations.count_documents({"user_id": uid, "status": "active"})
     
+    # 3. Generate Automated Insights
+    insights = []
+    if cat_consistency:
+        # Sort by time spent
+        by_time = sorted(cat_consistency, key=lambda x: x["time_spent"], reverse=True)
+        top_cat = by_time[0]
+        if top_cat["time_spent"] > 0:
+            insights.append({
+                "type": "top_performer",
+                "text": f"You're investing heavily in {top_cat['icon']} {top_cat['name']}! {top_cat['time_spent']} minutes logged recently.",
+                "color": top_cat["color"]
+            })
+        
+        # Sort by avg mood (only those with logs)
+        logged_cats = [c for c in cat_consistency if c["count"] > 0]
+        if logged_cats:
+            by_mood = sorted(logged_cats, key=lambda x: x["avg_mood"], reverse=True)
+            happiest_cat = by_mood[0]
+            insights.append({
+                "type": "mood_booster",
+                "text": f"{happiest_cat['icon']} {happiest_cat['name']} seems to be your happiest space right now.",
+                "color": happiest_cat["color"]
+            })
+
+            # Check for neglected categories
+            neglected = sorted(cat_consistency, key=lambda x: x["count"])
+            if neglected[0]["count"] < logs_count / 2:
+                insights.append({
+                    "type": "balance_nudge",
+                    "text": f"Your {neglected[0]['icon']} {neglected[0]['name']} could use a bit more attention this week.",
+                    "color": neglected[0]["color"]
+                })
+
+    # 4. Prepare Radar Data (Balance visualization)
+    radar_data = []
+    for c in cat_consistency:
+        # Scale count to 0-10 relative to total logs
+        activity_score = round((c["count"] / max(logs_count, 1)) * 10, 1)
+        radar_data.append({
+            "subject": f"{c['icon']} {c['name']}",
+            "mood": c["avg_mood"],
+            "activity": activity_score,
+            "full": 10
+        })
+
     result = {
         "streak": current_user.get("streak", 0),
         "longest_streak": current_user.get("longest_streak", 0),
@@ -1279,6 +1412,9 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         "time_spent_trend": time_spent_trend,
         "weekly_summary": weekly_summary,
         "category_consistency": cat_consistency,
+        "emotion_trends": [{"label": e["_id"], "count": e["count"]} for e in agg_result["emotions"]],
+        "radar_data": radar_data,
+        "insights": insights,
         "goals": {
             "total": sum(goal_counts.values()),
             "completed": goal_counts.get("completed", 0),
@@ -1294,3 +1430,37 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
 @app.get("/")
 def root():
     return {"message": "GrowthLog API v2.2 running"}
+# --- Automated Reminders (Nudge Feature) ---
+@app.post("/admin/nudge-silent-users")
+def nudge_silent_users(background_tasks: BackgroundTasks):
+    """
+    Finds all users who haven't logged today and sends them a nudge.
+    In production, this would be called by a Cron job or a task scheduler.
+    """
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # 1. Get IDs of users who have logged today
+    logged_user_ids = db.daily_logs.distinct("user_id", {"date": today_str})
+    logged_user_ids = [ObjectId(_id) for _id in logged_user_ids]
+    
+    # 2. Find all users NOT in that list who have notifications ENABLED
+    silent_users = list(db.users.find({
+        "_id": {"$nin": logged_user_ids}, 
+        "email_verified": True,
+        "email_notifications": {"$ne": False}
+    }))
+    
+    for user in silent_users:
+        subject = "✦ A small nudge for your future self"
+        body = f"""
+        <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee;">
+            <h2 style="font-family: serif; color: #6b8c6b;">Keep the streak alive, {user['name']}?</h2>
+            <p>Growth is built on small, daily reflections. You haven't checked in today yet!</p>
+            <p>It only takes 2 minutes to record how you're feeling and what you've learned.</p>
+            <a href="{ALLOWED_ORIGINS[0]}/log" style="display: inline-block; background: #c9a84c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 30px;">Log Today's Growth →</a>
+            <p style="font-size: 12px; color: #999; margin-top: 40px;">GrowthLog — Holistic Tracking for the Intentional Life</p>
+        </div>
+        """
+        background_tasks.add_task(send_email, user['email'], subject, body)
+        
+    return {"status": "success", "nudge_count": len(silent_users)}
