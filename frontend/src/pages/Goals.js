@@ -18,8 +18,8 @@ export default function Goals() {
   const [showModal, setShowModal] = useState(false);
   const [editGoal, setEditGoal] = useState(null);
   const [reflectGoal, setReflectGoal] = useState(null);
-  const [addReflectionGoal, setAddReflectionGoal] = useState(null);
-  const [newReflectionText, setNewReflectionText] = useState('');
+  const [addNoteGoal, setAddNoteGoal] = useState(null);
+  const [newNoteText, setNewNoteText] = useState('');
   const [showCreateCat, setShowCreateCat] = useState(false);
   const [newCatForm, setNewCatForm] = useState({ name: '', icon: '🎯', color: '#6b8c6b', description: '' });
   const [form, setForm] = useState({ category_id: '', title: '', description: '', deadline: '' });
@@ -117,23 +117,23 @@ export default function Goals() {
     finally { setLoading(false); }
   };
 
-  const handleAddReflection = async () => {
-    if (!newReflectionText.trim()) return toast.error('Write your reflection');
+  const handleAddNote = async () => {
+    if (!newNoteText.trim()) return toast.error('Write your note');
     setLoading(true);
     try {
-      await API.post(`/goals/${addReflectionGoal.id}/reflections`, { text: newReflectionText });
-      toast.success('Reflection added!');
-      setAddReflectionGoal(null);
-      setNewReflectionText('');
+      await API.post(`/goals/${addNoteGoal.id}/notes`, { text: newNoteText });
+      toast.success('Note added!');
+      setAddNoteGoal(null);
+      setNewNoteText('');
       load();
-    } catch { toast.error('Failed to add reflection'); }
+    } catch { toast.error('Failed to add note'); }
     finally { setLoading(false); }
   };
 
-  const handleDeleteReflection = async (goal, reflectionId) => {
+  const handleDeleteNote = async (goal, noteId) => {
     if (!window.confirm('Delete this note?')) return;
     try {
-      await API.delete(`/goals/${goal.id}/reflections/${reflectionId}`);
+      await API.delete(`/goals/${goal.id}/notes/${noteId}`);
       toast.success('Note deleted');
       load();
     } catch {
@@ -149,7 +149,7 @@ export default function Goals() {
     return true;
   });
 
-  const overdue = goals.filter(g => g.status === 'active' && isPast(parseISO(g.current_deadline)));
+  const overdue = goals.filter(g => ['active', 'extended'].includes(g.status) && isPast(parseISO(g.current_deadline)));
 
   const CAT_ICONS = ['🎯', '🧠', '💼', '❤️', '💪', '📚', '🌿', '💰', '🎨'];
   const CAT_COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b'];
@@ -251,23 +251,22 @@ export default function Goals() {
                         </div>
                       )}
 
-                      {goal.reflections?.length > 0 && (
+                      {goal.notes?.length > 0 && (
                         <div style={{ marginTop: 10 }}>
                           <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'rgba(13,13,13,0.35)', marginBottom: 6 }}>
-                            Notes ({goal.reflections.length})
+                            Notes ({goal.notes.length})
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {goal.reflections.slice(-3).map((r, i) => (
+                            {goal.notes.slice(-3).map((r, i) => (
                               <div key={r.id || i} style={{ padding: '8px 12px', background: 'var(--mist)', borderRadius: 8, fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', borderLeft: '2px solid rgba(13,13,13,0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                                 <div>
                                   <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
                                     {format(new Date(r.date), 'MMM d, yyyy')}
-                                    {r.status_change && <span style={{ marginLeft: 6 }}>· {r.status_change}</span>}
                                   </div>
                                   "{r.text}"
                                 </div>
                                 {r.id && (
-                                  <button onClick={() => handleDeleteReflection(goal, r.id)}
+                                  <button onClick={() => handleDeleteNote(goal, r.id)}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'rgba(13,13,13,0.2)', flexShrink: 0 }}>✕</button>
                                 )}
                               </div>
@@ -283,9 +282,9 @@ export default function Goals() {
                         <button className="btn btn-sm btn-outline" onClick={() => openEdit(goal)} title="Edit">✎</button>
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        {goal.status === 'active' && (
+                        {['active', 'extended'].includes(goal.status) && (
                           <>
-                            <button className="btn btn-sm btn-outline" onClick={() => { setAddReflectionGoal(goal); setNewReflectionText(''); }} title="Add note">+ Note</button>
+                            <button className="btn btn-sm btn-outline" onClick={() => { setAddNoteGoal(goal); setNewNoteText(''); }} title="Add note">+ Note</button>
                             <button className="btn btn-sm btn-outline" onClick={() => { setReflectGoal(goal); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
                               Reflect
                             </button>
@@ -366,25 +365,25 @@ export default function Goals() {
         </div>
       )}
 
-      {/* Add Quick Reflection Modal */}
-      {addReflectionGoal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setAddReflectionGoal(null)}>
+      {/* Add Quick Note Modal */}
+      {addNoteGoal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setAddNoteGoal(null)}>
           <div className="modal">
             <div className="modal-header">
               <h3>Add Note</h3>
-              <button className="modal-close" onClick={() => setAddReflectionGoal(null)}>✕</button>
+              <button className="modal-close" onClick={() => setAddNoteGoal(null)}>✕</button>
             </div>
             <div style={{ padding: '10px 14px', background: 'var(--mist)', borderRadius: 10, marginBottom: 16, fontSize: 14 }}>
-              <strong>{addReflectionGoal.title}</strong>
+              <strong>{addNoteGoal.title}</strong>
             </div>
             <div className="form-group">
               <label className="form-label">What's on your mind about this goal?</label>
-              <textarea className="form-textarea" value={newReflectionText} onChange={(e) => setNewReflectionText(e.target.value)}
+              <textarea className="form-textarea" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)}
                 placeholder="Progress made, obstacles, insights, next steps..." style={{ minHeight: 120 }} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn btn-outline" onClick={() => setAddReflectionGoal(null)} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleAddReflection} disabled={loading} style={{ flex: 1 }}>
+              <button className="btn btn-outline" onClick={() => setAddNoteGoal(null)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleAddNote} disabled={loading} style={{ flex: 1 }}>
                 {loading ? 'Saving...' : 'Add Note'}
               </button>
             </div>

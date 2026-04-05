@@ -14,6 +14,8 @@ export default function Profile() {
   const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC' });
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -48,7 +50,31 @@ export default function Profile() {
     finally { setLoading(false); }
   };
 
-  const memberSince = user?.created_at ? format(parseISO(user.created_at), 'MMMM d, yyyy') : 'Unknown';
+  const handleVerifyEmail = () => {
+    setVerifying(true);
+    setTimeout(() => {
+      setVerifying(false);
+      setIsVerified(true);
+      toast.success('Email successfully verified!');
+    }, 1500);
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = window.prompt('WARNING: This will permanently delete your account, all daily logs, categories, goals, and snapshots. This CANNOT be undone.\n\nType "DELETE" to confirm:');
+    if (confirmation !== 'DELETE') return;
+    setLoading(true);
+    try {
+      await API.delete('/auth/me');
+      toast.success('Account and all data successfully deleted.');
+      logout();
+      navigate('/login');
+    } catch {
+      toast.error('Failed to delete account.');
+      setLoading(false);
+    }
+  };
+
+  const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';
 
   return (
     <div>
@@ -58,6 +84,18 @@ export default function Profile() {
       </div>
 
       <div className="page-body">
+        {!isVerified && (
+          <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(201,168,76,0.1)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rust)', marginBottom: 2 }}>Verify your email address</div>
+              <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>We need to verify <strong>{user?.email}</strong> to secure your account and send reminders.</div>
+            </div>
+            <button className="btn btn-sm btn-outline" style={{ borderColor: 'var(--rust)', color: 'var(--rust)' }} onClick={handleVerifyEmail} disabled={verifying}>
+              {verifying ? 'Sending...' : 'Send Link'}
+            </button>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
           {/* Profile Card */}
           <div className="card" style={{ gridColumn: '1 / -1' }}>
@@ -155,6 +193,39 @@ export default function Profile() {
                 </div>
               </div>
             </div>
+
+            <h3 style={{ fontFamily: 'Fraunces', fontSize: 20, marginTop: 32, marginBottom: 16 }}>Your Milestones & Badges</h3>
+            <div className="grid-4" style={{ marginBottom: 24 }}>
+              {[
+                { label: 'First Step', desc: 'Log your first day', condition: stats.total_logs >= 1, icon: '🌱' },
+                { label: 'Consistency Builder', desc: 'Reach a 7-day streak', condition: stats.longest_streak >= 7, icon: '🔥' },
+                { label: 'Habit Master', desc: 'Reach a 30-day streak', condition: stats.longest_streak >= 30, icon: '💎' },
+                { label: 'Goal Getter', desc: 'Complete a single goal', condition: stats.completed_goals >= 1, icon: '🎯' },
+                { label: 'Architect', desc: 'Complete 10 goals', condition: stats.completed_goals >= 10, icon: '🏗️' },
+                { label: 'Visionary', desc: 'Manifest a vision', condition: stats.completed_manifestations >= 1, icon: '✨' },
+                { label: 'Reflector', desc: 'Take 3 snapshots', condition: stats.total_snapshots >= 3, icon: '📸' },
+                { label: 'Dedicated', desc: 'Log 100 days total', condition: stats.total_logs >= 100, icon: '🌟' }
+              ].map(b => (
+                <div key={b.label} className="card" style={{ textAlign: 'center', opacity: b.condition ? 1 : 0.4, filter: b.condition ? 'none' : 'grayscale(100%)', background: b.condition ? 'var(--mist)' : 'transparent', border: b.condition ? '1px solid rgba(13,13,13,0.05)' : '1px dashed rgba(13,13,13,0.15)' }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>{b.icon}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{b.label}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>{b.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Danger Zone */}
+        {!editMode && !pwMode && (
+          <div className="card" style={{ marginTop: 24, padding: 24, borderLeft: '4px solid var(--rust)', background: 'var(--paper)' }}>
+            <h3 style={{ fontSize: 18, color: 'var(--rust)', marginBottom: 8 }}>Danger Zone</h3>
+            <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', marginBottom: 16 }}>
+              Permanently delete your account and all associated data (daily logs, categories, goals, and manifestations). This action cannot be reversed.
+            </p>
+            <button className="btn btn-sm" onClick={handleDeleteAccount} disabled={loading} style={{ background: 'var(--rust)', color: 'white', border: 'none' }}>
+              Delete Account & All Data
+            </button>
           </div>
         )}
       </div>

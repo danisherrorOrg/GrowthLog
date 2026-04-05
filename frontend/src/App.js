@@ -8,9 +8,11 @@ import Register from './pages/Register';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DailyLog from './pages/DailyLog';
+import AllLogs from './pages/AllLogs';
 import Categories from './pages/Categories';
 import Goals from './pages/Goals';
 import GoalDetail from './pages/GoalDetail';
+import CategoryDetail from './pages/CategoryDetail';
 import Manifestations from './pages/Manifestations';
 import ManifestationDetail from './pages/ManifestationDetail';
 import Snapshots from './pages/Snapshots';
@@ -49,7 +51,9 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="log" element={<DailyLog />} />
+            <Route path="history" element={<AllLogs />} />
             <Route path="categories" element={<Categories />} />
+            <Route path="categories/:categoryId" element={<CategoryDetail />} />
             <Route path="goals" element={<Goals />} />
             <Route path="goals/:goalId" element={<GoalDetail />} />
             <Route path="manifestations" element={<Manifestations />} />

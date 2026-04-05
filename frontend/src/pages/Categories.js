@@ -20,9 +20,6 @@ export default function Categories() {
   const [archived, setArchived] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editCat, setEditCat] = useState(null);
-  const [viewCat, setViewCat] = useState(null);
-  const [catLogs, setCatLogs] = useState([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
   const [loading, setLoading] = useState(false);
@@ -95,14 +92,8 @@ export default function Categories() {
     load();
   };
 
-  const handleViewLogs = async (cat) => {
-    setViewCat(cat);
-    setLoadingLogs(true);
-    try {
-      const r = await API.get(`/categories/${cat.id}/logs?days=90`);
-      setCatLogs(r.data);
-    } catch { toast.error('Failed to load logs'); }
-    finally { setLoadingLogs(false); }
+  const handleViewLogs = (cat) => {
+    navigate(`/categories/${cat.id}`);
   };
 
   const addDefault = async (def) => {
@@ -170,7 +161,7 @@ export default function Categories() {
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
                 {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>{cat.description}</p>}
                 <button className="btn btn-outline btn-sm" onClick={() => handleViewLogs(cat)} style={{ marginTop: 'auto', width: '100%' }}>
-                  View All Logs →
+                  View Detail & Logs →
                 </button>
               </div>
             ))}
@@ -220,6 +211,21 @@ export default function Categories() {
               <h3>{editCat ? 'Edit Category' : 'New Category'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
+            
+            {!editCat && (
+              <div style={{ marginBottom: 20 }}>
+                <label className="form-label" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Or choose a template</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {DEFAULTS.map((d) => (
+                    <button key={d.name} type="button" onClick={() => setForm({ ...d })}
+                      style={{ padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(13,13,13,0.1)', background: 'var(--mist)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>{d.icon}</span> {d.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="form-group">
               <label className="form-label">Name</label>
               <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Spiritual Growth" />
@@ -280,52 +286,6 @@ export default function Categories() {
                 Yes, Delete Permanently
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* View Category Logs Modal */}
-      {viewCat && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setViewCat(null)}>
-          <div className="modal" style={{ maxWidth: 680, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 28 }}>{viewCat.icon}</span>
-                <div>
-                  <h3>{viewCat.name} — All Logs</h3>
-                  <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>{catLogs.length} entries in the last 90 days</p>
-                </div>
-              </div>
-              <button className="modal-close" onClick={() => setViewCat(null)}>✕</button>
-            </div>
-
-            {loadingLogs ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'rgba(13,13,13,0.4)' }}>Loading logs...</div>
-            ) : catLogs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <p style={{ color: 'rgba(13,13,13,0.4)' }}>No logs for this category in the past 90 days.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {catLogs.sort((a, b) => b.date.localeCompare(a.date)).map((log) => (
-                  <div key={log.id} style={{ padding: '14px 16px', background: 'var(--mist)', borderRadius: 10, borderLeft: `3px solid ${viewCat.color}` }}>
-                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 8 }}>
-                      {format(parseISO(log.date), 'EEEE, MMMM d, yyyy')}
-                    </div>
-                    {log.entries.map((entry, i) => (
-                      <div key={i}>
-                        <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink)', margin: 0 }}>{entry.text}</p>
-                        <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>
-                          <span>Mood {entry.mood}/10</span>
-                          <span>Energy {entry.energy}/10</span>
-                          {entry.emotions?.length > 0 && <span>{entry.emotions.join(', ')}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
