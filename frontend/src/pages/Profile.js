@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
+
+
 
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [pwMode, setPwMode] = useState(false);
@@ -34,7 +41,9 @@ export default function Profile() {
       await refreshUser();
       toast.success('Profile updated!');
       setEditMode(false);
-    } catch { toast.error('Failed to update profile'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update profile')); }
+
+
     finally { setLoading(false); }
   };
 
@@ -48,7 +57,8 @@ export default function Profile() {
       toast.success('Password changed!');
       setPwMode(false);
       setPwForm({ current_password: '', new_password: '', confirm: '' });
-    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to change password'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to change password')); }
+
     finally { setLoading(false); }
   };
 
@@ -61,7 +71,8 @@ export default function Profile() {
       toast.success('Email updated successfully!');
       setEmailMode(false);
       setEmailForm({ new_email: '', password: '' });
-    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to update email'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update email')); }
+
     finally { setLoading(false); }
   };
 
@@ -71,7 +82,9 @@ export default function Profile() {
       await API.put('/auth/public', { is_public: !user?.is_public });
       await refreshUser();
       toast.success(user?.is_public ? 'Profile is now Private' : 'Profile is now Public!');
-    } catch { toast.error('Failed to change privacy settings'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to change privacy settings')); }
+
+
     finally { setLoading(false); }
   };
 
@@ -80,8 +93,10 @@ export default function Profile() {
     try {
       await API.post('/auth/verify/send');
       toast.success('Verification link sent! Check your email (and console for this demo).');
-    } catch {
-      toast.error('Failed to send verification link.');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to send verification link.'));
+
+
     } finally {
       setVerifying(false);
     }
@@ -96,10 +111,12 @@ export default function Profile() {
       toast.success('Account and all data successfully deleted.');
       logout();
       navigate('/login');
-    } catch {
-      toast.error('Failed to delete account.');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to delete account.'));
       setLoading(false);
     }
+
+
   };
 
   const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';

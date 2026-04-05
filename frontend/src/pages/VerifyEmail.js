@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from 'react';
 
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../utils/api';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
+
+
 
 export default function VerifyEmail() {
   const { token } = useParams();
@@ -21,10 +25,14 @@ export default function VerifyEmail() {
         setStatus('success');
         await refreshUser();
       })
-      .catch(() => {
+      .catch((e) => {
         setStatus('error');
+        toast.error(getErrorMessage(e, 'Verification failed'));
       });
-  }, [token, refreshUser]);
+  }, [token]); // eslint-disable-line
+
+
+
 
 
   return (

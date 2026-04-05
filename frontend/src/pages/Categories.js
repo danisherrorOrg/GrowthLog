@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
 const COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
@@ -66,7 +68,9 @@ export default function Categories() {
       setForm({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
       setEditCat(null);
       load();
-    } catch { toast.error('Failed to save category'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save category')); }
+
+
     finally { setLoading(false); }
   };
 
@@ -86,7 +90,9 @@ export default function Categories() {
       toast.success(`"${confirmDelete.name}" permanently deleted with all its data`);
       setConfirmDelete(null);
       load();
-    } catch { toast.error('Failed to delete'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
+
+
   };
 
   const handleRestore = async (id, name) => {

@@ -4,6 +4,8 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
+
 
 const EMOTIONS = ['Motivated', 'Anxious', 'Proud', 'Frustrated', 'Grateful', 'Tired', 'Inspired', 'Calm', 'Overwhelmed', 'Hopeful', 'Focused', 'Distracted'];
 
@@ -58,11 +60,14 @@ export default function DailyLog() {
           setEntries(map);
         }
       })
-      .catch(() => {
+      .catch((e) => {
         setError(true);
-        toast.error('Failed to load log data');
+        toast.error(getErrorMessage(e, 'Failed to load log data'));
       })
+
+
       .finally(() => setLoading(false));
+
   }, []);
 
   const updateEntry = (catId, field, val) => {
@@ -96,8 +101,9 @@ export default function DailyLog() {
       else toast.success('✦ Log saved!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save log');
+      toast.error(getErrorMessage(err, 'Failed to save log'));
     } finally {
+
       setSaving(false);
     }
   };

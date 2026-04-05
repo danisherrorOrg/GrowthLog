@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 export default function AllLogs() {
   const navigate = useNavigate();
@@ -16,9 +18,11 @@ export default function AllLogs() {
       // Sort in descending order by date
       const sortedLogs = res.data.sort((a, b) => b.date.localeCompare(a.date));
       setLogs(sortedLogs);
-    } catch {
-      toast.error('Failed to load logs');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to load logs'));
     } finally {
+
+
       setLoading(false);
     }
   };
@@ -33,9 +37,11 @@ export default function AllLogs() {
       await API.delete(`/logs/${date}`);
       toast.success('Log deleted');
       setLogs((prev) => prev.filter(l => l.date !== date));
-    } catch {
-      toast.error('Failed to delete log');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to delete log'));
     }
+
+
   };
 
   if (loading) return (

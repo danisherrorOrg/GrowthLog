@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Date Created' },
@@ -37,9 +39,11 @@ export default function Goals() {
       const [g, c] = await Promise.all([API.get(`/goals?${params}`), API.get('/categories')]);
       setGoals(g.data);
       setCategories(c.data);
-    } catch {
-      toast.error('Failed to load goals');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to load goals'));
     }
+
+
   };
 
   useEffect(() => { load(); }, [sortBy, sortOrder, filterCategory]);
@@ -70,7 +74,9 @@ export default function Goals() {
       setShowCreateCat(false);
       setNewCatForm({ name: '', icon: '🎯', color: '#6b8c6b', description: '' });
       toast.success(`${r.data.icon} ${r.data.name} created!`);
-    } catch { toast.error('Failed to create category'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to create category')); }
+
+
   };
 
   const handleSave = async () => {
@@ -89,8 +95,9 @@ export default function Goals() {
       setForm({ category_id: '', title: '', description: '', deadline: '' });
       load();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save goal');
+      toast.error(getErrorMessage(err, 'Failed to save goal'));
     } finally { setLoading(false); }
+
   };
 
   const handleDelete = async (goal) => {
@@ -99,9 +106,11 @@ export default function Goals() {
       await API.delete(`/goals/${goal.id}`);
       toast.success('Goal deleted');
       load();
-    } catch {
-      toast.error('Failed to delete goal');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to delete goal'));
     }
+
+
   };
 
   const handleReflect = async () => {
@@ -113,8 +122,10 @@ export default function Goals() {
       toast.success(reflectForm.status === 'completed' ? '✅ Goal completed!' : reflectForm.status === 'extended' ? '🔄 Deadline extended' : '📝 Reflection saved');
       setReflectGoal(null);
       load();
-    } catch { toast.error('Failed to save reflection'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save reflection')); }
+
     finally { setLoading(false); }
+
   };
 
   const handleAddNote = async () => {
@@ -126,8 +137,10 @@ export default function Goals() {
       setAddNoteGoal(null);
       setNewNoteText('');
       load();
-    } catch { toast.error('Failed to add note'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add note')); }
+
     finally { setLoading(false); }
+
   };
 
   const handleDeleteNote = async (goal, noteId) => {

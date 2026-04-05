@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 export default function Snapshots() {
   const navigate = useNavigate();
@@ -59,8 +61,10 @@ export default function Snapshots() {
       setEditSnap(null);
       setForm({ description: '', values: '', mood: 5, date: '' });
       load();
-    } catch { toast.error('Failed to save snapshot'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save snapshot')); }
+
     finally { setLoading(false); }
+
   };
 
   const handleDelete = async (snap) => {
@@ -99,7 +103,8 @@ export default function Snapshots() {
     try {
       const r = await API.get(`/snapshots/compare?snap1_id=${compareA.id}&snap2_id=${compareB.id}`);
       setCompareResult(r.data);
-    } catch { toast.error('Failed to compare snapshots'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to compare snapshots')); }
+
     finally { setComparing(false); }
   };
 

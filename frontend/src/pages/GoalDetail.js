@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Date Created' },
@@ -45,8 +47,10 @@ export default function GoalDetail() {
       const [g, c] = await Promise.all([API.get(`/goals/${goalId}`), API.get('/categories')]);
       setGoal(g.data);
       setCategories(c.data);
-    } catch { toast.error('Failed to load goal'); navigate('/goals'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to load goal')); navigate('/goals'); }
+
     finally { setLoading(false); }
+
   };
 
   useEffect(() => { load(); }, [goalId]);
@@ -62,8 +66,10 @@ export default function GoalDetail() {
       setNoteText('');
       setShowNoteInput(false);
       load();
-    } catch { toast.error('Failed to add note'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add note')); }
+
     finally { setSaving(false); }
+
   };
 
   const handleDeleteNote = async (noteId) => {
@@ -83,8 +89,10 @@ export default function GoalDetail() {
       setMgTime(0);
       setShowMgInput(false);
       load();
-    } catch { toast.error('Failed to add'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add micro-goal')); }
+
     finally { setSaving(false); }
+
   };
 
   const handleUpdateMg = async (mgId) => {
@@ -95,8 +103,10 @@ export default function GoalDetail() {
       toast.success('Updated!');
       setEditMg(null);
       load();
-    } catch { toast.error('Failed to update'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update micro-goal')); }
+
     finally { setSaving(false); }
+
   };
 
 
@@ -104,7 +114,8 @@ export default function GoalDetail() {
     try {
       await API.put(`/goals/${goalId}/micro-goals/${mgId}/toggle`);
       load();
-    } catch { toast.error('Failed to update'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update')); }
+
   };
 
   const handleDeleteMg = async (mgId) => {
@@ -122,7 +133,8 @@ export default function GoalDetail() {
       setReflectionText('');
       setShowReflectionInput(false);
       load();
-    } catch { toast.error('Failed to add reflection'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add reflection')); }
+
     finally { setSaving(false); }
   };
 
@@ -142,7 +154,8 @@ export default function GoalDetail() {
       toast.success(reflectForm.status === 'completed' ? '✅ Goal completed!' : reflectForm.status === 'extended' ? '🔄 Deadline extended' : '📝 Reflection saved');
       setShowReflectModal(false);
       load();
-    } catch { toast.error('Failed to save reflection'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save reflection')); }
+
     finally { setSaving(false); }
   };
 

@@ -4,17 +4,18 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from bson import ObjectId
+from bson import ObjectId, errors as bson_errors
 import bcrypt
 import jwt
-from dotenv import load_dotenv
 import os
 import secrets
+from dotenv import load_dotenv
 
 
 load_dotenv()
-from collections import defaultdict
+
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
 
@@ -251,6 +252,11 @@ class ManifestationProgressUpdateModel(BaseModel):
     text: Optional[str] = None
     type: Optional[str] = None
 
+class ManifestationCompleteModel(BaseModel):
+    text: str
+
+
+
 class SnapshotModel(BaseModel):
     description: str
     values: Optional[List[str]] = []
@@ -344,8 +350,10 @@ def me(current_user=Depends(get_current_user)):
         "bio": u.get("bio", ""), "avatar_emoji": u.get("avatar_emoji", "🌱"),
         "timezone": u.get("timezone", "UTC"),
         "created_at": u.get("created_at", utcnow()).isoformat(),
-        "is_public": u.get("is_public", False)
+        "is_public": u.get("is_public", False),
+        "is_verified": u.get("is_verified", False),
     }
+
 
 @app.put("/auth/profile")
 def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_user)):
@@ -387,14 +395,12 @@ def toggle_public(data: PublicToggleModel, current_user=Depends(get_current_user
 def get_public_stats(user_id: str):
     try:
         user = db.users.find_one({"_id": ObjectId(user_id)})
-    except:
+    except bson_errors.InvalidId:
         raise HTTPException(status_code=404, detail="User not found")
-        
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.get("is_public", False):
         raise HTTPException(status_code=403, detail="Profile is private")
-        
     created_at = user.get("created_at", utcnow())
     return {
         "name": user["name"],
@@ -409,6 +415,7 @@ def get_public_stats(user_id: str):
         "total_snapshots": db.snapshots.count_documents({"user_id": user_id})
     }
 
+
 @app.delete("/auth/me")
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
@@ -421,25 +428,45 @@ def delete_account(current_user=Depends(get_current_user)):
     db.users.delete_one({"_id": current_user["_id"]})
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 
 @app.get("/auth/stats")
 def get_user_stats(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    cache_key = f"stats:{uid}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
     created_at = current_user.get("created_at", utcnow())
-    return {
+    # Use aggregation pipelines to count in one DB round-trip
+    goal_pipeline = list(db.goals.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    goal_counts = {g["_id"]: g["count"] for g in goal_pipeline}
+    manifestation_pipeline = list(db.manifestations.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    m_counts = {m["_id"]: m["count"] for m in manifestation_pipeline}
+    result = {
         "total_logs": db.daily_logs.count_documents({"user_id": uid}),
-        "total_goals": db.goals.count_documents({"user_id": uid}),
-        "completed_goals": db.goals.count_documents({"user_id": uid, "status": "completed"}),
-        "total_manifestations": db.manifestations.count_documents({"user_id": uid}),
-        "completed_manifestations": db.manifestations.count_documents({"user_id": uid, "status": "completed"}),
+        "total_goals": sum(goal_counts.values()),
+        "completed_goals": goal_counts.get("completed", 0),
+        "total_manifestations": sum(m_counts.values()),
+        "completed_manifestations": m_counts.get("completed", 0),
         "total_snapshots": db.snapshots.count_documents({"user_id": uid}),
         "total_categories": db.categories.count_documents({"user_id": uid, "archived": {"$ne": True}}),
-        "days_since_join": (utcnow() - created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else utcnow() - created_at).days,
+        "days_since_join": (utcnow() - (created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else created_at)).days,
         "streak": current_user.get("streak", 0),
         "longest_streak": current_user.get("longest_streak", 0),
     }
+    cache_set(cache_key, result, ttl=300)  # 5-min cache for stats
+    return result
+
 
 
 # --- Categories ---
@@ -588,7 +615,9 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
     goal["id"] = str(result.inserted_id)
     del goal["_id"]
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return goal
+
 
 
 @app.put("/goals/{goal_id}")
@@ -611,8 +640,11 @@ def delete_goal(goal_id: str, current_user=Depends(get_current_user)):
     r = db.goals.delete_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Goal not found")
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 
 @app.put("/goals/{goal_id}/reflect")
@@ -632,7 +664,9 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
                         {"$set": update, "$push": {"reflections": ref_entry}})
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 
 @app.post("/goals/{goal_id}/reflections")
@@ -764,13 +798,18 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
         db.daily_logs.update_one({"_id": existing["_id"]},
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating}})
         cache_invalidate(f"dashboard:{uid}")
+        cache_invalidate(f"stats:{uid}")
         return {"success": True, "updated": True}
+
     db.daily_logs.insert_one({
         "user_id": uid, "date": today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
         "created_at": utcnow(),
     })
+    # Note: Streak logic only runs on new log creation.
+    # Updates to existing logs (handled in 'if existing' above) do not modify streak.
     user = db.users.find_one({"_id": ObjectId(uid)})
+
     last = user.get("last_log_date")
     yesterday = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
     streak = user.get("streak", 0)
@@ -782,7 +821,9 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     db.users.update_one({"_id": ObjectId(uid)},
                         {"$set": {"streak": streak, "longest_streak": longest, "last_log_date": today}})
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True, "streak": streak}
+
 
 @app.delete("/logs/{date}")
 def delete_log(date: str, current_user=Depends(get_current_user)):
@@ -791,7 +832,9 @@ def delete_log(date: str, current_user=Depends(get_current_user)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 
 # --- Manifestations ---
@@ -815,12 +858,14 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     start = utcnow()
     if data.target_date:
         target_str = data.target_date
-        target_days = (datetime.strptime(data.target_date, "%Y-%m-%d") - start.replace(tzinfo=None)).days
+        target_date_naive = datetime.strptime(data.target_date, "%Y-%m-%d")
+        target_days = (target_date_naive - start.replace(tzinfo=None)).days
     elif data.target_days:
         target_str = (start + timedelta(days=data.target_days)).strftime("%Y-%m-%d")
         target_days = data.target_days
     else:
         raise HTTPException(status_code=400, detail="Provide target_days or target_date")
+
     item = {
         "user_id": str(current_user["_id"]), "vision": data.vision,
         "target_days": target_days, "categories": data.categories, "notes": data.notes,
@@ -832,7 +877,9 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     item["id"] = str(result.inserted_id)
     del item["_id"]
     cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return item
+
 
 
 @app.put("/manifestations/{m_id}")
@@ -851,7 +898,9 @@ def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
     cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 @app.put("/manifestations/{m_id}/archive")
@@ -915,12 +964,15 @@ def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_
     return {"success": True}
 
 @app.put("/manifestations/{m_id}/complete")
-def complete_manifestation(m_id: str, reflection: dict, current_user=Depends(get_current_user)):
+def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_user=Depends(get_current_user)):
     db.manifestations.update_one(
         {"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-        {"$set": {"status": "completed", "reflection": reflection.get("text"), "completed_at": utcnow()}}
+        {"$set": {"status": "completed", "reflection": data.text, "completed_at": utcnow()}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Snapshots ---
@@ -956,7 +1008,9 @@ def create_snapshot(data: SnapshotModel, current_user=Depends(get_current_user))
     result = db.snapshots.insert_one(item)
     item["id"] = str(result.inserted_id)
     del item["_id"]
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return item
+
 
 @app.put("/snapshots/{snap_id}")
 def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depends(get_current_user)):
@@ -971,7 +1025,9 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
     r = db.snapshots.delete_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Dashboard ---

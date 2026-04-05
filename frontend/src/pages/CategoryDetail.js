@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 export default function CategoryDetail() {
   const { categoryId } = useParams();
@@ -32,8 +34,10 @@ export default function CategoryDetail() {
         setLogs(logsRes.data || []);
         setGoals(goalsRes.data || []);
       } catch (err) {
-        toast.error("Failed to load category details");
+        toast.error(getErrorMessage(err, "Failed to load category details"));
       } finally {
+
+
         setLoading(false);
       }
     };
@@ -46,9 +50,11 @@ export default function CategoryDetail() {
       await API.delete(`/logs/${date}`);
       toast.success('Daily log deleted');
       setLogs(logs.filter(l => l.date !== date));
-    } catch {
-      toast.error('Failed to delete log');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to delete log'));
     }
+
+
   };
 
   if (loading) return (
