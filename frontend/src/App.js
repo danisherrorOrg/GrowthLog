@@ -20,6 +20,8 @@ import SnapshotDetail from './pages/SnapshotDetail';
 import Growth from './pages/Growth';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
+import VerifyEmail from './pages/VerifyEmail';
+
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -64,6 +66,8 @@ export default function App() {
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
             <Route path="growth" element={<Growth />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="verify/:token" element={<VerifyEmail />} />
+
           </Route>
         </Routes>
       </BrowserRouter>

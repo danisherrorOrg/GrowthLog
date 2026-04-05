@@ -10,6 +10,8 @@ import bcrypt
 import jwt
 from dotenv import load_dotenv
 import os
+import secrets
+
 
 load_dotenv()
 from collections import defaultdict
@@ -280,7 +282,9 @@ def register(data: RegisterModel):
         "created_at": utcnow(),
         "streak": 0, "longest_streak": 0, "last_log_date": None,
         "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
+        "is_verified": False, "verification_token": None,
     })
+
     
     uid_str = str(result.inserted_id)
     default_categories = [
@@ -293,9 +297,37 @@ def register(data: RegisterModel):
     db.categories.insert_many(default_categories)
 
     return {"token": create_token(uid_str),
-            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat()}}
+            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
+
+@app.post("/auth/verify/send")
+def send_verification(current_user=Depends(get_current_user)):
+    if current_user.get("is_verified", False):
+        raise HTTPException(status_code=400, detail="User is already verified")
+    uid = str(current_user["_id"])
+    token = secrets.token_urlsafe(32)
+
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"verification_token": token}})
+    
+    # MOCK EMAIL SENDING
+    print(f"\n--- MOCK EMAIL ---")
+    print(f"To: {current_user['email']}")
+    print(f"Subject: Verify your GrowthLog Account")
+    print(f"Link: http://localhost:3000/verify/{token}")
+    print(f"------------------\n")
+    
+    return {"success": True}
+
+@app.get("/auth/verify/{token}")
+def verify_email(token: str):
+    user = db.users.find_one({"verification_token": token})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "verification_token": None}})
+    return {"success": True}
 
 @app.post("/auth/login")
+
 def login(data: LoginModel):
     user = db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
@@ -381,13 +413,16 @@ def get_public_stats(user_id: str):
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.categories.delete_many({"user_id": uid})
+    db.category_templates.delete_many({"user_id": uid})
     db.goals.delete_many({"user_id": uid})
     db.manifestations.delete_many({"user_id": uid})
     db.snapshots.delete_many({"user_id": uid})
     db.daily_logs.delete_many({"user_id": uid})
     db.users.delete_one({"_id": current_user["_id"]})
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"categories:{uid}")
     return {"success": True}
+
 
 @app.get("/auth/stats")
 def get_user_stats(current_user=Depends(get_current_user)):
@@ -470,14 +505,18 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
         raise HTTPException(status_code=400, detail="No fields to update")
     db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.put("/categories/{category_id}/restore")
 def restore_category(category_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": False}})
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/categories/{category_id}")
 def delete_category(category_id: str, permanent: bool = False, current_user=Depends(get_current_user)):
@@ -491,7 +530,9 @@ def delete_category(category_id: str, permanent: bool = False, current_user=Depe
     else:
         db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": True}})
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.get("/categories/{category_id}/logs")
 def get_category_logs(category_id: str, days: int = 90, current_user=Depends(get_current_user)):
@@ -546,7 +587,9 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
     result = db.goals.insert_one(goal)
     goal["id"] = str(result.inserted_id)
     del goal["_id"]
+    cache_invalidate(f"dashboard:{uid}")
     return goal
+
 
 @app.put("/goals/{goal_id}")
 def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_current_user)):
@@ -559,14 +602,18 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid}, {"$set": fields})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}")
 def delete_goal(goal_id: str, current_user=Depends(get_current_user)):
     r = db.goals.delete_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Goal not found")
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.put("/goals/{goal_id}/reflect")
 def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_current_user)):
@@ -584,7 +631,9 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
         update["current_deadline"] = data.new_deadline
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
                         {"$set": update, "$push": {"reflections": ref_entry}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.post("/goals/{goal_id}/reflections")
 def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user=Depends(get_current_user)):
@@ -592,7 +641,9 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
              "date": data.date or utcnow().isoformat()}
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
                         {"$push": {"reflections": entry}})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}/reflections/{reflection_id}")
 def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depends(get_current_user)):
@@ -602,7 +653,9 @@ def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depend
         raise HTTPException(status_code=404, detail="Goal not found")
     reflections = [r for r in goal.get("reflections", []) if r.get("id") != reflection_id]
     db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"reflections": reflections}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.post("/goals/{goal_id}/notes")
 def add_goal_note(goal_id: str, data: NoteModel, current_user=Depends(get_current_user)):
@@ -625,7 +678,9 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
         {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
         {"$push": {"micro_goals": mg}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True, "id": mg_id}
+
 
 @app.put("/goals/{goal_id}/micro-goals/{mg_id}")
 def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
@@ -642,7 +697,9 @@ def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_us
             break
             
     db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 
 @app.put("/goals/{goal_id}/micro-goals/{mg_id}/toggle")
@@ -659,7 +716,9 @@ def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
             break
             
     db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}/micro-goals/{mg_id}")
 def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
@@ -667,7 +726,9 @@ def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
         {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
         {"$pull": {"micro_goals": {"id": mg_id}}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Daily Logs ---
@@ -770,7 +831,9 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     result = db.manifestations.insert_one(item)
     item["id"] = str(result.inserted_id)
     del item["_id"]
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return item
+
 
 @app.put("/manifestations/{m_id}")
 def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user=Depends(get_current_user)):
@@ -778,27 +841,35 @@ def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.delete("/manifestations/{m_id}")
 def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
     r = db.manifestations.delete_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.put("/manifestations/{m_id}/archive")
 def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$set": {"status": "archived"}})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.post("/manifestations/{m_id}/progress")
 def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, current_user=Depends(get_current_user)):
     entry = {"id": str(ObjectId()), "text": data.text, "type": data.type, "date": utcnow().isoformat()}
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$push": {"progress_entries": entry}})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.put("/manifestations/{m_id}/progress/{entry_id}")
 def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationProgressUpdateModel,
@@ -814,7 +885,9 @@ def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationP
             if data.type is not None: e["type"] = data.type
             break
     db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/manifestations/{m_id}/progress/{entry_id}")
 def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends(get_current_user)):
@@ -824,7 +897,9 @@ def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends
         raise HTTPException(status_code=404, detail="Not found")
     entries = [e for e in item.get("progress_entries", []) if e.get("id") != entry_id]
     db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.post("/manifestations/{m_id}/notes")
 def add_manifestation_note(m_id: str, data: NoteModel, current_user=Depends(get_current_user)):

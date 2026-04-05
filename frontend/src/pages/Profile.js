@@ -17,7 +17,7 @@ export default function Profile() {
   const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+
 
   useEffect(() => {
     if (user) {
@@ -75,13 +75,16 @@ export default function Profile() {
     finally { setLoading(false); }
   };
 
-  const handleVerifyEmail = () => {
+  const handleVerifyEmail = async () => {
     setVerifying(true);
-    setTimeout(() => {
+    try {
+      await API.post('/auth/verify/send');
+      toast.success('Verification link sent! Check your email (and console for this demo).');
+    } catch {
+      toast.error('Failed to send verification link.');
+    } finally {
       setVerifying(false);
-      setIsVerified(true);
-      toast.success('Email successfully verified!');
-    }, 1500);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -109,7 +112,8 @@ export default function Profile() {
       </div>
 
       <div className="page-body">
-        {!isVerified && (
+        {!user?.is_verified && (
+
           <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(201,168,76,0.1)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rust)', marginBottom: 2 }}>Verify your email address</div>
