@@ -6,6 +6,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 from pymongo import MongoClient, ASCENDING, DESCENDING
+from pymongo.errors import DuplicateKeyError
 from bson import ObjectId, errors as bson_errors
 import bcrypt
 import jwt
@@ -46,7 +47,11 @@ security = HTTPBearer()
 # --- Ensure indexes on startup ---
 @app.on_event("startup")
 def create_indexes():
-    db.users.create_index([("email", ASCENDING)], unique=True)
+    # Category uniqueness: try to create, but don't crash the whole app if there's legacy duplicate data
+    try:
+        db.categories.create_index([("user_id", ASCENDING), ("name", ASCENDING)], unique=True)
+    except Exception as e:
+        print(f"WARNING: Could not create unique index on categories: {e}. Please deduplicate manually.")
     db.categories.create_index([("user_id", ASCENDING), ("archived", ASCENDING)])
     db.goals.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
     db.goals.create_index([("user_id", ASCENDING), ("category_id", ASCENDING)])
@@ -84,9 +89,9 @@ def hash_password(p: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
-def create_token(uid: str) -> str:
+def create_token(uid: str, version: int = 1) -> str:
     return jwt.encode(
-        {"user_id": uid, "exp": utcnow() + timedelta(days=30)},
+        {"user_id": uid, "v": version, "exp": utcnow() + timedelta(days=30)},
         JWT_SECRET, algorithm="HS256"
     )
 
@@ -96,6 +101,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+        
+        # Security: Invalidate tokens if the password was changed (version mismatch)
+        if payload.get("v") != user.get("token_version", 1):
+             raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
+             
         return user
     except HTTPException:
         raise
@@ -293,6 +303,9 @@ def register(data: RegisterModel):
 
     
     uid_str = str(result.inserted_id)
+    # Default token version is 1
+    db.users.update_one({"_id": result.inserted_id}, {"$set": {"token_version": 1}})
+
     default_categories = [
         {"user_id": uid_str, "name": "Mind", "icon": "🧠", "color": "#c9a84c", "description": "Learning, intellect, and mental health", "archived": False, "created_at": utcnow()},
         {"user_id": uid_str, "name": "Body", "icon": "💪", "color": "#6b8c6b", "description": "Physical health, fitness, and nutrition", "archived": False, "created_at": utcnow()},
@@ -302,23 +315,38 @@ def register(data: RegisterModel):
     ]
     db.categories.insert_many(default_categories)
 
-    return {"token": create_token(uid_str),
+    return {"token": create_token(uid_str, 1),
             "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
 
 @app.post("/auth/verify/send")
 def send_verification(current_user=Depends(get_current_user)):
     if current_user.get("is_verified", False):
         raise HTTPException(status_code=400, detail="User is already verified")
+    
+    # Anti-spam: 60s cooldown
+    last_sent = current_user.get("verification_sent_at")
+    if last_sent:
+        # Pymongo might return it as aware or naive depending on how it was stored
+        if last_sent.tzinfo is None: last_sent = last_sent.replace(tzinfo=timezone.utc)
+        if (utcnow() - last_sent).total_seconds() < 60:
+            raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another email")
+
     uid = str(current_user["_id"])
     token = secrets.token_urlsafe(32)
+    expires = utcnow() + timedelta(hours=24)
 
-    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"verification_token": token}})
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "verification_token": token,
+        "verification_token_expires": expires,
+        "verification_sent_at": utcnow()
+    }})
     
     # MOCK EMAIL SENDING
     print(f"\n--- MOCK EMAIL ---")
     print(f"To: {current_user['email']}")
     print(f"Subject: Verify your GrowthLog Account")
     print(f"Link: http://localhost:3000/verify/{token}")
+    print(f"Expires in: 24 hours")
     print(f"------------------\n")
     
     return {"success": True}
@@ -327,9 +355,15 @@ def send_verification(current_user=Depends(get_current_user)):
 def verify_email(token: str):
     user = db.users.find_one({"verification_token": token})
     if not user:
-        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+        raise HTTPException(status_code=400, detail="Invalid token")
     
-    db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "verification_token": None}})
+    expires = user.get("verification_token_expires")
+    if expires:
+        if expires.tzinfo is None: expires = expires.replace(tzinfo=timezone.utc)
+        if utcnow() > expires:
+            raise HTTPException(status_code=400, detail="Verification link has expired")
+    
+    db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "verification_token": None, "verification_token_expires": None}})
     return {"success": True}
 
 @app.post("/auth/login")
@@ -338,7 +372,7 @@ def login(data: LoginModel):
     user = db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"token": create_token(str(user["_id"])),
+    return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
             "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat()}}
 
 @app.get("/auth/me")
@@ -367,7 +401,13 @@ def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_us
 def change_password(data: PasswordChangeModel, current_user=Depends(get_current_user)):
     if not verify_password(data.current_password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"password": hash_password(data.new_password)}})
+    
+    # Increment token_version to invalidate all existing JWTs
+    new_version = current_user.get("token_version", 1) + 1
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "password": hash_password(data.new_password),
+        "token_version": new_version
+    }})
     return {"success": True}
 
 class EmailChangeModel(BaseModel):
@@ -493,11 +533,14 @@ def create_category(data: CategoryModel, current_user=Depends(get_current_user))
         "color": data.color, "description": data.description,
         "archived": False, "created_at": utcnow(),
     }
-    result = db.categories.insert_one(cat)
-    cat["id"] = str(result.inserted_id)
-    del cat["_id"]
-    cache_invalidate(f"categories:{uid}")
-    return cat
+    try:
+        result = db.categories.insert_one(cat)
+        cat["id"] = str(result.inserted_id)
+        del cat["_id"]
+        cache_invalidate(f"categories:{uid}")
+        return cat
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail=f"A category named '{data.name}' already exists.")
 
 @app.get("/categories/templates")
 def get_category_templates(current_user=Depends(get_current_user)):
@@ -632,6 +675,7 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
         raise HTTPException(status_code=400, detail="No fields to update")
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid}, {"$set": fields})
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
 
 
@@ -858,8 +902,9 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     start = utcnow()
     if data.target_date:
         target_str = data.target_date
-        target_date_naive = datetime.strptime(data.target_date, "%Y-%m-%d")
-        target_days = (target_date_naive - start.replace(tzinfo=None)).days
+        # Parse as UTC-0
+        target_date_obj = datetime.strptime(data.target_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        target_days = (target_date_obj - start).days
     elif data.target_days:
         target_str = (start + timedelta(days=data.target_days)).strftime("%Y-%m-%d")
         target_days = data.target_days
@@ -888,7 +933,9 @@ def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])}, {"$set": fields})
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
 
 
@@ -907,7 +954,9 @@ def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
 def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$set": {"status": "archived"}})
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
 
 
@@ -1018,6 +1067,9 @@ def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depend
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.snapshots.update_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    uid = str(current_user["_id"])
+    cache_invalidate(f"stats:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
 @app.delete("/snapshots/{snap_id}")
@@ -1041,75 +1093,101 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         return cached
 
     since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
-    logs = list(db.daily_logs.find({"user_id": uid, "date": {"$gte": since}}))
-    goals = list(db.goals.find({"user_id": uid}))
+    
+    # 1. Aggregate Logs for trends, heatmap, and category consistency
+    pipeline = [
+        {"$match": {"user_id": uid, "date": {"$gte": since}}},
+        {"$facet": {
+            "trends": [
+                {"$sort": {"date": 1}},
+                {"$project": {
+                    "date": 1,
+                    "overall_rating": {"$ifNull": ["$overall_rating", 5]},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "avg_energy": {"$avg": "$entries.energy"},
+                    "time_spent": {"$sum": "$entries.time_spent"}
+                }}
+            ],
+            "category_stats": [
+                {"$unwind": "$entries"},
+                {"$group": {
+                    "_id": "$entries.category_id",
+                    "count": {"$sum": 1},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "time_spent": {"$sum": "$entries.time_spent"}
+                }}
+            ],
+            "weekly_summary": [
+                {"$project": {
+                    "date_obj": {"$dateFromString": {"dateString": "$date"}},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "avg_energy": {"$avg": "$entries.energy"}
+                }},
+                {"$group": {
+                    "_id": {"$isoWeek": "$date_obj"},
+                    "logs": {"$sum": 1},
+                    "mood_sum": {"$sum": "$avg_mood"},
+                    "energy_sum": {"$sum": "$avg_energy"}
+                }},
+                {"$sort": {"_id": 1}}
+            ],
+            "totals": [
+                {"$unwind": "$entries"},
+                {"$group": {
+                    "_id": None,
+                    "total_time": {"$sum": "$entries.time_spent"},
+                    "log_count": {"$sum": 1} # This is entries count, let's get logs count separately
+                }}
+            ]
+        }}
+    ]
+    
+    agg_result = list(db.daily_logs.aggregate(pipeline))[0]
+    logs_count = db.daily_logs.count_documents({"user_id": uid, "date": {"$gte": since}})
+    
+    # Process aggregation results
+    heatmap = {t["date"]: t["overall_rating"] for t in agg_result["trends"]}
+    mood_trend = [{"date": t["date"], "mood": round(t["avg_mood"] or 5, 1)} for t in agg_result["trends"]]
+    energy_trend = [{"date": t["date"], "energy": round(t["avg_energy"] or 5, 1)} for t in agg_result["trends"]]
+    time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result["trends"]]
+    
+    cat_stats_map = {s["_id"]: s for s in agg_result["category_stats"]}
     categories = list(db.categories.find({"user_id": uid, "archived": {"$ne": True}}))
-    manifestations = list(db.manifestations.find({"user_id": uid, "status": "active"}))
-
-    heatmap = {l["date"]: l.get("overall_rating", 5) for l in logs}
-    mood_trend = []
-    energy_trend = []
-    time_spent_trend = []
-    total_time_spent = 0
-    cat_time = defaultdict(int)
-    cat_mood = defaultdict(list)
-    cat_counts = defaultdict(int)
-
-    for log in sorted(logs, key=lambda x: x["date"]):
-        entries = log.get("entries", [])
-        moods = [e.get("mood", 5) for e in entries]
-        energies = [e.get("energy", 5) for e in entries]
-        day_time = sum(e.get("time_spent", 0) for e in entries)
-        total_time_spent += day_time
-        
-        mood_trend.append({"date": log["date"], "mood": round(sum(moods)/len(moods), 1) if moods else 5})
-        energy_trend.append({"date": log["date"], "energy": round(sum(energies)/len(energies), 1) if energies else 5})
-        time_spent_trend.append({"date": log["date"], "time_spent": day_time})
-
-        for e in entries:
-            cid = str(e["category_id"])
-            cat_counts[cid] += 1
-            cat_mood[cid].append(e.get("mood", 5))
-            cat_time[cid] += e.get("time_spent", 0)
-
     cat_consistency = [
         {
             "name": c["name"], "icon": c["icon"], "color": c["color"], "id": str(c["_id"]),
-            "count": cat_counts.get(str(c["_id"]), 0),
-            "percentage": round((cat_counts.get(str(c["_id"]), 0) / max(len(logs), 1)) * 100),
-            "avg_mood": round(sum(cat_mood.get(str(c["_id"]), [5])) / max(len(cat_mood.get(str(c["_id"]), [5])), 1), 1),
-            "time_spent": cat_time.get(str(c["_id"]), 0)
+            "count": cat_stats_map.get(str(c["_id"]), {}).get("count", 0),
+            "percentage": round((cat_stats_map.get(str(c["_id"]), {}).get("count", 0) / max(logs_count, 1)) * 100),
+            "avg_mood": round(cat_stats_map.get(str(c["_id"]), {}).get("avg_mood", 5) or 5, 1),
+            "time_spent": cat_stats_map.get(str(c["_id"]), {}).get("time_spent", 0)
         }
         for c in categories
     ]
-
-
-    weekly_data = defaultdict(lambda: {"logs": 0, "mood_sum": 0, "energy_sum": 0})
-    for log in logs:
-        try:
-            d = datetime.strptime(log["date"], "%Y-%m-%d")
-            week_key = f"W{d.isocalendar()[1]}"
-            weekly_data[week_key]["logs"] += 1
-            entries = log.get("entries", [])
-            if entries:
-                weekly_data[week_key]["mood_sum"] += sum(e.get("mood", 5) for e in entries) / len(entries)
-                weekly_data[week_key]["energy_sum"] += sum(e.get("energy", 5) for e in entries) / len(entries)
-        except Exception:
-            pass
-
+    
     weekly_summary = [
-        {"week": k, "logs": v["logs"],
-         "avg_mood": round(v["mood_sum"]/max(v["logs"],1), 1),
-         "avg_energy": round(v["energy_sum"]/max(v["logs"],1), 1)}
-        for k, v in sorted(weekly_data.items())
+        {
+            "week": f"W{w['_id']}",
+            "logs": w["logs"],
+            "avg_mood": round(w["mood_sum"] / max(w["logs"], 1), 1),
+            "avg_energy": round(w["energy_sum"] / max(w["logs"], 1), 1)
+        }
+        for w in agg_result["weekly_summary"]
     ]
-
-    user = db.users.find_one({"_id": ObjectId(uid)})
+    
+    # 2. Parallel fetch for Goals and Manifestations (small result sets)
+    goals = list(db.goals.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    goal_counts = {g["_id"]: g["count"] for g in goals}
+    
+    manifestations_count = db.manifestations.count_documents({"user_id": uid, "status": "active"})
+    
     result = {
-        "streak": user.get("streak", 0),
-        "longest_streak": user.get("longest_streak", 0),
-        "total_logs": len(logs),
-        "total_time_spent": total_time_spent,
+        "streak": current_user.get("streak", 0),
+        "longest_streak": current_user.get("longest_streak", 0),
+        "total_logs": logs_count,
+        "total_time_spent": sum(c["time_spent"] for c in cat_consistency),
         "heatmap": heatmap,
         "mood_trend": mood_trend,
         "energy_trend": energy_trend,
@@ -1117,14 +1195,14 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         "weekly_summary": weekly_summary,
         "category_consistency": cat_consistency,
         "goals": {
-            "total": len(goals),
-            "completed": len([g for g in goals if g["status"] == "completed"]),
-            "active": len([g for g in goals if g["status"] == "active"]),
+            "total": sum(goal_counts.values()),
+            "completed": goal_counts.get("completed", 0),
+            "active": goal_counts.get("active", 0),
         },
-        "active_manifestations": len(manifestations),
+        "active_manifestations": manifestations_count,
     }
 
-    cache_set(cache_key, result, ttl=120)
+    cache_set(cache_key, result, ttl=300) # Increased TTL for optimized dashboard
     return result
 
 
