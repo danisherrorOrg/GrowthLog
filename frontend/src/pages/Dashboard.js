@@ -7,7 +7,9 @@ import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth
 import { getErrorMessage } from '../utils/errors';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
-  ResponsiveContainer, PieChart, Pie, Cell, Legend
+  ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  BarChart, Bar
 } from 'recharts';
 
 export default function Dashboard() {
@@ -17,6 +19,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [days, setDays] = useState(30);
+  const [quote, setQuote] = useState(null);
+
+  useEffect(() => {
+    API.get('/prompts/quote').then(r => setQuote(r.data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -105,6 +112,28 @@ export default function Dashboard() {
       </div>
 
       <div className="page-body">
+        {/* Insights Section */}
+        {data?.insights?.length > 0 && (
+          <div style={{ display: 'flex', gap: 12, marginBottom: 28, overflowX: 'auto', paddingBottom: 8 }}>
+            {data.insights.map((insight, i) => (
+              <div key={i} className="card" style={{ 
+                minWidth: 300, flex: 1, padding: '16px 20px', 
+                background: `linear-gradient(135deg, white 0%, ${insight.color}05 100%)`,
+                borderLeft: `4px solid ${insight.color}`,
+                display: 'flex', alignItems: 'center', gap: 14,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ fontSize: 24 }}>
+                  {insight.type === 'top_performer' ? '📈' : insight.type === 'mood_booster' ? '✨' : '⚖️'}
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, fontWeight: 500 }}>
+                  {insight.text}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Onboarding Nudge for New Users */}
         {user?.total_logs === 0 && (
           <div className="card" style={{ 
@@ -140,7 +169,34 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Stat cards */}
+        {/* Quote of the Day */}
+        {quote && (
+          <div className="card" style={{ 
+            marginBottom: 28, 
+            padding: '24px 32px', 
+            background: 'rgba(201,168,76,0.04)', 
+            border: '1px solid rgba(201,168,76,0.15)',
+            textAlign: 'center',
+            borderRadius: 20
+          }}>
+            <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 12 }}>“</div>
+            <p style={{ 
+              fontFamily: 'Fraunces', 
+              fontSize: 20, 
+              color: 'var(--ink)', 
+              lineHeight: 1.6, 
+              margin: '0 auto 8px',
+              fontStyle: 'italic',
+              maxWidth: 600
+            }}>
+              {quote.text}
+            </p>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)' }}>
+              — {quote.author}
+            </div>
+          </div>
+        )}
+
         <div className="grid-4" style={{ marginBottom: 28 }}>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--gold)' }}>{data?.streak || 0}</div>
@@ -303,33 +359,61 @@ export default function Dashboard() {
           <div className="card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
             <div className="section-title" style={{ marginBottom: 20 }}>
               <span>Life Balance</span>
-              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Time Allocation (min)</span>
+              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Time & Mood Distribution</span>
             </div>
             <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data?.category_consistency?.filter(c => c.time_spent > 0) || []}
-                    dataKey="time_spent"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                  >
-                    {data?.category_consistency?.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontFamily: 'DM Sans', fontSize: 12 }}
-                    formatter={(value) => [`${value} min`, 'Time Spent']}
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data?.radar_data || []}>
+                  <PolarGrid stroke="rgba(13,13,13,0.05)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.4)' }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 10]} axisLine={false} tick={false} />
+                  <Radar
+                    name="Mood"
+                    dataKey="mood"
+                    stroke="var(--sage)"
+                    fill="var(--sage)"
+                    fillOpacity={0.5}
+                  />
+                  <Radar
+                    name="Activity"
+                    dataKey="activity"
+                    stroke="var(--gold)"
+                    fill="var(--gold)"
+                    fillOpacity={0.3}
                   />
                   <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                </PieChart>
+                  <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontSize: 12 }} />
+                </RadarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+        </div>
+
+        {/* Emotion Trends Section */}
+        <div className="card" style={{ marginBottom: 28 }}>
+          <div className="section-title" style={{ marginBottom: 24 }}>
+            <span>Emotional Palette</span>
+            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Frequency of feelings recently</span>
+          </div>
+          <div style={{ height: 280 }}>
+            {data?.emotion_trends?.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={data.emotion_trends} margin={{ left: 40, right: 40 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="label" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink)' }} width={100} />
+                  <RechartsTooltip cursor={{ fill: 'rgba(13,13,13,0.02)' }} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontSize: 12 }} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {data.emotion_trends.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={`hsla(${140 + (index * 15)}, 20%, 50%, ${1 - (index * 0.08)})`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(13,13,13,0.3)', fontSize: 14 }}>
+                Log your daily check-ins to see emotional trends ✦
+              </div>
+            )}
           </div>
         </div>
 

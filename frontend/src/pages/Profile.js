@@ -19,7 +19,7 @@ export default function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [pwMode, setPwMode] = useState(false);
   const [emailMode, setEmailMode] = useState(false);
-  const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC' });
+  const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC', email_notifications: true });
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm: '' });
   const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,13 @@ export default function Profile() {
 
   useEffect(() => {
     if (user) {
-      setForm({ name: user.name || '', bio: user.bio || '', avatar_emoji: user.avatar_emoji || '🌱', timezone: user.timezone || 'UTC' });
+      setForm({ 
+        name: user.name || '', 
+        bio: user.bio || '', 
+        avatar_emoji: user.avatar_emoji || '🌱', 
+        timezone: user.timezone || 'UTC',
+        email_notifications: user.email_notifications !== false 
+      });
     }
     API.get('/auth/stats').then(r => setStats(r.data)).catch(() => {});
   }, [user]);
@@ -37,7 +43,13 @@ export default function Profile() {
     if (!form.name.trim()) return toast.error('Name is required');
     setLoading(true);
     try {
-      await API.put('/auth/profile', { name: form.name, bio: form.bio, avatar_emoji: form.avatar_emoji, timezone: form.timezone });
+      await API.put('/auth/profile', { 
+        name: form.name, 
+        bio: form.bio, 
+        avatar_emoji: form.avatar_emoji, 
+        timezone: form.timezone,
+        email_notifications: form.email_notifications
+      });
       await refreshUser();
       toast.success('Profile updated!');
       setEditMode(false);
@@ -220,6 +232,17 @@ export default function Profile() {
                   <label className="form-label">Bio (optional)</label>
                   <textarea className="form-textarea" value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}
                     placeholder="A short note about yourself or your growth intentions..." style={{ minHeight: 80 }} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.email_notifications} 
+                      onChange={e => setForm({ ...form, email_notifications: e.target.checked })}
+                      style={{ width: 18, height: 18, accentColor: 'var(--sage)' }} />
+                    <span>Enable daily email nudges & reminders</span>
+                  </label>
+                  <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4, marginLeft: 26 }}>
+                    If enabled, we'll send a gentle nudge if you haven't logged your growth by evening.
+                  </p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
