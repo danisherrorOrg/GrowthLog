@@ -30,3 +30,4 @@ Next things to do:
 - Allow user to change email.
 - Allow user to share their profile and it's stats (not any other data) so that friends can compare their stats.
 - Allow user to create their own custom categories template.
+- Allow user to add the time spend on the goal or task or anything in this project so that user can track how much time of the day they have spend on the task or goal or anything.
