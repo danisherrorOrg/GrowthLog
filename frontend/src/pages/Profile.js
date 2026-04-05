@@ -11,8 +11,10 @@ export default function Profile() {
   const [stats, setStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [pwMode, setPwMode] = useState(false);
+  const [emailMode, setEmailMode] = useState(false);
   const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC' });
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm: '' });
+  const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -47,6 +49,29 @@ export default function Profile() {
       setPwMode(false);
       setPwForm({ current_password: '', new_password: '', confirm: '' });
     } catch (e) { toast.error(e.response?.data?.detail || 'Failed to change password'); }
+    finally { setLoading(false); }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!emailForm.new_email || !emailForm.password) return toast.error('Fill all fields');
+    setLoading(true);
+    try {
+      await API.put('/auth/email', { new_email: emailForm.new_email, password: emailForm.password });
+      await refreshUser();
+      toast.success('Email updated successfully!');
+      setEmailMode(false);
+      setEmailForm({ new_email: '', password: '' });
+    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to update email'); }
+    finally { setLoading(false); }
+  };
+
+  const handleTogglePublic = async () => {
+    setLoading(true);
+    try {
+      await API.put('/auth/public', { is_public: !user?.is_public });
+      await refreshUser();
+      toast.success(user?.is_public ? 'Profile is now Private' : 'Profile is now Public!');
+    } catch { toast.error('Failed to change privacy settings'); }
     finally { setLoading(false); }
   };
 
@@ -107,9 +132,10 @@ export default function Profile() {
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>{user?.email}</p>
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 12 }}>Member since {memberSince}</p>
                   {user?.bio && <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6, marginBottom: 12, fontStyle: 'italic' }}>"{user.bio}"</p>}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setEditMode(true)}>✎ Edit Profile</button>
                     <button className="btn btn-outline btn-sm" onClick={() => setPwMode(true)}>🔒 Change Password</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => setEmailMode(true)}>✉️ Change Email</button>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -216,6 +242,38 @@ export default function Profile() {
           </div>
         )}
 
+        {/* Social / Sharing */}
+        {!editMode && !pwMode && (
+          <div className="card" style={{ marginTop: 24, padding: 24, borderLeft: '4px solid var(--sage)', background: 'var(--mist)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ fontSize: 18, color: 'var(--sage)', marginBottom: 8 }}>Public Profile Link</h3>
+                <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', maxWidth: 600 }}>
+                  Make your aggregated stats, badges, and streaks public so you can share your progress with friends. 
+                  (Don't worry, your private daily logs, notes, and specific journal entries remain 100% hidden).
+                </p>
+              </div>
+              <button className={`btn btn-sm ${user?.is_public ? 'btn-primary' : 'btn-outline'}`} onClick={handleTogglePublic} disabled={loading}>
+                {loading ? '...' : user?.is_public ? '✓ Profile is Public' : 'Make Public'}
+              </button>
+            </div>
+            
+            {user?.is_public && (
+              <div style={{ padding: 12, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(13,13,13,0.1)', borderRadius: 8, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{ fontSize: 20 }}>🔗</span>
+                <a href={`/u/${user?.id}`} target="_blank" rel="noreferrer" style={{ flex: 1, fontFamily: 'monospace', fontSize: 13, color: 'var(--sage)', textDecoration: 'none' }}>
+                  {window.location.origin}/u/{user?.id}
+                </a>
+                <button className="btn btn-ghost btn-sm" style={{ background: 'white', border: '1px solid rgba(13,13,13,0.1)' }} 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/u/${user?.id}`);
+                    toast.success('Link copied to clipboard!');
+                  }}>Copy Link</button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Danger Zone */}
         {!editMode && !pwMode && (
           <div className="card" style={{ marginTop: 24, padding: 24, borderLeft: '4px solid var(--rust)', background: 'var(--paper)' }}>
@@ -257,6 +315,33 @@ export default function Profile() {
               <button className="btn btn-outline" onClick={() => setPwMode(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleChangePassword} disabled={loading} style={{ flex: 1 }}>
                 {loading ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Change Email Modal */}
+      {emailMode && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEmailMode(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Change Email</h3>
+              <button className="modal-close" onClick={() => setEmailMode(false)}>✕</button>
+            </div>
+            <div className="form-group">
+              <label className="form-label">New Email Address</label>
+              <input type="email" className="form-input" value={emailForm.new_email}
+                onChange={e => setEmailForm({ ...emailForm, new_email: e.target.value })} placeholder="new@example.com" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Current Password</label>
+              <input type="password" className="form-input" value={emailForm.password}
+                onChange={e => setEmailForm({ ...emailForm, password: e.target.value })} placeholder="••••••••" />
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-outline" onClick={() => setEmailMode(false)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleChangeEmail} disabled={loading} style={{ flex: 1 }}>
+                {loading ? 'Changing...' : 'Change Email'}
               </button>
             </div>
           </div>

@@ -19,15 +19,32 @@
 *   **Allow user to choose custom or predefined "Type" in adding progress in Manifestations**: No customizations added to Manifestation progress flows.
 *   **Allow user to edit/delete the progress in a Manifestations**: No Edit/Delete capabilities added to Manifestation flows.
 
-Essentially, **the core logging, category structuring, and goal tracking functionalities are completely finished!** 
-
-The things left remaining mostly revolve around fleshing out **Manifestations** and **Snapshots**, injecting real **email validation servers**, inserting **graph visualizations**, and building up your **Auth/Landing page marketing**.
-
-
-Next things to do:
 ---
-- Allow user to enter their own mongodb and JWT secret, so that they can use their own data instead of using my database (but still use my server for processing).
-- Allow user to change email.
-- Allow user to share their profile and it's stats (not any other data) so that friends can compare their stats.
-- Allow user to create their own custom categories template.
-- Allow user to add the time spend on the goal or task or anything in this project so that user can track how much time of the day they have spend on the task or goal or anything.
+
+## 🎯 Proposed Roadmap (Next Steps)
+
+Based on the newly added ideas and the remaining incomplete features, here is a structured pathway for what we should implement next, ordered from highest UI impact to deep architectural shifts.
+
+### Sprint 1: Finishing Core Modules (Manifestations & Snapshots)
+Before adding massive structural changes, we must solidify the core logging components.
+- [ ] Fix the **Compare Snapshot** functionality.
+- [ ] Add ability to choose custom predefined "Type" options when updating **Manifestations**.
+- [ ] Build Edit/Delete pipelines for **Manifestations** progress entries.
+- [ ] Allow deletion of notes inside Manifestations.
+
+### Sprint 2: Profile & Social Extensions
+Enhancing the user experience with profile management and social gamification.
+- [ ] **Change Email**: Allow users to securely update their account email from the Profile Dashboard.
+- [ ] **Public Stats Sharing**: Generate a public, shareable URL for user profiles so friends can view and compare their Milestone Badges, Streaks, and Total Logs (without exposing private text entries).
+- [ ] **Login/Landing Page Marketing**: Revamp the Login/Signup screens with graphics, descriptions, and feature highlights to tell the user how to get the most benefits out of the app.
+
+### Sprint 3: Advanced Logging Customization
+Deepening the toolkit for dedicated logging users.
+- [ ] **Custom Category Templates**: Allow users to build and save their *own* reusable templates, extending the default (Mind, Body, Career) ones.
+- [ ] **Time Tracking System**: Add time parameters (minutes/hours) to Micro-goals and Daily Logs so users can visualize exactly how much time of their day is dedicated to specific life categories.
+- [ ] **Advanced Graphing**: Inject Recharts visualizations onto the Dashboard to plot time spent and rating trends over time.
+
+### Sprint 4: Architectural Evolution (BYOD)
+Complex scale capabilities for the monolith.
+- [ ] **Real Email Validation Servers**: Connect genuine SMTP logic to valid user emails.
+- [ ] **Bring Your Own Database (BYOD)**: Engineer a headless mode wherein a user can supply their own MongoDB Connection URI and JWT Secret via local storage/HTTPS headers. The server will process logic but pipe all documents straight into the user's private cluster.

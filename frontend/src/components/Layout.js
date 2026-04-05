@@ -1,5 +1,6 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useEffect } from 'react';
 
 const NAV = [
   { to: '/dashboard', icon: '◈', label: 'Dashboard' },
@@ -13,8 +14,14 @@ const NAV = [
 ];
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Refresh user data (streak, etc.) on every page navigation
+  useEffect(() => {
+    refreshUser().catch(() => {});
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();

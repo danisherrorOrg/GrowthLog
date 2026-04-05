@@ -304,6 +304,7 @@ def me(current_user=Depends(get_current_user)):
         "bio": u.get("bio", ""), "avatar_emoji": u.get("avatar_emoji", "🌱"),
         "timezone": u.get("timezone", "UTC"),
         "created_at": u.get("created_at", utcnow()).isoformat(),
+        "is_public": u.get("is_public", False)
     }
 
 @app.put("/auth/profile")
@@ -320,6 +321,53 @@ def change_password(data: PasswordChangeModel, current_user=Depends(get_current_
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {"password": hash_password(data.new_password)}})
     return {"success": True}
+
+class EmailChangeModel(BaseModel):
+    new_email: str
+    password: str
+
+@app.put("/auth/email")
+def change_email(data: EmailChangeModel, current_user=Depends(get_current_user)):
+    if not verify_password(data.password, current_user["password"]):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    if db.users.find_one({"email": data.new_email}):
+        raise HTTPException(status_code=400, detail="Email is already in use")
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"email": data.new_email}})
+    return {"success": True, "email": data.new_email}
+
+class PublicToggleModel(BaseModel):
+    is_public: bool
+
+@app.put("/auth/public")
+def toggle_public(data: PublicToggleModel, current_user=Depends(get_current_user)):
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"is_public": data.is_public}})
+    return {"success": True, "is_public": data.is_public}
+
+@app.get("/public/u/{user_id}")
+def get_public_stats(user_id: str):
+    try:
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+    except:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.get("is_public", False):
+        raise HTTPException(status_code=403, detail="Profile is private")
+        
+    created_at = user.get("created_at", utcnow())
+    return {
+        "name": user["name"],
+        "bio": user.get("bio", ""),
+        "avatar_emoji": user.get("avatar_emoji", "🌱"),
+        "created_at": created_at.isoformat(),
+        "streak": user.get("streak", 0),
+        "longest_streak": user.get("longest_streak", 0),
+        "total_logs": db.daily_logs.count_documents({"user_id": user_id}),
+        "completed_goals": db.goals.count_documents({"user_id": user_id, "status": "completed"}),
+        "total_manifestations": db.manifestations.count_documents({"user_id": user_id}),
+        "total_snapshots": db.snapshots.count_documents({"user_id": user_id})
+    }
 
 @app.delete("/auth/me")
 def delete_account(current_user=Depends(get_current_user)):

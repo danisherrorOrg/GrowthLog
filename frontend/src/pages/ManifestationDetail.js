@@ -161,9 +161,11 @@ export default function ManifestationDetail() {
       <div className="page-body">
         {/* Vision card */}
         <div className="card" style={{ background: isReady ? 'var(--ink)' : 'white', marginBottom: 20 }}>
-          <blockquote style={{ fontFamily: 'Fraunces', fontSize: 20, fontStyle: 'italic',
+          <blockquote style={{
+            fontFamily: 'Fraunces', fontSize: 20, fontStyle: 'italic',
             color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.7, margin: '0 0 16px',
-            padding: '0 0 0 16px', borderLeft: `4px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}` }}>
+            padding: '0 0 0 16px', borderLeft: `4px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}`
+          }}>
             "{item.vision}"
           </blockquote>
 

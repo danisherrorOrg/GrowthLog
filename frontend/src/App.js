@@ -19,6 +19,7 @@ import Snapshots from './pages/Snapshots';
 import SnapshotDetail from './pages/SnapshotDetail';
 import Growth from './pages/Growth';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,6 +48,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/u/:userId" element={<PublicProfile />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
