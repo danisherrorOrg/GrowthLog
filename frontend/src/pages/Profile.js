@@ -48,13 +48,20 @@ export default function Profile() {
   };
 
   const handleChangePassword = async () => {
-    if (!pwForm.current_password || !pwForm.new_password) return toast.error('Fill all fields');
-    if (pwForm.new_password.length < 6) return toast.error('New password must be at least 6 characters');
-    if (pwForm.new_password !== pwForm.confirm) return toast.error('Passwords do not match');
+    if (!pwForm.current_password || !pwForm.new_password || !pwForm.confirm) {
+      return toast.error('Please fill in all password fields');
+    }
+    if (pwForm.new_password.length < 6) {
+      return toast.error('New password must be at least 6 characters long');
+    }
+    if (pwForm.new_password !== pwForm.confirm) {
+      return toast.error('New passwords do not match');
+    }
+    
     setLoading(true);
     try {
       await API.put('/auth/password', { current_password: pwForm.current_password, new_password: pwForm.new_password });
-      toast.success('Password changed!');
+      toast.success('Password changed successfully!');
       setPwMode(false);
       setPwForm({ current_password: '', new_password: '', confirm: '' });
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to change password')); }
@@ -130,14 +137,30 @@ export default function Profile() {
 
       <div className="page-body">
         {!user?.is_verified && (
-
-          <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(201,168,76,0.1)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rust)', marginBottom: 2 }}>Verify your email address</div>
-              <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>We need to verify <strong>{user?.email}</strong> to secure your account and send reminders.</div>
+          <div style={{ 
+            marginBottom: 24, 
+            padding: '16px 20px', 
+            background: 'var(--rust)', 
+            color: 'white',
+            borderRadius: 12, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)'
+          }}>
+            <div style={{ flex: 1, marginRight: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your email address ✦</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                We've sent a link to <strong>{user?.email}</strong>. Please verify your account to unlock all features and secure your growth data.
+              </div>
             </div>
-            <button className="btn btn-sm btn-outline" style={{ borderColor: 'var(--rust)', color: 'var(--rust)' }} onClick={handleVerifyEmail} disabled={verifying}>
-              {verifying ? 'Sending...' : 'Send Link'}
+            <button 
+              className="btn btn-sm" 
+              style={{ background: 'white', color: 'var(--rust)', border: 'none', fontWeight: 600, whiteSpace: 'nowrap' }} 
+              onClick={handleVerifyEmail} 
+              disabled={verifying}
+            >
+              {verifying ? 'Sending...' : 'Resend Link'}
             </button>
           </div>
         )}
@@ -149,7 +172,14 @@ export default function Profile() {
               <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
                 <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0 }}>{user?.avatar_emoji || '🌱'}</div>
                 <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: 24, marginBottom: 4 }}>{user?.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <h2 style={{ fontSize: 24 }}>{user?.name}</h2>
+                    {user?.is_verified && (
+                      <span className="tag tag-green" style={{ fontSize: 10, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                        Verified ✦
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>{user?.email}</p>
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 12 }}>Member since {memberSince}</p>
                   {user?.bio && <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6, marginBottom: 12, fontStyle: 'italic' }}>"{user.bio}"</p>}

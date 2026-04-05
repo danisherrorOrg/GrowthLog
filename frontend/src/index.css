@@ -289,6 +289,7 @@ h1, h2, h3, h4 {
 
 .rating-slider {
   flex: 1;
+  appearance: none;
   -webkit-appearance: none;
   height: 4px;
   border-radius: 2px;
@@ -394,15 +395,17 @@ h1, h2, h3, h4 {
 }
 
 /* Heatmap */
-.heatmap {
-  display: grid;
-  grid-template-columns: repeat(30, 1fr);
+.heatmap-container {
+  display: flex;
   gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 8px;
 }
 
 .heatmap-cell {
-  aspect-ratio: 1;
-  border-radius: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
   background: var(--mist);
   cursor: default;
   transition: transform 0.15s;

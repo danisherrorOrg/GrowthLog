@@ -1162,6 +1162,8 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
                 {"$project": {
                     "date": 1,
                     "overall_rating": {"$ifNull": ["$overall_rating", 5]},
+                    "highlight": {"$ifNull": ["$highlight", ""]},
+                    "entry_count": {"$size": {"$ifNull": ["$entries", []]}},
                     "avg_mood": {"$avg": "$entries.mood"},
                     "avg_energy": {"$avg": "$entries.energy"},
                     "time_spent": {"$sum": "$entries.time_spent"}
@@ -1205,7 +1207,7 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     logs_count = db.daily_logs.count_documents({"user_id": uid, "date": {"$gte": since}})
     
     # Process aggregation results
-    heatmap = {t["date"]: t["overall_rating"] for t in agg_result["trends"]}
+    heatmap = {t["date"]: {"rating": t["overall_rating"], "highlight": t["highlight"], "count": t["entry_count"]} for t in agg_result["trends"]}
     mood_trend = [{"date": t["date"], "mood": round(t["avg_mood"] or 5, 1)} for t in agg_result["trends"]]
     energy_trend = [{"date": t["date"], "energy": round(t["avg_energy"] or 5, 1)} for t in agg_result["trends"]]
     time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result["trends"]]
