@@ -234,7 +234,7 @@ export default function Manifestations() {
                     <div style={{ marginBottom: 12 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => setExpandedProgress(p => ({ ...p, [item.id]: !p[item.id] }))}
                         style={{ color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', fontSize: 12 }}>
-                        {showProg ? '▼' : '▶'} {progressEntries.length} progress note{progressEntries.length > 1 ? 's' : ''}
+                        {showProg ? '▼' : '▶'} {progressEntries.length} progress entr{progressEntries.length > 1 ? 'ies' : 'y'}
                       </button>
                       {showProg && (
                         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>

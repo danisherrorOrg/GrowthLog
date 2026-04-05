@@ -195,8 +195,8 @@ export default function DailyLog() {
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Time Invested (min)</label>
                   <input type="number" className="form-input" value={entry.time_spent}
-                    onChange={(e) => updateEntry(cat.id, 'time_spent', e.target.value)}
-                    placeholder="0" min="0" />
+                    onChange={(e) => updateEntry(cat.id, 'time_spent', Math.min(1440, Math.max(0, parseInt(e.target.value) || 0)))}
+                    placeholder="0" min="0" max="1440" />
                 </div>
               </div>
 
@@ -220,7 +220,13 @@ export default function DailyLog() {
           <h3 style={{ fontSize: 18, marginBottom: 16 }}>Overall Day</h3>
           <div className="form-group">
             <label className="form-label">Highlight of the day</label>
-            <input className="form-input" value={highlight} onChange={(e) => setHighlight(e.target.value)} placeholder="What's the one thing that stood out today?" />
+            <textarea 
+              className="form-textarea" 
+              value={highlight} 
+              onChange={(e) => setHighlight(e.target.value)} 
+              placeholder="What's the one thing that stood out today?" 
+              style={{ minHeight: 80 }}
+            />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Overall day rating — {overallRating}/10</label>

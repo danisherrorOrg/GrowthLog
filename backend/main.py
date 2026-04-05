@@ -735,11 +735,23 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
 @app.delete("/goals/{goal_id}/reflections/{reflection_id}")
 def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    reflections = [r for r in goal.get("reflections", []) if r.get("id") != reflection_id]
-    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"reflections": reflections}})
+    db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid},
+        {"$pull": {"reflections": {"id": reflection_id}}}
+    )
+    cache_invalidate(f"dashboard:{uid}")
+    return {"success": True}
+
+@app.put("/goals/{goal_id}/reflections/{reflection_id}")
+def update_goal_reflection(goal_id: str, reflection_id: str, data: NoteModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "reflections.id": reflection_id},
+        {"$set": {"reflections.$.text": data.text}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or reflection not found")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -755,6 +767,18 @@ def add_goal_note(goal_id: str, data: NoteModel, current_user=Depends(get_curren
 def delete_goal_note(goal_id: str, note_id: str, current_user=Depends(get_current_user)):
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
                         {"$pull": {"notes": {"id": note_id}}})
+    return {"success": True}
+
+@app.put("/goals/{goal_id}/notes/{note_id}")
+def update_goal_note(goal_id: str, note_id: str, data: NoteModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "notes.id": note_id},
+        {"$set": {"notes.$.text": data.text}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or note not found")
     return {"success": True}
 
 @app.post("/goals/{goal_id}/micro-goals")

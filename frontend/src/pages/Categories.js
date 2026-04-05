@@ -110,7 +110,7 @@ export default function Categories() {
       await API.post('/categories', def);
       toast.success(`${def.icon} ${def.name} added!`);
       load();
-    } catch { toast.error('Already exists or failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add category')); }
   };
 
   const handleSaveAsTemplate = async (cat) => {

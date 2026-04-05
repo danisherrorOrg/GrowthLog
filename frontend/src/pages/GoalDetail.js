@@ -28,6 +28,10 @@ export default function GoalDetail() {
   const [editMg, setEditMg] = useState(null); // id
   const [editMgText, setEditMgText] = useState('');
   const [editMgTime, setEditMgTime] = useState(0);
+  const [editNoteId, setEditNoteId] = useState(null);
+  const [editNoteText, setEditNoteText] = useState('');
+  const [editReflectionId, setEditReflectionId] = useState(null);
+  const [editReflectionText, setEditReflectionText] = useState('');
 
 
   // Note input
@@ -77,6 +81,18 @@ export default function GoalDetail() {
     await API.delete(`/goals/${goalId}/notes/${noteId}`);
     toast.success('Note deleted');
     load();
+  };
+
+  const handleUpdateNote = async (noteId) => {
+    if (!editNoteText.trim()) return toast.error('Note cannot be empty');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/notes/${noteId}`, { text: editNoteText });
+      toast.success('Note updated!');
+      setEditNoteId(null);
+      load();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update note')); }
+    finally { setSaving(false); }
   };
 
   const handleAddMg = async () => {
@@ -143,6 +159,18 @@ export default function GoalDetail() {
     await API.delete(`/goals/${goalId}/reflections/${reflectionId}`);
     toast.success('Reflection deleted');
     load();
+  };
+
+  const handleUpdateReflection = async (reflectionId) => {
+    if (!editReflectionText.trim()) return toast.error('Reflection cannot be empty');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/reflections/${reflectionId}`, { text: editReflectionText });
+      toast.success('Reflection updated!');
+      setEditReflectionId(null);
+      load();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update reflection')); }
+    finally { setSaving(false); }
   };
 
   const handleReflect = async () => {
@@ -317,11 +345,25 @@ export default function GoalDetail() {
                     <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 4 }}>
                       {format(new Date(note.date), 'MMM d, yyyy')}
                     </div>
-                    <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
-                    <button onClick={() => handleDeleteNote(note.id)}
-                      style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>
-                      ✕
-                    </button>
+                    {editNoteId === note.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => setEditNoteId(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateNote(note.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
+                        <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                          <button onClick={() => { setEditNoteId(note.id); setEditNoteText(note.text); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                          <button onClick={() => handleDeleteNote(note.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -363,12 +405,26 @@ export default function GoalDetail() {
                       {format(new Date(r.date), 'MMM d, yyyy')}
                       {r.status_change && <span style={{ marginLeft: 6, color: 'var(--sage)' }}>· {r.status_change}</span>}
                     </div>
-                    <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
-                    {r.id && (
-                      <button onClick={() => handleDeleteReflection(r.id)}
-                        style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>
-                        ✕
-                      </button>
+                    {editReflectionId === (r.id || i) ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <textarea className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => setEditReflectionId(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateReflection(r.id || i)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
+                        {r.id && (
+                          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                            <button onClick={() => { setEditReflectionId(r.id || i); setEditReflectionText(r.text); }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                            <button onClick={() => handleDeleteReflection(r.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
