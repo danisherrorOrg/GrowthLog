@@ -22,3 +22,11 @@
 Essentially, **the core logging, category structuring, and goal tracking functionalities are completely finished!** 
 
 The things left remaining mostly revolve around fleshing out **Manifestations** and **Snapshots**, injecting real **email validation servers**, inserting **graph visualizations**, and building up your **Auth/Landing page marketing**.
+
+
+Next things to do:
+---
+- Allow user to enter their own mongodb and JWT secret, so that they can use their own data instead of using my database (but still use my server for processing).
+- Allow user to change email.
+- Allow user to share their profile and it's stats (not any other data) so that friends can compare their stats.
+- Allow user to create their own custom categories template.
