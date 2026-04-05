@@ -420,8 +420,14 @@ def change_email(data: EmailChangeModel, current_user=Depends(get_current_user))
         raise HTTPException(status_code=400, detail="Incorrect password")
     if db.users.find_one({"email": data.new_email}):
         raise HTTPException(status_code=400, detail="Email is already in use")
-    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"email": data.new_email}})
-    return {"success": True, "email": data.new_email}
+    # Security: Reset verification status on email change
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "email": data.new_email,
+        "is_verified": False,
+        "verification_token": None,
+        "verification_token_expires": None
+    }})
+    return {"success": True, "email": data.new_email, "is_verified": False}
 
 class PublicToggleModel(BaseModel):
     is_public: bool
@@ -573,10 +579,13 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
     fields = clean_update(data.dict())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
-    db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
-    cache_invalidate(f"categories:{uid}")
-    cache_invalidate(f"dashboard:{uid}")
-    return {"success": True}
+    try:
+        db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
+        cache_invalidate(f"categories:{uid}")
+        cache_invalidate(f"dashboard:{uid}")
+        return {"success": True}
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail=f"A category named '{fields.get('name', 'unknown')}' already exists.")
 
 
 @app.put("/categories/{category_id}/restore")
@@ -760,21 +769,14 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
     return {"success": True, "id": mg_id}
 
 
-@app.put("/goals/{goal_id}/micro-goals/{mg_id}")
-def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
-    uid = str(current_user["_id"])
-    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "micro_goals.id": mg_id},
+        {"$set": {"micro_goals.$.text": data.text, "micro_goals.$.time_spent": data.time_spent}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
     
-    mgs = goal.get("micro_goals", [])
-    for mg in mgs:
-        if mg.get("id") == mg_id:
-            mg["text"] = data.text
-            mg["time_spent"] = data.time_spent
-            break
-            
-    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -783,17 +785,27 @@ def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_us
 @app.put("/goals/{goal_id}/micro-goals/{mg_id}/toggle")
 def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    
-    mgs = goal.get("micro_goals", [])
-    for mg in mgs:
-        if mg.get("id") == mg_id:
-            mg["completed"] = not mg.get("completed", False)
-            break
-            
-    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    # Atomic toggle using $[element] syntax
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid},
+        [{"$set": {
+            "micro_goals": {
+                "$map": {
+                    "input": "$micro_goals",
+                    "as": "mg",
+                    "in": {
+                        "$cond": [
+                            {"$eq": ["$$mg.id", mg_id]},
+                            {"$mergeObjects": ["$$mg", {"completed": {"$not": "$$mg.completed"}}]},
+                            "$$mg"
+                        ]
+                    }
+                }
+            }
+        }}]
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -813,8 +825,10 @@ def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
 
 @app.get("/logs")
 def get_logs(days: int = 30, current_user=Depends(get_current_user)):
+    # Cap historical queries at 365 days for performance
+    days = min(max(days, 1), 365)
     since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
-    return serialize_list(db.daily_logs.find({"user_id": str(current_user["_id"]), "date": {"$gte": since}}))
+    return serialize_list(db.daily_logs.find({"user_id": str(current_user["_id"]), "date": {"$gte": since}}).sort("date", DESCENDING))
 
 @app.get("/logs/today")
 def get_today_log(current_user=Depends(get_current_user)):
@@ -826,6 +840,55 @@ def get_today_log(current_user=Depends(get_current_user)):
 def get_log_by_date(date: str, current_user=Depends(get_current_user)):
     log = db.daily_logs.find_one({"user_id": str(current_user["_id"]), "date": date})
     return serialize(log) if log else None
+
+def recalculate_user_streak(uid: str):
+    """Accurately calculates the current and longest streak based on all logs."""
+    logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING))
+    if not logs:
+        db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
+        return 0
+
+    dates = sorted([l["date"] for l in logs], reverse=True)
+    today = utcnow().strftime("%Y-%m-%d")
+    yesterday = (utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    current_streak = 0
+    longest_streak = 0
+    temp_streak = 0
+    
+    # Check if the streak is still active (logged today or yesterday)
+    last_log = dates[0]
+    if last_log != today and last_log != yesterday:
+        current_streak = 0
+    else:
+        # Calculate current streak
+        check_date = last_log
+        for d in dates:
+            if d == check_date:
+                current_streak += 1
+                check_date = (datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+            else:
+                break
+
+    # Calculate longest streak across all history
+    check_date = dates[0]
+    for i, d in enumerate(dates):
+        if i == 0:
+            temp_streak = 1
+        else:
+            prev_day = (datetime.strptime(dates[i-1], "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+            if d == prev_day:
+                temp_streak += 1
+            else:
+                temp_streak = 1
+        longest_streak = max(longest_streak, temp_streak)
+
+    db.users.update_one({"_id": ObjectId(uid)}, {"$set": {
+        "streak": current_streak,
+        "longest_streak": longest_streak,
+        "last_log_date": last_log
+    }})
+    return current_streak
 
 @app.post("/logs")
 def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
@@ -850,20 +913,9 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
         "highlight": data.highlight, "overall_rating": data.overall_rating,
         "created_at": utcnow(),
     })
-    # Note: Streak logic only runs on new log creation.
-    # Updates to existing logs (handled in 'if existing' above) do not modify streak.
-    user = db.users.find_one({"_id": ObjectId(uid)})
-
-    last = user.get("last_log_date")
-    yesterday = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-    streak = user.get("streak", 0)
-    if last == yesterday:
-        streak += 1
-    elif last != today:
-        streak = 1
-    longest = max(streak, user.get("longest_streak", 0))
-    db.users.update_one({"_id": ObjectId(uid)},
-                        {"$set": {"streak": streak, "longest_streak": longest, "last_log_date": today}})
+    
+    # Recalculate streak robustly
+    streak = recalculate_user_streak(uid)
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True, "streak": streak}
@@ -875,6 +927,8 @@ def delete_log(date: str, current_user=Depends(get_current_user)):
     result = db.daily_logs.delete_one({"user_id": uid, "date": date})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
+    # Robust streak recalculation after deletion
+    recalculate_user_streak(uid)
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True}
@@ -973,16 +1027,18 @@ def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, curr
 def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationProgressUpdateModel,
                                    current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    item = db.manifestations.find_one({"_id": ObjectId(m_id), "user_id": uid})
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    entries = item.get("progress_entries", [])
-    for e in entries:
-        if e.get("id") == entry_id:
-            if data.text is not None: e["text"] = data.text
-            if data.type is not None: e["type"] = data.type
-            break
-    db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    fields = clean_update(data.dict())
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    update_data = {f"progress_entries.$.{k}": v for k, v in fields.items()}
+    result = db.manifestations.update_one(
+        {"_id": ObjectId(m_id), "user_id": uid, "progress_entries.id": entry_id},
+        {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manifestation or progress entry not found")
+        
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -990,11 +1046,12 @@ def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationP
 @app.delete("/manifestations/{m_id}/progress/{entry_id}")
 def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    item = db.manifestations.find_one({"_id": ObjectId(m_id), "user_id": uid})
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    entries = [e for e in item.get("progress_entries", []) if e.get("id") != entry_id]
-    db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    result = db.manifestations.update_one(
+        {"_id": ObjectId(m_id), "user_id": uid},
+        {"$pull": {"progress_entries": {"id": entry_id}}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manifestation not found")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -1086,6 +1143,8 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
 
 @app.get("/dashboard")
 def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
+    # Cap historical queries at 365 days for performance
+    days = min(max(days, 1), 365)
     uid = str(current_user["_id"])
     cache_key = f"dashboard:{uid}:{days}"
     cached = cache_get(cache_key)
