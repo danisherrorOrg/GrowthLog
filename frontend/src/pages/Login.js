@@ -3,27 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const FEATURES = [
-  {
-    icon: '✦',
-    title: 'Daily Log — 2 minutes a day',
-    desc: 'Rate your mood, energy, and write what happened across each life category. Simple. Consistent. Powerful over time.',
-  },
-  {
-    icon: '◇',
-    title: 'Goals with real reflection',
-    desc: 'Set goals with deadlines, break them into micro-steps, and reflect honestly when the time comes. Not just a list.',
-  },
-  {
-    icon: '✧',
-    title: 'Manifestations — become the vision',
-    desc: 'Write your future self in vivid detail. Track every win and challenge as you close the gap between now and then.',
-  },
-  {
-    icon: '○',
-    title: 'Snapshots — see how far you\'ve come',
-    desc: 'Capture who you are today. In 30 or 90 days, compare the two entries side by side and see tangible growth.',
-  },
+const DIMENSIONS = [
+  { icon: '🧠', title: 'Mind', desc: 'Intellectual growth, learning, and mental clarity.', color: 'var(--sage)' },
+  { icon: '💪', title: 'Body', desc: 'Physical health, energy levels, and vital habits.', color: 'var(--rust)' },
+  { icon: '💼', title: 'Career', desc: 'Professional wins, productivity, and financial health.', color: '#8b6bc4' },
+  { icon: '🤝', title: 'Social', desc: 'Deepening connections and finding community.', color: 'var(--gold)' },
+  { icon: '✨', title: 'Soul', desc: 'Spirituality, peace, and internal alignment.', color: '#c4623a' },
 ];
 
 const STATS = [
@@ -72,18 +57,24 @@ export default function Login() {
             ))}
           </div>
 
-          {/* Feature list */}
+          {/* Dimensions list */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.35)', marginBottom: 18 }}>
-              Everything you get
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.3)', marginBottom: 20 }}>
+              The 5 Dimensions of Growth
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {FEATURES.map(({ icon, title, desc }) => (
-                <div key={title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 20, color: 'var(--gold)', flexShrink: 0, marginTop: 1 }}>{icon}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {DIMENSIONS.map(({ icon, title, desc, color }) => (
+                <div key={title} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                  <div style={{ 
+                    width: 44, height: 44, borderRadius: 12, background: 'rgba(245,240,232,0.05)', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                    border: `1px solid ${color + '33'}` 
+                  }}>
+                    {icon}
+                  </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(245,240,232,0.9)', marginBottom: 3 }}>{title}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.45)', lineHeight: 1.6 }}>{desc}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(245,240,232,0.9)', marginBottom: 2 }}>{title}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(245,240,232,0.4)', lineHeight: 1.4 }}>{desc}</div>
                   </div>
                 </div>
               ))}

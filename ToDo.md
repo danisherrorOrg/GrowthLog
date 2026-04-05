@@ -9,14 +9,14 @@
 *   **Public Profiles**: Implemented public, shareable profile URLs (`/u/:userId`) to showcase streaks and earned badges.
 *   **Email Verification Flow**: Built the `VerifyEmail.js` frontend and backend token verification logic.
 *   **Compare Snapshots**: Fully functional side-by-side comparison of any two historical snapshots to visualize character growth.
+*   **Advanced Data Visualization (Recharts)**: Integrated dynamic LineCharts (Mood/Energy trends) and PieCharts (Life Balance/Time allocation) into the Dashboard.
+*   **Methodology Branding**: Revamped Login/Register with a "5 Dimensions of Growth" infographic (Mind, Body, Career, Social, Soul).
+*   **Onboarding Nudge**: Added a "Journey Starter" welcome card to the Dashboard for new users with 0 logs.
 
 ### 🟡 Partially Done (Needs more focus)
 *   **I want to remove hardcoding as much we can**: Ongoing. We've dynamicized prompts and badge loops, but color palettes and icons are still mostly hardcoded lists.
-*   **Time Tracking System**: Initial 24-hour validation added to Daily Logs, but full time-spent visualization (Recharts) across the dashboard is still pending.
 
 ### 🔴 Not Started / Still Left to Do
-*   **In the login/signup page need to add sections that will tell user what is the page**: The auth pages remain simple forms. No graphics or instructional benefits copy has been added yet. 
-*   **Create more complex graphs**: Integrate robust line-graph/pie-chart charting elements using `Recharts` to show rating trends over months.
 *   **Real SMTP Integration**: Connect a genuine mailing service (like SendGrid or Mailgun) to handle actual verification emails.
 *   **Bring Your Own Database (BYOD)**: Engineer a mode where users can provide their own MongoDB Connection URI for private storage.
 
@@ -24,10 +24,7 @@
 
 ## 🎯 Proposed Roadmap (Next Steps)
 
-### Sprint 1: Data Visualization (The "Wow" Factor)
-- [ ] Integrate **Recharts** on the Dashboard for mood and energy trends.
-- [ ] Add a **Time Spent Pie Chart** on the stats page to visualize life-balance.
-
-### Sprint 2: Brand & Onboarding
-- [ ] Revamp **Login/Register** pages with illustrative "Benefits" sections to explain the GrowthLog methodology (Mind, Body, Career, etc.).
-- [ ] Add a "First Log" onboarding walkthrough for new users.
+### Sprint 3: Architectural Refinement
+- [ ] Implement **Smarter Caching**: Use Redis (optional) or persistent local caching for faster dashboard loads.
+- [ ] Build a **Headless "Bring Your Own Database" mode** for privacy-conscious users.
+- [ ] Connect a real **SMTP Service** for genuine profile verification.

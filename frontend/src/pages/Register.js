@@ -10,15 +10,12 @@ const STEPS = [
   { num: '04', title: 'Watch patterns emerge', desc: 'After 7+ days, your Growth page shows charts of your mood, energy, and habits over time.' },
 ];
 
-const BENEFITS = [
-  { icon: '🌱', label: 'Daily journaling across all life areas' },
-  { icon: '◎', label: 'Mood & energy trend charts (Recharts)' },
-  { icon: '✧', label: 'Vision boards & manifestation tracking' },
-  { icon: '◇', label: 'Goals with built-in reflection prompts' },
-  { icon: '○', label: 'Before & after snapshots of yourself' },
-  { icon: '▦', label: 'Fully custom category system' },
-  { icon: '📅', label: 'Full log history — edit any past day' },
-  { icon: '🔒', label: 'Completely private — only you see it' },
+const DIMENSIONS = [
+  { icon: '🧠', title: 'Mind', desc: 'Intellectual growth and mental clarity.', color: 'var(--sage)' },
+  { icon: '💪', title: 'Body', desc: 'Physical health and vital energy.', color: 'var(--rust)' },
+  { icon: '💼', title: 'Career', desc: 'Productivity and financial health.', color: '#8b6bc4' },
+  { icon: '🤝', title: 'Social', desc: 'Deepening human connections.', color: 'var(--gold)' },
+  { icon: '✨', title: 'Soul', desc: 'Spirituality and internal alignment.', color: '#c4623a' },
 ];
 
 export default function Register() {
@@ -72,16 +69,25 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Benefits grid */}
+          {/* Dimensions grid */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.35)', marginBottom: 14 }}>
-              What you get
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.3)', marginBottom: 18 }}>
+              The 5 Dimensions of Growth
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
-              {BENEFITS.map(({ icon, label }) => (
-                <div key={label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
-                  <span style={{ fontSize: 12, color: 'rgba(245,240,232,0.5)', lineHeight: 1.4 }}>{label}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
+              {DIMENSIONS.map(({ icon, title, desc, color }) => (
+                <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ 
+                    width: 32, height: 32, borderRadius: 8, background: 'rgba(245,240,232,0.05)', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+                    border: `1px solid ${color + '33'}`, flexShrink: 0 
+                  }}>
+                    {icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(245,240,232,0.9)', marginBottom: 2 }}>{title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(245,240,232,0.4)', lineHeight: 1.4 }}>{desc}</div>
+                  </div>
                 </div>
               ))}
             </div>

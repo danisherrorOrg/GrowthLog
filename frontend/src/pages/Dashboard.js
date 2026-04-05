@@ -5,6 +5,10 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
+  ResponsiveContainer, PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -101,6 +105,28 @@ export default function Dashboard() {
       </div>
 
       <div className="page-body">
+        {/* Onboarding Nudge for New Users */}
+        {user?.total_logs === 0 && (
+          <div className="card" style={{ 
+            marginBottom: 28, 
+            background: 'var(--mist)', 
+            border: '2px dashed var(--sage)', 
+            padding: '32px 40px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🌱</div>
+            <h3 style={{ fontFamily: 'Fraunces', fontSize: 24, marginBottom: 12 }}>Welcome to your growth story</h3>
+            <p style={{ maxWidth: 500, margin: '0 auto 24px', color: 'rgba(13,13,13,0.6)', lineHeight: 1.6 }}>
+              GrowthLog is built on the compound effect of small, daily reflections. 
+              The best way to start is by capturing who you are today.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={() => navigate('/snapshots')}>Take a Snapshot ○</button>
+              <button className="btn btn-outline" onClick={() => navigate('/log')}>Log your first day ✦</button>
+            </div>
+          </div>
+        )}
+
         {/* Time filter */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[7, 30, 60, 90].map(d => (
@@ -235,6 +261,75 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Growth Trends & Life Balance */}
+        <div className="grid-2" style={{ marginBottom: 28 }}>
+          <div className="card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
+            <div className="section-title" style={{ marginBottom: 20 }}>
+              <span>Growth Trends</span>
+              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Mood vs Energy</span>
+            </div>
+            <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data?.mood_trend?.map((m, i) => ({ ...m, energy: data?.energy_trend?.[i]?.energy || 5 }))}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(13,13,13,0.05)" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.4)' }}
+                    minTickGap={30}
+                    tickFormatter={(str) => {
+                      try { return format(parseISO(str), 'MMM d'); } catch(e) { return str; }
+                    }}
+                  />
+                  <YAxis domain={[0, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.4)' }} />
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontFamily: 'DM Sans', fontSize: 12 }}
+                    labelFormatter={(label) => {
+                      try { return format(parseISO(label), 'EEEE, MMMM do'); } catch(e) { return label; }
+                    }}
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Line type="monotone" dataKey="mood" stroke="var(--sage)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Mood" />
+                  <Line type="monotone" dataKey="energy" stroke="var(--gold)" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="Energy" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
+            <div className="section-title" style={{ marginBottom: 20 }}>
+              <span>Life Balance</span>
+              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Time Allocation (min)</span>
+            </div>
+            <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data?.category_consistency?.filter(c => c.time_spent > 0) || []}
+                    dataKey="time_spent"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                  >
+                    {data?.category_consistency?.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontFamily: 'DM Sans', fontSize: 12 }}
+                    formatter={(value) => [`${value} min`, 'Time Spent']}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
