@@ -160,6 +160,12 @@ class CategoryModel(BaseModel):
     color: str
     description: Optional[str] = ""
 
+class CategoryTemplateModel(BaseModel):
+    name: str
+    icon: str
+    color: str
+    description: Optional[str] = ""
+
 class CategoryUpdateModel(BaseModel):
     name: Optional[str] = None
     icon: Optional[str] = None
@@ -185,6 +191,7 @@ class GoalReflectModel(BaseModel):
 
 class MicroGoalModel(BaseModel):
     text: str
+    time_spent: Optional[int] = 0
 
 class GoalReflectionAddModel(BaseModel):
     text: str
@@ -199,6 +206,7 @@ class DailyLogEntryModel(BaseModel):
     mood: int
     energy: int
     emotions: Optional[List[str]] = []
+    time_spent: Optional[int] = 0
 
     @field_validator("mood", "energy")
     @classmethod
@@ -429,6 +437,31 @@ def create_category(data: CategoryModel, current_user=Depends(get_current_user))
     cache_invalidate(f"categories:{uid}")
     return cat
 
+@app.get("/categories/templates")
+def get_category_templates(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    return serialize_list(db.category_templates.find({"user_id": uid}))
+
+@app.post("/categories/templates")
+def create_category_template(data: CategoryTemplateModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    template = {
+        "user_id": uid, "name": data.name, "icon": data.icon,
+        "color": data.color, "description": data.description,
+        "created_at": utcnow(),
+    }
+    result = db.category_templates.insert_one(template)
+    template["id"] = str(result.inserted_id)
+    del template["_id"]
+    return template
+
+@app.delete("/categories/templates/{template_id}")
+def delete_category_template(template_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    db.category_templates.delete_one({"_id": ObjectId(template_id), "user_id": uid})
+    return {"success": True}
+
+
 @app.put("/categories/{category_id}")
 def update_category(category_id: str, data: CategoryUpdateModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
@@ -587,12 +620,30 @@ def delete_goal_note(goal_id: str, note_id: str, current_user=Depends(get_curren
 @app.post("/goals/{goal_id}/micro-goals")
 def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
     mg_id = str(ObjectId())
-    mg = {"id": mg_id, "text": data.text, "completed": False}
+    mg = {"id": mg_id, "text": data.text, "completed": False, "time_spent": data.time_spent or 0}
     db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
         {"$push": {"micro_goals": mg}}
     )
     return {"success": True, "id": mg_id}
+
+@app.put("/goals/{goal_id}/micro-goals/{mg_id}")
+def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    mgs = goal.get("micro_goals", [])
+    for mg in mgs:
+        if mg.get("id") == mg_id:
+            mg["text"] = data.text
+            mg["time_spent"] = data.time_spent
+            break
+            
+    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    return {"success": True}
+
 
 @app.put("/goals/{goal_id}/micro-goals/{mg_id}/toggle")
 def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
@@ -867,29 +918,40 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     heatmap = {l["date"]: l.get("overall_rating", 5) for l in logs}
     mood_trend = []
     energy_trend = []
+    time_spent_trend = []
+    total_time_spent = 0
+    cat_time = defaultdict(int)
+    cat_mood = defaultdict(list)
+    cat_counts = defaultdict(int)
+
     for log in sorted(logs, key=lambda x: x["date"]):
         entries = log.get("entries", [])
         moods = [e.get("mood", 5) for e in entries]
         energies = [e.get("energy", 5) for e in entries]
+        day_time = sum(e.get("time_spent", 0) for e in entries)
+        total_time_spent += day_time
+        
         mood_trend.append({"date": log["date"], "mood": round(sum(moods)/len(moods), 1) if moods else 5})
         energy_trend.append({"date": log["date"], "energy": round(sum(energies)/len(energies), 1) if energies else 5})
+        time_spent_trend.append({"date": log["date"], "time_spent": day_time})
 
-    cat_counts = defaultdict(int)
-    cat_mood = defaultdict(list)
-    for log in logs:
-        for e in log.get("entries", []):
-            cat_counts[e["category_id"]] += 1
-            cat_mood[e["category_id"]].append(e.get("mood", 5))
+        for e in entries:
+            cid = str(e["category_id"])
+            cat_counts[cid] += 1
+            cat_mood[cid].append(e.get("mood", 5))
+            cat_time[cid] += e.get("time_spent", 0)
 
     cat_consistency = [
         {
-            "name": c["name"], "icon": c["icon"], "color": c["color"],
+            "name": c["name"], "icon": c["icon"], "color": c["color"], "id": str(c["_id"]),
             "count": cat_counts.get(str(c["_id"]), 0),
             "percentage": round((cat_counts.get(str(c["_id"]), 0) / max(len(logs), 1)) * 100),
             "avg_mood": round(sum(cat_mood.get(str(c["_id"]), [5])) / max(len(cat_mood.get(str(c["_id"]), [5])), 1), 1),
+            "time_spent": cat_time.get(str(c["_id"]), 0)
         }
         for c in categories
     ]
+
 
     weekly_data = defaultdict(lambda: {"logs": 0, "mood_sum": 0, "energy_sum": 0})
     for log in logs:
@@ -916,9 +978,11 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         "streak": user.get("streak", 0),
         "longest_streak": user.get("longest_streak", 0),
         "total_logs": len(logs),
+        "total_time_spent": total_time_spent,
         "heatmap": heatmap,
         "mood_trend": mood_trend,
         "energy_trend": energy_trend,
+        "time_spent_trend": time_spent_trend,
         "weekly_summary": weekly_summary,
         "category_consistency": cat_consistency,
         "goals": {
@@ -928,6 +992,7 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         },
         "active_manifestations": len(manifestations),
     }
+
     cache_set(cache_key, result, ttl=120)
     return result
 

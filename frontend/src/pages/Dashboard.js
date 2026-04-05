@@ -93,10 +93,11 @@ export default function Dashboard() {
             <div className="stat-label">◇ Goal Completion</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{data?.longest_streak || 0}</div>
-            <div className="stat-label">◎ Best Streak</div>
+            <div className="stat-value">{data?.total_time_spent || 0}</div>
+            <div className="stat-label">⏱ Total Min Spent</div>
           </div>
         </div>
+
 
         <div className="grid-2" style={{ marginBottom: 28 }}>
           {/* Heatmap */}

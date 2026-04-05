@@ -22,16 +22,19 @@ export default function Categories() {
   const [editCat, setEditCat] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
 
   const load = async () => {
-    const [active, arch] = await Promise.all([
+    const [active, arch, temps] = await Promise.all([
       API.get('/categories'),
       API.get('/categories?include_archived=true'),
+      API.get('/categories/templates'),
     ]);
     setCategories(active.data);
     setArchived(arch.data.filter(c => c.archived));
+    setTemplates(temps.data);
   };
 
   useEffect(() => { load(); }, []);
@@ -104,6 +107,24 @@ export default function Categories() {
     } catch { toast.error('Already exists or failed'); }
   };
 
+  const handleSaveAsTemplate = async (cat) => {
+    try {
+      await API.post('/categories/templates', { name: cat.name, icon: cat.icon, color: cat.color, description: cat.description || '' });
+      toast.success('Saved to your templates!');
+      load();
+    } catch { toast.error('Failed to save template'); }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!window.confirm('Delete this template?')) return;
+    try {
+      await API.delete(`/categories/templates/${id}`);
+      toast.success('Template deleted');
+      load();
+    } catch { toast.error('Failed to delete template'); }
+  };
+
+
   return (
     <div>
       <div className="page-header">
@@ -154,6 +175,7 @@ export default function Categories() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <span style={{ fontSize: 32 }}>{cat.icon}</span>
                   <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleSaveAsTemplate(cat)} title="Save as Template" style={{ color: 'var(--sage)' }}>⭐</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)} title="Edit" style={{ color: 'rgba(13,13,13,0.4)' }}>✎</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleArchive(cat.id, cat.name)} title="Archive" style={{ color: 'rgba(13,13,13,0.3)' }}>📦</button>
                   </div>
@@ -214,17 +236,34 @@ export default function Categories() {
             
             {!editCat && (
               <div style={{ marginBottom: 20 }}>
-                <label className="form-label" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Or choose a template</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <label className="form-label" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.4)' }}>Quick Templates</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, width: '100%', color: 'rgba(13,13,13,0.3)', marginBottom: 2 }}>DEFAULTS:</span>
                   {DEFAULTS.map((d) => (
                     <button key={d.name} type="button" onClick={() => setForm({ ...d })}
-                      style={{ padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(13,13,13,0.1)', background: 'var(--mist)', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      className="template-chip">
                       <span>{d.icon}</span> {d.name}
                     </button>
                   ))}
                 </div>
+                {templates.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <span style={{ fontSize: 10, width: '100%', color: 'var(--sage)', marginBottom: 2 }}>MY TEMPLATES:</span>
+                    {templates.map((t) => (
+                      <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <button type="button" onClick={() => setForm({ name: t.name, icon: t.icon, color: t.color, description: t.description })}
+                          className="template-chip" style={{ border: '1px solid var(--sage)' }}>
+                          <span>{t.icon}</span> {t.name}
+                        </button>
+                        <button onClick={() => handleDeleteTemplate(t.id)} 
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.2)', fontSize: 10 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+
             
             <div className="form-group">
               <label className="form-label">Name</label>

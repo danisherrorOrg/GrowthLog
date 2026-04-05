@@ -49,12 +49,12 @@ export default function DailyLog() {
           setOverallRating(existing.overall_rating || 5);
           const map = {};
           existing.entries.forEach((e) => {
-            map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [] };
+            map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [], time_spent: e.time_spent || 0 };
           });
           setEntries(map);
         } else {
           const map = {};
-          cats.forEach((c) => { map[c.id] = { text: '', mood: 5, energy: 5, emotions: [] }; });
+          cats.forEach((c) => { map[c.id] = { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 }; });
           setEntries(map);
         }
       })
@@ -85,6 +85,7 @@ export default function DailyLog() {
       mood: e.mood,
       energy: e.energy,
       emotions: e.emotions,
+      time_spent: parseInt(e.time_spent) || 0,
     }));
 
     setSaving(true);
@@ -142,7 +143,8 @@ export default function DailyLog() {
       <div className="page-body">
         {/* Category entries */}
         {categories.map((cat) => {
-          const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [] };
+          const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 };
+
           return (
             <div key={cat.id} className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${cat.color}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -183,6 +185,12 @@ export default function DailyLog() {
                       style={{ '--val': `${(entry.energy - 1) / 9 * 100}%`, '--color': 'var(--gold)' }} />
                     <span style={{ fontSize: 16 }}>⚡</span>
                   </div>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Time Invested (min)</label>
+                  <input type="number" className="form-input" value={entry.time_spent}
+                    onChange={(e) => updateEntry(cat.id, 'time_spent', e.target.value)}
+                    placeholder="0" min="0" />
                 </div>
               </div>
 

@@ -21,7 +21,12 @@ export default function GoalDetail() {
 
   // Micro-goals
   const [mgText, setMgText] = useState('');
+  const [mgTime, setMgTime] = useState(0);
   const [showMgInput, setShowMgInput] = useState(false);
+  const [editMg, setEditMg] = useState(null); // id
+  const [editMgText, setEditMgText] = useState('');
+  const [editMgTime, setEditMgTime] = useState(0);
+
 
   // Note input
   const [noteText, setNoteText] = useState('');
@@ -72,14 +77,28 @@ export default function GoalDetail() {
     if (!mgText.trim()) return toast.error('Enter micro-goal');
     setSaving(true);
     try {
-      await API.post(`/goals/${goalId}/micro-goals`, { text: mgText });
+      await API.post(`/goals/${goalId}/micro-goals`, { text: mgText, time_spent: parseInt(mgTime) || 0 });
       toast.success('Added!');
       setMgText('');
+      setMgTime(0);
       setShowMgInput(false);
       load();
     } catch { toast.error('Failed to add'); }
     finally { setSaving(false); }
   };
+
+  const handleUpdateMg = async (mgId) => {
+    if (!editMgText.trim()) return toast.error('Enter micro-goal text');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/micro-goals/${mgId}`, { text: editMgText, time_spent: parseInt(editMgTime) || 0 });
+      toast.success('Updated!');
+      setEditMg(null);
+      load();
+    } catch { toast.error('Failed to update'); }
+    finally { setSaving(false); }
+  };
+
 
   const handleToggleMg = async (mgId) => {
     try {
@@ -204,27 +223,58 @@ export default function GoalDetail() {
               <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
                 <input className="form-input" value={mgText} onChange={e => setMgText(e.target.value)}
                   placeholder="Small, actionable step..." style={{ marginBottom: 8 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
+                  <input type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
+                    style={{ width: 80, padding: '4px 8px' }} min="0" />
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); }}>Cancel</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); setMgTime(0); }}>Cancel</button>
                   <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving}>Add Step</button>
                 </div>
               </div>
             )}
+
 
             {(goal.micro_goals || []).length === 0 && !showMgInput ? (
               <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>Break this goal down into smaller steps.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(goal.micro_goals || []).map(mg => (
-                  <div key={mg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, position: 'relative', border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : 'none' }}>
-                    <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
-                    <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, flex: 1, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
-                    <button onClick={() => handleDeleteMg(mg.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)' }}>✕</button>
+                  <div key={mg.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : '1px solid transparent' }}>
+                    {editMg === mg.id ? (
+                      <div>
+                        <input className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <label style={{ fontSize: 11, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
+                          <input type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)}
+                            style={{ width: 70, padding: '2px 6px', fontSize: 12 }} min="0" />
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-outline btn-sm" onClick={() => setEditMg(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => handleUpdateMg(mg.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
+                          {mg.time_spent > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 2, display: 'block' }}>⏱ {mg.time_spent} min spent</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => { setEditMg(mg.id); setEditMgText(mg.text); setEditMgTime(mg.time_spent || 0); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                          <button onClick={() => handleDeleteMg(mg.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+
           </div>
 
           {/* Notes Section */}
