@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const PROGRESS_TYPES = [
   { value: 'improvement', label: '📈 Improvement', color: 'var(--sage)' },
@@ -44,7 +46,8 @@ export default function Manifestations() {
       setShowModal(false);
       setForm({ vision: '', target_days: 30, target_date: '', use_custom_date: false, notes: '' });
       load();
-    } catch (e) { toast.error(e.response?.data?.detail || 'Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
+
     finally { setLoading(false); }
   };
 
@@ -56,8 +59,10 @@ export default function Manifestations() {
       toast.success('Vision updated!');
       setEditItem(null);
       load();
-    } catch { toast.error('Failed to update'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update')); }
+
     finally { setLoading(false); }
+
   };
 
   const handleDelete = async (item) => {
@@ -83,8 +88,10 @@ export default function Manifestations() {
       setCompleteItem(null);
       setReflection('');
       load();
-    } catch { toast.error('Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
+
     finally { setLoading(false); }
+
   };
 
   const resolveType = (f) => f.type === 'custom' ? (f.customType.trim() || 'custom') : f.type;
@@ -98,8 +105,10 @@ export default function Manifestations() {
       setProgressItem(null);
       setProgressForm({ text: '', type: 'improvement', customType: '' });
       load();
-    } catch { toast.error('Failed to add progress'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add progress')); }
+
     finally { setLoading(false); }
+
   };
 
   const openEdit = (item) => {
@@ -225,7 +234,7 @@ export default function Manifestations() {
                     <div style={{ marginBottom: 12 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => setExpandedProgress(p => ({ ...p, [item.id]: !p[item.id] }))}
                         style={{ color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', fontSize: 12 }}>
-                        {showProg ? '▼' : '▶'} {progressEntries.length} progress note{progressEntries.length > 1 ? 's' : ''}
+                        {showProg ? '▼' : '▶'} {progressEntries.length} progress entr{progressEntries.length > 1 ? 'ies' : 'y'}
                       </button>
                       {showProg && (
                         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>

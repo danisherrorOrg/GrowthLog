@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const SORT_OPTIONS = [
   { value: 'created_at', label: 'Date Created' },
@@ -21,7 +23,16 @@ export default function GoalDetail() {
 
   // Micro-goals
   const [mgText, setMgText] = useState('');
+  const [mgTime, setMgTime] = useState(0);
   const [showMgInput, setShowMgInput] = useState(false);
+  const [editMg, setEditMg] = useState(null); // id
+  const [editMgText, setEditMgText] = useState('');
+  const [editMgTime, setEditMgTime] = useState(0);
+  const [editNoteId, setEditNoteId] = useState(null);
+  const [editNoteText, setEditNoteText] = useState('');
+  const [editReflectionId, setEditReflectionId] = useState(null);
+  const [editReflectionText, setEditReflectionText] = useState('');
+
 
   // Note input
   const [noteText, setNoteText] = useState('');
@@ -40,8 +51,10 @@ export default function GoalDetail() {
       const [g, c] = await Promise.all([API.get(`/goals/${goalId}`), API.get('/categories')]);
       setGoal(g.data);
       setCategories(c.data);
-    } catch { toast.error('Failed to load goal'); navigate('/goals'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to load goal')); navigate('/goals'); }
+
     finally { setLoading(false); }
+
   };
 
   useEffect(() => { load(); }, [goalId]);
@@ -57,8 +70,10 @@ export default function GoalDetail() {
       setNoteText('');
       setShowNoteInput(false);
       load();
-    } catch { toast.error('Failed to add note'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add note')); }
+
     finally { setSaving(false); }
+
   };
 
   const handleDeleteNote = async (noteId) => {
@@ -68,24 +83,55 @@ export default function GoalDetail() {
     load();
   };
 
+  const handleUpdateNote = async (noteId) => {
+    if (!editNoteText.trim()) return toast.error('Note cannot be empty');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/notes/${noteId}`, { text: editNoteText });
+      toast.success('Note updated!');
+      setEditNoteId(null);
+      load();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update note')); }
+    finally { setSaving(false); }
+  };
+
   const handleAddMg = async () => {
     if (!mgText.trim()) return toast.error('Enter micro-goal');
     setSaving(true);
     try {
-      await API.post(`/goals/${goalId}/micro-goals`, { text: mgText });
+      await API.post(`/goals/${goalId}/micro-goals`, { text: mgText, time_spent: parseInt(mgTime) || 0 });
       toast.success('Added!');
       setMgText('');
+      setMgTime(0);
       setShowMgInput(false);
       load();
-    } catch { toast.error('Failed to add'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add micro-goal')); }
+
     finally { setSaving(false); }
+
   };
+
+  const handleUpdateMg = async (mgId) => {
+    if (!editMgText.trim()) return toast.error('Enter micro-goal text');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/micro-goals/${mgId}`, { text: editMgText, time_spent: parseInt(editMgTime) || 0 });
+      toast.success('Updated!');
+      setEditMg(null);
+      load();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update micro-goal')); }
+
+    finally { setSaving(false); }
+
+  };
+
 
   const handleToggleMg = async (mgId) => {
     try {
       await API.put(`/goals/${goalId}/micro-goals/${mgId}/toggle`);
       load();
-    } catch { toast.error('Failed to update'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update')); }
+
   };
 
   const handleDeleteMg = async (mgId) => {
@@ -103,7 +149,8 @@ export default function GoalDetail() {
       setReflectionText('');
       setShowReflectionInput(false);
       load();
-    } catch { toast.error('Failed to add reflection'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to add reflection')); }
+
     finally { setSaving(false); }
   };
 
@@ -112,6 +159,18 @@ export default function GoalDetail() {
     await API.delete(`/goals/${goalId}/reflections/${reflectionId}`);
     toast.success('Reflection deleted');
     load();
+  };
+
+  const handleUpdateReflection = async (reflectionId) => {
+    if (!editReflectionText.trim()) return toast.error('Reflection cannot be empty');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}/reflections/${reflectionId}`, { text: editReflectionText });
+      toast.success('Reflection updated!');
+      setEditReflectionId(null);
+      load();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update reflection')); }
+    finally { setSaving(false); }
   };
 
   const handleReflect = async () => {
@@ -123,7 +182,8 @@ export default function GoalDetail() {
       toast.success(reflectForm.status === 'completed' ? '✅ Goal completed!' : reflectForm.status === 'extended' ? '🔄 Deadline extended' : '📝 Reflection saved');
       setShowReflectModal(false);
       load();
-    } catch { toast.error('Failed to save reflection'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save reflection')); }
+
     finally { setSaving(false); }
   };
 
@@ -204,27 +264,58 @@ export default function GoalDetail() {
               <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
                 <input className="form-input" value={mgText} onChange={e => setMgText(e.target.value)}
                   placeholder="Small, actionable step..." style={{ marginBottom: 8 }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <label style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
+                  <input type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
+                    style={{ width: 80, padding: '4px 8px' }} min="0" />
+                </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); }}>Cancel</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); setMgTime(0); }}>Cancel</button>
                   <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving}>Add Step</button>
                 </div>
               </div>
             )}
+
 
             {(goal.micro_goals || []).length === 0 && !showMgInput ? (
               <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>Break this goal down into smaller steps.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(goal.micro_goals || []).map(mg => (
-                  <div key={mg.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, position: 'relative', border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : 'none' }}>
-                    <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
-                    <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, flex: 1, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
-                    <button onClick={() => handleDeleteMg(mg.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)' }}>✕</button>
+                  <div key={mg.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : '1px solid transparent' }}>
+                    {editMg === mg.id ? (
+                      <div>
+                        <input className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <label style={{ fontSize: 11, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
+                          <input type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)}
+                            style={{ width: 70, padding: '2px 6px', fontSize: 12 }} min="0" />
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-outline btn-sm" onClick={() => setEditMg(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => handleUpdateMg(mg.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
+                          {mg.time_spent > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 2, display: 'block' }}>⏱ {mg.time_spent} min spent</span>}
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => { setEditMg(mg.id); setEditMgText(mg.text); setEditMgTime(mg.time_spent || 0); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                          <button onClick={() => handleDeleteMg(mg.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+
           </div>
 
           {/* Notes Section */}
@@ -254,11 +345,25 @@ export default function GoalDetail() {
                     <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 4 }}>
                       {format(new Date(note.date), 'MMM d, yyyy')}
                     </div>
-                    <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
-                    <button onClick={() => handleDeleteNote(note.id)}
-                      style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>
-                      ✕
-                    </button>
+                    {editNoteId === note.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => setEditNoteId(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateNote(note.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
+                        <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                          <button onClick={() => { setEditNoteId(note.id); setEditNoteText(note.text); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                          <button onClick={() => handleDeleteNote(note.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -300,12 +405,26 @@ export default function GoalDetail() {
                       {format(new Date(r.date), 'MMM d, yyyy')}
                       {r.status_change && <span style={{ marginLeft: 6, color: 'var(--sage)' }}>· {r.status_change}</span>}
                     </div>
-                    <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
-                    {r.id && (
-                      <button onClick={() => handleDeleteReflection(r.id)}
-                        style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>
-                        ✕
-                      </button>
+                    {editReflectionId === (r.id || i) ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <textarea className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button className="btn btn-sm btn-outline" onClick={() => setEditReflectionId(null)} style={{ fontSize: 11 }}>Cancel</button>
+                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateReflection(r.id || i)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
+                        {r.id && (
+                          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                            <button onClick={() => { setEditReflectionId(r.id || i); setEditReflectionText(r.text); }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
+                            <button onClick={() => handleDeleteReflection(r.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}

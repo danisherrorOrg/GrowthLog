@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 export default function SnapshotDetail() {
   const { snapshotId } = useParams();
@@ -23,8 +25,10 @@ export default function SnapshotDetail() {
       setSnap(s.data);
       setSnapshots(all.data);
       setForm({ description: s.data.description, values: s.data.values?.join(', ') || '', mood: s.data.mood });
-    } catch { toast.error('Failed to load snapshot'); navigate('/snapshots'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to load snapshot')); navigate('/snapshots'); }
+
     finally { setLoading(false); }
+
   };
 
   useEffect(() => { load(); }, [snapshotId]);
@@ -35,8 +39,10 @@ export default function SnapshotDetail() {
     try {
       const r = await API.get(`/snapshots/compare?snap1_id=${snapshotId}&snap2_id=${compareId}`);
       setCompareSnap(r.data.snapshot2);
-    } catch { toast.error('Failed to compare'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to compare')); }
+
     finally { setComparing(false); }
+
   };
 
   const handleSave = async () => {
@@ -51,8 +57,10 @@ export default function SnapshotDetail() {
       toast.success('Snapshot updated!');
       setEditMode(false);
       load();
-    } catch { toast.error('Failed to save'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save')); }
+
     finally { setSaving(false); }
+
   };
 
   const handleDelete = async () => {

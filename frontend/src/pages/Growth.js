@@ -4,7 +4,8 @@ import toast from 'react-hot-toast';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, RadarChart, Radar, PolarGrid,
-  PolarAngleAxis, BarChart, Bar, AreaChart, Area, ComposedChart
+  PolarAngleAxis, BarChart, Bar, AreaChart, Area, ComposedChart,
+  PieChart, Pie, Cell
 } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
@@ -35,6 +36,20 @@ export default function Growth() {
     mood: d.mood,
     energy: data?.energy_trend?.[i]?.energy ?? null,
   }));
+
+  const timeTrend = (data?.time_spent_trend || []).map(d => ({
+    date: format(parseISO(d.date), 'MMM d'),
+    minutes: d.time_spent,
+  }));
+
+  const timeDistData = (data?.category_consistency || [])
+    .filter(cat => cat.time_spent > 0)
+    .map(cat => ({
+      name: cat.name,
+      value: cat.time_spent,
+      color: cat.color
+    }));
+
 
   const radarData = (data?.category_consistency || []).map(cat => ({
     category: cat.name,
@@ -155,6 +170,29 @@ export default function Growth() {
           )}
         </div>
 
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="section-title">
+            <span>Time Investment Trend (min)</span>
+            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Total focus time</span>
+          </div>
+          {timeTrend.length < 2 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(13,13,13,0.4)', fontSize: 14 }}>
+              Track time in your logs to see investment trends
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={timeTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(13,13,13,0.05)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'rgba(13,13,13,0.4)' }} />
+                <YAxis tick={{ fontSize: 11, fill: 'rgba(13,13,13,0.4)' }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Area type="monotone" dataKey="minutes" fill="rgba(201,168,76,0.1)" stroke="#c9a84c" strokeWidth={2} dot={{ fill: '#c9a84c', r: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+
         <div className="grid-2" style={{ marginBottom: 24 }}>
           <div className="card">
             <div className="section-title">Life Balance Radar</div>
@@ -233,7 +271,10 @@ export default function Growth() {
                         <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>avg mood {cat.avg_mood}/10</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>{cat.count} logs</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{cat.time_spent || 0} min</div>
+                          <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)' }}>invested</div>
+                        </div>
                         <span style={{
                           fontFamily: 'Fraunces', fontSize: 18,
                           color: cat.percentage >= 80 ? 'var(--sage)' : cat.percentage >= 50 ? 'var(--gold)' : 'var(--rust)'

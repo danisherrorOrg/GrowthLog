@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
-import { format, subDays, eachDayOfInterval } from 'date-fns';
+import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -14,19 +15,54 @@ export default function Dashboard() {
   const [days, setDays] = useState(30);
 
   useEffect(() => {
-    setLoading(true);
-    setError(false);
-    API.get(`/dashboard?days=${days}`)
-      .then((res) => setData(res.data))
-      .catch(() => {
+    const fetchDashboard = async () => {
+      setLoading(true);
+      setError(false);
+      try {
+        const res = await API.get(`/dashboard?days=${days}`);
+        setData(res.data);
+      } catch (err) {
         setError(true);
-        toast.error('Failed to load dashboard');
-      })
-      .finally(() => setLoading(false));
+        toast.error(getErrorMessage(err, 'Failed to load dashboard'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
   }, [days]);
 
+  const [hoveredData, setHoveredData] = useState(null);
+
+  // Group days into weeks for the heatmap
   const today = new Date();
-  const dateRange = eachDayOfInterval({ start: subDays(today, days - 1), end: today });
+  const startDate = subDays(today, days - 1);
+  const dateRange = eachDayOfInterval({ start: startDate, end: today });
+  
+  // Create a map of weeks for a vertical column layout
+  const weeks = [];
+  let currentWeek = [];
+  
+  // Fill initial week if it's partial
+  const firstDay = startOfWeek(startDate);
+  let d = firstDay;
+  while (d < startDate) {
+    currentWeek.push({ date: d, padding: true });
+    d = new Date(d.getTime() + 86400000);
+  }
+
+  dateRange.forEach((date) => {
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+    currentWeek.push({ date, padding: false });
+  });
+  
+  // Fill last week if partial
+  while (currentWeek.length < 7) {
+    currentWeek.push({ date: null, padding: true });
+  }
+  weeks.push(currentWeek);
 
   if (loading) return (
     <div>
@@ -93,38 +129,87 @@ export default function Dashboard() {
             <div className="stat-label">◇ Goal Completion</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{data?.longest_streak || 0}</div>
-            <div className="stat-label">◎ Best Streak</div>
+            <div className="stat-value">{data?.total_time_spent || 0}</div>
+            <div className="stat-label">⏱ Total Min Spent</div>
           </div>
         </div>
 
+
         <div className="grid-2" style={{ marginBottom: 28 }}>
           {/* Heatmap */}
-          <div className="card">
-            <div className="section-title">
+          <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="section-title" style={{ marginBottom: 20 }}>
               <span>Activity Heatmap</span>
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Last {days} days</span>
             </div>
-            <div className="heatmap">
-              {dateRange.map((d) => {
-                const key = format(d, 'yyyy-MM-dd');
-                const rating = data?.heatmap?.[key];
-                const level = rating ? Math.ceil(rating / 2) : 0;
-                return (
-                  <div
-                    key={key}
-                    className={`heatmap-cell ${rating ? `logged-${Math.min(level, 5)}` : ''}`}
-                    title={`${format(d, 'MMM d')}: ${rating ? `rated ${rating}/10` : 'no log'}`}
-                  />
-                );
-              })}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>
-              <span>Less</span>
-              {[0,1,2,3,4,5].map(l => (
-                <div key={l} style={{ width: 12, height: 12, borderRadius: 2, background: l === 0 ? 'var(--mist)' : `rgba(107,140,107,${l * 0.18})` }} />
+            
+            <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
+              {weeks.map((week, wi) => (
+                <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {week.map((day, di) => {
+                    if (day.padding || !day.date) return <div key={di} className="heatmap-cell" style={{ opacity: 0 }} />;
+                    
+                    const key = format(day.date, 'yyyy-MM-dd');
+                    const entry = data?.heatmap?.[key];
+                    const rating = entry?.rating || 0;
+                    const level = rating ? Math.ceil(rating / 2) : 0;
+                    
+                    return (
+                      <div
+                        key={key}
+                        onMouseEnter={() => setHoveredData({ date: day.date, ...entry })}
+                        onMouseLeave={() => setHoveredData(null)}
+                        className={`heatmap-cell ${rating ? `logged-${Math.min(level, 5)}` : ''}`}
+                        style={{ cursor: 'pointer', transition: 'all 0.2s ease', transform: hoveredData?.date === day.date ? 'scale(1.2)' : 'scale(1)' }}
+                      />
+                    );
+                  })}
+                </div>
               ))}
-              <span>More</span>
+            </div>
+
+            {/* Tooltip / Insight Area */}
+            <div style={{ 
+              marginTop: 'auto', 
+              padding: '12px 16px', 
+              background: 'var(--mist)', 
+              borderRadius: 12, 
+              minHeight: 80,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              border: '1.5px solid rgba(13,13,13,0.05)',
+              transition: 'all 0.3s ease'
+            }}>
+              {hoveredData ? (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>{format(hoveredData.date, 'EEEE, MMMM do')}</span>
+                    {hoveredData.rating ? (
+                      <span className="tag tag-green" style={{ fontSize: 10 }}>Rating: {hoveredData.rating}/10</span>
+                    ) : (
+                      <span className="tag tag-mist" style={{ fontSize: 10 }}>No entry</span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: hoveredData.highlight ? 'normal' : 'italic', margin: 0, lineHeight: 1.4 }}>
+                    {hoveredData.highlight || (hoveredData.rating ? "Detailed log captured for this day." : "Take a moment to reflect and log today's growth.")}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', opacity: 0.5 }}>
+                  <div style={{ fontSize: 12, color: 'var(--ink)' }}>Hover over a day for insights ✦</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              <span>Low</span>
+              <div style={{ display: 'flex', gap: 3 }}>
+                {[0,1,2,3,4,5].map(l => (
+                  <div key={l} style={{ width: 10, height: 10, borderRadius: 2, background: l === 0 ? 'var(--mist)' : `rgba(107,140,107,${0.2 + (l * 0.16)})` }} />
+                ))}
+              </div>
+              <span>High</span>
             </div>
           </div>
 
@@ -138,7 +223,7 @@ export default function Dashboard() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {(data?.category_consistency || []).map((cat) => (
-                  <div key={cat.name}>
+                  <div key={cat.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
                       <span>{cat.icon} {cat.name}</span>
                       <span style={{ color: 'rgba(13,13,13,0.45)' }}>{cat.count} / {data.total_logs} days</span>
@@ -166,7 +251,7 @@ export default function Dashboard() {
                 <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>Active</div>
               </div>
               <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontFamily: 'Fraunces', fontSize: 32, color: 'var(--gold)' }}>{data?.goals?.completed || 0}</div>
+                <div style={{ fontFamily: 'Fraunces', fontSize: 32, color: 'var(--rust)' }}>{data?.goals?.completed || 0}</div>
                 <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>Completed</div>
               </div>
               <div style={{ textAlign: 'center', flex: 1 }}>

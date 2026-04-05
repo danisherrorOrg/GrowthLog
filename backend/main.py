@@ -4,15 +4,19 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 from pymongo import MongoClient, ASCENDING, DESCENDING
-from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
+from bson import ObjectId, errors as bson_errors
 import bcrypt
 import jwt
-from dotenv import load_dotenv
 import os
+import secrets
+from dotenv import load_dotenv
+
 
 load_dotenv()
-from collections import defaultdict
+
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
 
@@ -43,7 +47,11 @@ security = HTTPBearer()
 # --- Ensure indexes on startup ---
 @app.on_event("startup")
 def create_indexes():
-    db.users.create_index([("email", ASCENDING)], unique=True)
+    # Category uniqueness: try to create, but don't crash the whole app if there's legacy duplicate data
+    try:
+        db.categories.create_index([("user_id", ASCENDING), ("name", ASCENDING)], unique=True)
+    except Exception as e:
+        print(f"WARNING: Could not create unique index on categories: {e}. Please deduplicate manually.")
     db.categories.create_index([("user_id", ASCENDING), ("archived", ASCENDING)])
     db.goals.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
     db.goals.create_index([("user_id", ASCENDING), ("category_id", ASCENDING)])
@@ -81,9 +89,9 @@ def hash_password(p: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
-def create_token(uid: str) -> str:
+def create_token(uid: str, version: int = 1) -> str:
     return jwt.encode(
-        {"user_id": uid, "exp": utcnow() + timedelta(days=30)},
+        {"user_id": uid, "v": version, "exp": utcnow() + timedelta(days=30)},
         JWT_SECRET, algorithm="HS256"
     )
 
@@ -93,6 +101,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+        
+        # Security: Invalidate tokens if the password was changed (version mismatch)
+        if payload.get("v") != user.get("token_version", 1):
+             raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
+             
         return user
     except HTTPException:
         raise
@@ -160,6 +173,12 @@ class CategoryModel(BaseModel):
     color: str
     description: Optional[str] = ""
 
+class CategoryTemplateModel(BaseModel):
+    name: str
+    icon: str
+    color: str
+    description: Optional[str] = ""
+
 class CategoryUpdateModel(BaseModel):
     name: Optional[str] = None
     icon: Optional[str] = None
@@ -185,6 +204,7 @@ class GoalReflectModel(BaseModel):
 
 class MicroGoalModel(BaseModel):
     text: str
+    time_spent: Optional[int] = 0
 
 class GoalReflectionAddModel(BaseModel):
     text: str
@@ -199,6 +219,7 @@ class DailyLogEntryModel(BaseModel):
     mood: int
     energy: int
     emotions: Optional[List[str]] = []
+    time_spent: Optional[int] = 0
 
     @field_validator("mood", "energy")
     @classmethod
@@ -241,6 +262,11 @@ class ManifestationProgressUpdateModel(BaseModel):
     text: Optional[str] = None
     type: Optional[str] = None
 
+class ManifestationCompleteModel(BaseModel):
+    text: str
+
+
+
 class SnapshotModel(BaseModel):
     description: str
     values: Optional[List[str]] = []
@@ -272,9 +298,14 @@ def register(data: RegisterModel):
         "created_at": utcnow(),
         "streak": 0, "longest_streak": 0, "last_log_date": None,
         "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
+        "is_verified": False, "verification_token": None,
     })
+
     
     uid_str = str(result.inserted_id)
+    # Default token version is 1
+    db.users.update_one({"_id": result.inserted_id}, {"$set": {"token_version": 1}})
+
     default_categories = [
         {"user_id": uid_str, "name": "Mind", "icon": "🧠", "color": "#c9a84c", "description": "Learning, intellect, and mental health", "archived": False, "created_at": utcnow()},
         {"user_id": uid_str, "name": "Body", "icon": "💪", "color": "#6b8c6b", "description": "Physical health, fitness, and nutrition", "archived": False, "created_at": utcnow()},
@@ -284,15 +315,64 @@ def register(data: RegisterModel):
     ]
     db.categories.insert_many(default_categories)
 
-    return {"token": create_token(uid_str),
-            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat()}}
+    return {"token": create_token(uid_str, 1),
+            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
+
+@app.post("/auth/verify/send")
+def send_verification(current_user=Depends(get_current_user)):
+    if current_user.get("is_verified", False):
+        raise HTTPException(status_code=400, detail="User is already verified")
+    
+    # Anti-spam: 60s cooldown
+    last_sent = current_user.get("verification_sent_at")
+    if last_sent:
+        # Pymongo might return it as aware or naive depending on how it was stored
+        if last_sent.tzinfo is None: last_sent = last_sent.replace(tzinfo=timezone.utc)
+        if (utcnow() - last_sent).total_seconds() < 60:
+            raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another email")
+
+    uid = str(current_user["_id"])
+    token = secrets.token_urlsafe(32)
+    expires = utcnow() + timedelta(hours=24)
+
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "verification_token": token,
+        "verification_token_expires": expires,
+        "verification_sent_at": utcnow()
+    }})
+    
+    # MOCK EMAIL SENDING
+    print(f"\n--- MOCK EMAIL ---")
+    print(f"To: {current_user['email']}")
+    print(f"Subject: Verify your GrowthLog Account")
+    print(f"Link: http://localhost:3000/verify/{token}")
+    print(f"Expires in: 24 hours")
+    print(f"------------------\n")
+    
+    return {"success": True}
+
+@app.get("/auth/verify/{token}")
+def verify_email(token: str):
+    user = db.users.find_one({"verification_token": token})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+    expires = user.get("verification_token_expires")
+    if expires:
+        if expires.tzinfo is None: expires = expires.replace(tzinfo=timezone.utc)
+        if utcnow() > expires:
+            raise HTTPException(status_code=400, detail="Verification link has expired")
+    
+    db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "verification_token": None, "verification_token_expires": None}})
+    return {"success": True}
 
 @app.post("/auth/login")
+
 def login(data: LoginModel):
     user = db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"token": create_token(str(user["_id"])),
+    return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
             "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat()}}
 
 @app.get("/auth/me")
@@ -304,7 +384,10 @@ def me(current_user=Depends(get_current_user)):
         "bio": u.get("bio", ""), "avatar_emoji": u.get("avatar_emoji", "🌱"),
         "timezone": u.get("timezone", "UTC"),
         "created_at": u.get("created_at", utcnow()).isoformat(),
+        "is_public": u.get("is_public", False),
+        "is_verified": u.get("is_verified", False),
     }
+
 
 @app.put("/auth/profile")
 def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_user)):
@@ -318,37 +401,118 @@ def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_us
 def change_password(data: PasswordChangeModel, current_user=Depends(get_current_user)):
     if not verify_password(data.current_password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
-    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"password": hash_password(data.new_password)}})
+    
+    # Increment token_version to invalidate all existing JWTs
+    new_version = current_user.get("token_version", 1) + 1
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "password": hash_password(data.new_password),
+        "token_version": new_version
+    }})
     return {"success": True}
+
+class EmailChangeModel(BaseModel):
+    new_email: str
+    password: str
+
+@app.put("/auth/email")
+def change_email(data: EmailChangeModel, current_user=Depends(get_current_user)):
+    if not verify_password(data.password, current_user["password"]):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    if db.users.find_one({"email": data.new_email}):
+        raise HTTPException(status_code=400, detail="Email is already in use")
+    # Security: Reset verification status on email change
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {
+        "email": data.new_email,
+        "is_verified": False,
+        "verification_token": None,
+        "verification_token_expires": None
+    }})
+    return {"success": True, "email": data.new_email, "is_verified": False}
+
+class PublicToggleModel(BaseModel):
+    is_public: bool
+
+@app.put("/auth/public")
+def toggle_public(data: PublicToggleModel, current_user=Depends(get_current_user)):
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"is_public": data.is_public}})
+    return {"success": True, "is_public": data.is_public}
+
+@app.get("/public/u/{user_id}")
+def get_public_stats(user_id: str):
+    try:
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+    except bson_errors.InvalidId:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.get("is_public", False):
+        raise HTTPException(status_code=403, detail="Profile is private")
+    created_at = user.get("created_at", utcnow())
+    return {
+        "name": user["name"],
+        "bio": user.get("bio", ""),
+        "avatar_emoji": user.get("avatar_emoji", "🌱"),
+        "created_at": created_at.isoformat(),
+        "streak": user.get("streak", 0),
+        "longest_streak": user.get("longest_streak", 0),
+        "total_logs": db.daily_logs.count_documents({"user_id": user_id}),
+        "completed_goals": db.goals.count_documents({"user_id": user_id, "status": "completed"}),
+        "total_manifestations": db.manifestations.count_documents({"user_id": user_id}),
+        "total_snapshots": db.snapshots.count_documents({"user_id": user_id})
+    }
+
 
 @app.delete("/auth/me")
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.categories.delete_many({"user_id": uid})
+    db.category_templates.delete_many({"user_id": uid})
     db.goals.delete_many({"user_id": uid})
     db.manifestations.delete_many({"user_id": uid})
     db.snapshots.delete_many({"user_id": uid})
     db.daily_logs.delete_many({"user_id": uid})
     db.users.delete_one({"_id": current_user["_id"]})
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
+
 
 @app.get("/auth/stats")
 def get_user_stats(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    cache_key = f"stats:{uid}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
     created_at = current_user.get("created_at", utcnow())
-    return {
+    # Use aggregation pipelines to count in one DB round-trip
+    goal_pipeline = list(db.goals.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    goal_counts = {g["_id"]: g["count"] for g in goal_pipeline}
+    manifestation_pipeline = list(db.manifestations.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    m_counts = {m["_id"]: m["count"] for m in manifestation_pipeline}
+    result = {
         "total_logs": db.daily_logs.count_documents({"user_id": uid}),
-        "total_goals": db.goals.count_documents({"user_id": uid}),
-        "completed_goals": db.goals.count_documents({"user_id": uid, "status": "completed"}),
-        "total_manifestations": db.manifestations.count_documents({"user_id": uid}),
-        "completed_manifestations": db.manifestations.count_documents({"user_id": uid, "status": "completed"}),
+        "total_goals": sum(goal_counts.values()),
+        "completed_goals": goal_counts.get("completed", 0),
+        "total_manifestations": sum(m_counts.values()),
+        "completed_manifestations": m_counts.get("completed", 0),
         "total_snapshots": db.snapshots.count_documents({"user_id": uid}),
         "total_categories": db.categories.count_documents({"user_id": uid, "archived": {"$ne": True}}),
-        "days_since_join": (utcnow() - created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else utcnow() - created_at).days,
+        "days_since_join": (utcnow() - (created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else created_at)).days,
         "streak": current_user.get("streak", 0),
         "longest_streak": current_user.get("longest_streak", 0),
     }
+    cache_set(cache_key, result, ttl=300)  # 5-min cache for stats
+    return result
+
 
 
 # --- Categories ---
@@ -375,11 +539,39 @@ def create_category(data: CategoryModel, current_user=Depends(get_current_user))
         "color": data.color, "description": data.description,
         "archived": False, "created_at": utcnow(),
     }
-    result = db.categories.insert_one(cat)
-    cat["id"] = str(result.inserted_id)
-    del cat["_id"]
-    cache_invalidate(f"categories:{uid}")
-    return cat
+    try:
+        result = db.categories.insert_one(cat)
+        cat["id"] = str(result.inserted_id)
+        del cat["_id"]
+        cache_invalidate(f"categories:{uid}")
+        return cat
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail=f"A category named '{data.name}' already exists.")
+
+@app.get("/categories/templates")
+def get_category_templates(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    return serialize_list(db.category_templates.find({"user_id": uid}))
+
+@app.post("/categories/templates")
+def create_category_template(data: CategoryTemplateModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    template = {
+        "user_id": uid, "name": data.name, "icon": data.icon,
+        "color": data.color, "description": data.description,
+        "created_at": utcnow(),
+    }
+    result = db.category_templates.insert_one(template)
+    template["id"] = str(result.inserted_id)
+    del template["_id"]
+    return template
+
+@app.delete("/categories/templates/{template_id}")
+def delete_category_template(template_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    db.category_templates.delete_one({"_id": ObjectId(template_id), "user_id": uid})
+    return {"success": True}
+
 
 @app.put("/categories/{category_id}")
 def update_category(category_id: str, data: CategoryUpdateModel, current_user=Depends(get_current_user)):
@@ -387,16 +579,23 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
     fields = clean_update(data.dict())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
-    db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
-    cache_invalidate(f"categories:{uid}")
-    return {"success": True}
+    try:
+        db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
+        cache_invalidate(f"categories:{uid}")
+        cache_invalidate(f"dashboard:{uid}")
+        return {"success": True}
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail=f"A category named '{fields.get('name', 'unknown')}' already exists.")
+
 
 @app.put("/categories/{category_id}/restore")
 def restore_category(category_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": False}})
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/categories/{category_id}")
 def delete_category(category_id: str, permanent: bool = False, current_user=Depends(get_current_user)):
@@ -410,7 +609,9 @@ def delete_category(category_id: str, permanent: bool = False, current_user=Depe
     else:
         db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": True}})
     cache_invalidate(f"categories:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.get("/categories/{category_id}/logs")
 def get_category_logs(category_id: str, days: int = 90, current_user=Depends(get_current_user)):
@@ -465,7 +666,11 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
     result = db.goals.insert_one(goal)
     goal["id"] = str(result.inserted_id)
     del goal["_id"]
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return goal
+
+
 
 @app.put("/goals/{goal_id}")
 def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_current_user)):
@@ -478,14 +683,22 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid}, {"$set": fields})
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}")
 def delete_goal(goal_id: str, current_user=Depends(get_current_user)):
     r = db.goals.delete_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Goal not found")
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
+
 
 @app.put("/goals/{goal_id}/reflect")
 def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_current_user)):
@@ -503,7 +716,11 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
         update["current_deadline"] = data.new_deadline
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
                         {"$set": update, "$push": {"reflections": ref_entry}})
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
+
 
 @app.post("/goals/{goal_id}/reflections")
 def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user=Depends(get_current_user)):
@@ -511,17 +728,33 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
              "date": data.date or utcnow().isoformat()}
     db.goals.update_one({"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
                         {"$push": {"reflections": entry}})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}/reflections/{reflection_id}")
 def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    reflections = [r for r in goal.get("reflections", []) if r.get("id") != reflection_id]
-    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"reflections": reflections}})
+    db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid},
+        {"$pull": {"reflections": {"id": reflection_id}}}
+    )
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
+@app.put("/goals/{goal_id}/reflections/{reflection_id}")
+def update_goal_reflection(goal_id: str, reflection_id: str, data: NoteModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "reflections.id": reflection_id},
+        {"$set": {"reflections.$.text": data.text}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or reflection not found")
+    cache_invalidate(f"dashboard:{uid}")
+    return {"success": True}
+
 
 @app.post("/goals/{goal_id}/notes")
 def add_goal_note(goal_id: str, data: NoteModel, current_user=Depends(get_current_user)):
@@ -536,31 +769,70 @@ def delete_goal_note(goal_id: str, note_id: str, current_user=Depends(get_curren
                         {"$pull": {"notes": {"id": note_id}}})
     return {"success": True}
 
+@app.put("/goals/{goal_id}/notes/{note_id}")
+def update_goal_note(goal_id: str, note_id: str, data: NoteModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "notes.id": note_id},
+        {"$set": {"notes.$.text": data.text}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or note not found")
+    return {"success": True}
+
 @app.post("/goals/{goal_id}/micro-goals")
 def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
     mg_id = str(ObjectId())
-    mg = {"id": mg_id, "text": data.text, "completed": False}
+    mg = {"id": mg_id, "text": data.text, "completed": False, "time_spent": data.time_spent or 0}
     db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
         {"$push": {"micro_goals": mg}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True, "id": mg_id}
+
+
+    # Atomic update using positional operator
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid, "micro_goals.id": mg_id},
+        {"$set": {"micro_goals.$.text": data.text, "micro_goals.$.time_spent": data.time_spent}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
+    
+    cache_invalidate(f"dashboard:{uid}")
+    return {"success": True}
+
+
 
 @app.put("/goals/{goal_id}/micro-goals/{mg_id}/toggle")
 def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
-    if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
-    
-    mgs = goal.get("micro_goals", [])
-    for mg in mgs:
-        if mg.get("id") == mg_id:
-            mg["completed"] = not mg.get("completed", False)
-            break
-            
-    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"micro_goals": mgs}})
+    # Atomic toggle using $[element] syntax
+    result = db.goals.update_one(
+        {"_id": ObjectId(goal_id), "user_id": uid},
+        [{"$set": {
+            "micro_goals": {
+                "$map": {
+                    "input": "$micro_goals",
+                    "as": "mg",
+                    "in": {
+                        "$cond": [
+                            {"$eq": ["$$mg.id", mg_id]},
+                            {"$mergeObjects": ["$$mg", {"completed": {"$not": "$$mg.completed"}}]},
+                            "$$mg"
+                        ]
+                    }
+                }
+            }
+        }}]
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/goals/{goal_id}/micro-goals/{mg_id}")
 def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
@@ -568,15 +840,19 @@ def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
         {"_id": ObjectId(goal_id), "user_id": str(current_user["_id"])},
         {"$pull": {"micro_goals": {"id": mg_id}}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Daily Logs ---
 
 @app.get("/logs")
 def get_logs(days: int = 30, current_user=Depends(get_current_user)):
+    # Cap historical queries at 365 days for performance
+    days = min(max(days, 1), 365)
     since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
-    return serialize_list(db.daily_logs.find({"user_id": str(current_user["_id"]), "date": {"$gte": since}}))
+    return serialize_list(db.daily_logs.find({"user_id": str(current_user["_id"]), "date": {"$gte": since}}).sort("date", DESCENDING))
 
 @app.get("/logs/today")
 def get_today_log(current_user=Depends(get_current_user)):
@@ -588,6 +864,55 @@ def get_today_log(current_user=Depends(get_current_user)):
 def get_log_by_date(date: str, current_user=Depends(get_current_user)):
     log = db.daily_logs.find_one({"user_id": str(current_user["_id"]), "date": date})
     return serialize(log) if log else None
+
+def recalculate_user_streak(uid: str):
+    """Accurately calculates the current and longest streak based on all logs."""
+    logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING))
+    if not logs:
+        db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
+        return 0
+
+    dates = sorted([l["date"] for l in logs], reverse=True)
+    today = utcnow().strftime("%Y-%m-%d")
+    yesterday = (utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    
+    current_streak = 0
+    longest_streak = 0
+    temp_streak = 0
+    
+    # Check if the streak is still active (logged today or yesterday)
+    last_log = dates[0]
+    if last_log != today and last_log != yesterday:
+        current_streak = 0
+    else:
+        # Calculate current streak
+        check_date = last_log
+        for d in dates:
+            if d == check_date:
+                current_streak += 1
+                check_date = (datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+            else:
+                break
+
+    # Calculate longest streak across all history
+    check_date = dates[0]
+    for i, d in enumerate(dates):
+        if i == 0:
+            temp_streak = 1
+        else:
+            prev_day = (datetime.strptime(dates[i-1], "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+            if d == prev_day:
+                temp_streak += 1
+            else:
+                temp_streak = 1
+        longest_streak = max(longest_streak, temp_streak)
+
+    db.users.update_one({"_id": ObjectId(uid)}, {"$set": {
+        "streak": current_streak,
+        "longest_streak": longest_streak,
+        "last_log_date": last_log
+    }})
+    return current_streak
 
 @app.post("/logs")
 def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
@@ -604,25 +929,21 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
         db.daily_logs.update_one({"_id": existing["_id"]},
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating}})
         cache_invalidate(f"dashboard:{uid}")
+        cache_invalidate(f"stats:{uid}")
         return {"success": True, "updated": True}
+
     db.daily_logs.insert_one({
         "user_id": uid, "date": today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
         "created_at": utcnow(),
     })
-    user = db.users.find_one({"_id": ObjectId(uid)})
-    last = user.get("last_log_date")
-    yesterday = (datetime.strptime(today, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-    streak = user.get("streak", 0)
-    if last == yesterday:
-        streak += 1
-    elif last != today:
-        streak = 1
-    longest = max(streak, user.get("longest_streak", 0))
-    db.users.update_one({"_id": ObjectId(uid)},
-                        {"$set": {"streak": streak, "longest_streak": longest, "last_log_date": today}})
+    
+    # Recalculate streak robustly
+    streak = recalculate_user_streak(uid)
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True, "streak": streak}
+
 
 @app.delete("/logs/{date}")
 def delete_log(date: str, current_user=Depends(get_current_user)):
@@ -630,8 +951,12 @@ def delete_log(date: str, current_user=Depends(get_current_user)):
     result = db.daily_logs.delete_one({"user_id": uid, "date": date})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
+    # Robust streak recalculation after deletion
+    recalculate_user_streak(uid)
     cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 
 # --- Manifestations ---
@@ -655,12 +980,15 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     start = utcnow()
     if data.target_date:
         target_str = data.target_date
-        target_days = (datetime.strptime(data.target_date, "%Y-%m-%d") - start.replace(tzinfo=None)).days
+        # Parse as UTC-0
+        target_date_obj = datetime.strptime(data.target_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        target_days = (target_date_obj - start).days
     elif data.target_days:
         target_str = (start + timedelta(days=data.target_days)).strftime("%Y-%m-%d")
         target_days = data.target_days
     else:
         raise HTTPException(status_code=400, detail="Provide target_days or target_date")
+
     item = {
         "user_id": str(current_user["_id"]), "vision": data.vision,
         "target_days": target_days, "categories": data.categories, "notes": data.notes,
@@ -671,7 +999,11 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     result = db.manifestations.insert_one(item)
     item["id"] = str(result.inserted_id)
     del item["_id"]
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return item
+
+
 
 @app.put("/manifestations/{m_id}")
 def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user=Depends(get_current_user)):
@@ -679,53 +1011,74 @@ def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 @app.delete("/manifestations/{m_id}")
 def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
     r = db.manifestations.delete_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
+
 
 @app.put("/manifestations/{m_id}/archive")
 def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$set": {"status": "archived"}})
+    uid = str(current_user["_id"])
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
+
 
 @app.post("/manifestations/{m_id}/progress")
 def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, current_user=Depends(get_current_user)):
     entry = {"id": str(ObjectId()), "text": data.text, "type": data.type, "date": utcnow().isoformat()}
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$push": {"progress_entries": entry}})
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
     return {"success": True}
+
 
 @app.put("/manifestations/{m_id}/progress/{entry_id}")
 def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationProgressUpdateModel,
                                    current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    item = db.manifestations.find_one({"_id": ObjectId(m_id), "user_id": uid})
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    entries = item.get("progress_entries", [])
-    for e in entries:
-        if e.get("id") == entry_id:
-            if data.text is not None: e["text"] = data.text
-            if data.type is not None: e["type"] = data.type
-            break
-    db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    fields = clean_update(data.dict())
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    update_data = {f"progress_entries.$.{k}": v for k, v in fields.items()}
+    result = db.manifestations.update_one(
+        {"_id": ObjectId(m_id), "user_id": uid, "progress_entries.id": entry_id},
+        {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manifestation or progress entry not found")
+        
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.delete("/manifestations/{m_id}/progress/{entry_id}")
 def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    item = db.manifestations.find_one({"_id": ObjectId(m_id), "user_id": uid})
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    entries = [e for e in item.get("progress_entries", []) if e.get("id") != entry_id]
-    db.manifestations.update_one({"_id": ObjectId(m_id)}, {"$set": {"progress_entries": entries}})
+    result = db.manifestations.update_one(
+        {"_id": ObjectId(m_id), "user_id": uid},
+        {"$pull": {"progress_entries": {"id": entry_id}}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manifestation not found")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
+
 
 @app.post("/manifestations/{m_id}/notes")
 def add_manifestation_note(m_id: str, data: NoteModel, current_user=Depends(get_current_user)):
@@ -741,12 +1094,15 @@ def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_
     return {"success": True}
 
 @app.put("/manifestations/{m_id}/complete")
-def complete_manifestation(m_id: str, reflection: dict, current_user=Depends(get_current_user)):
+def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_user=Depends(get_current_user)):
     db.manifestations.update_one(
         {"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-        {"$set": {"status": "completed", "reflection": reflection.get("text"), "completed_at": utcnow()}}
+        {"$set": {"status": "completed", "reflection": data.text, "completed_at": utcnow()}}
     )
+    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Snapshots ---
@@ -782,7 +1138,9 @@ def create_snapshot(data: SnapshotModel, current_user=Depends(get_current_user))
     result = db.snapshots.insert_one(item)
     item["id"] = str(result.inserted_id)
     del item["_id"]
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return item
+
 
 @app.put("/snapshots/{snap_id}")
 def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depends(get_current_user)):
@@ -790,6 +1148,9 @@ def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depend
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.snapshots.update_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    uid = str(current_user["_id"])
+    cache_invalidate(f"stats:{uid}")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
 @app.delete("/snapshots/{snap_id}")
@@ -797,13 +1158,17 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
     r = db.snapshots.delete_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
+    cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}
+
 
 
 # --- Dashboard ---
 
 @app.get("/dashboard")
 def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
+    # Cap historical queries at 365 days for performance
+    days = min(max(days, 1), 365)
     uid = str(current_user["_id"])
     cache_key = f"dashboard:{uid}:{days}"
     cached = cache_get(cache_key)
@@ -811,76 +1176,118 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         return cached
 
     since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
-    logs = list(db.daily_logs.find({"user_id": uid, "date": {"$gte": since}}))
-    goals = list(db.goals.find({"user_id": uid}))
+    
+    # 1. Aggregate Logs for trends, heatmap, and category consistency
+    pipeline = [
+        {"$match": {"user_id": uid, "date": {"$gte": since}}},
+        {"$facet": {
+            "trends": [
+                {"$sort": {"date": 1}},
+                {"$project": {
+                    "date": 1,
+                    "overall_rating": {"$ifNull": ["$overall_rating", 5]},
+                    "highlight": {"$ifNull": ["$highlight", ""]},
+                    "entry_count": {"$size": {"$ifNull": ["$entries", []]}},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "avg_energy": {"$avg": "$entries.energy"},
+                    "time_spent": {"$sum": "$entries.time_spent"}
+                }}
+            ],
+            "category_stats": [
+                {"$unwind": "$entries"},
+                {"$group": {
+                    "_id": "$entries.category_id",
+                    "count": {"$sum": 1},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "time_spent": {"$sum": "$entries.time_spent"}
+                }}
+            ],
+            "weekly_summary": [
+                {"$project": {
+                    "date_obj": {"$dateFromString": {"dateString": "$date"}},
+                    "avg_mood": {"$avg": "$entries.mood"},
+                    "avg_energy": {"$avg": "$entries.energy"}
+                }},
+                {"$group": {
+                    "_id": {"$isoWeek": "$date_obj"},
+                    "logs": {"$sum": 1},
+                    "mood_sum": {"$sum": "$avg_mood"},
+                    "energy_sum": {"$sum": "$avg_energy"}
+                }},
+                {"$sort": {"_id": 1}}
+            ],
+            "totals": [
+                {"$unwind": "$entries"},
+                {"$group": {
+                    "_id": None,
+                    "total_time": {"$sum": "$entries.time_spent"},
+                    "log_count": {"$sum": 1} # This is entries count, let's get logs count separately
+                }}
+            ]
+        }}
+    ]
+    
+    agg_result = list(db.daily_logs.aggregate(pipeline))[0]
+    logs_count = db.daily_logs.count_documents({"user_id": uid, "date": {"$gte": since}})
+    
+    # Process aggregation results
+    heatmap = {t["date"]: {"rating": t["overall_rating"], "highlight": t["highlight"], "count": t["entry_count"]} for t in agg_result["trends"]}
+    mood_trend = [{"date": t["date"], "mood": round(t["avg_mood"] or 5, 1)} for t in agg_result["trends"]]
+    energy_trend = [{"date": t["date"], "energy": round(t["avg_energy"] or 5, 1)} for t in agg_result["trends"]]
+    time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result["trends"]]
+    
+    cat_stats_map = {s["_id"]: s for s in agg_result["category_stats"]}
     categories = list(db.categories.find({"user_id": uid, "archived": {"$ne": True}}))
-    manifestations = list(db.manifestations.find({"user_id": uid, "status": "active"}))
-
-    heatmap = {l["date"]: l.get("overall_rating", 5) for l in logs}
-    mood_trend = []
-    energy_trend = []
-    for log in sorted(logs, key=lambda x: x["date"]):
-        entries = log.get("entries", [])
-        moods = [e.get("mood", 5) for e in entries]
-        energies = [e.get("energy", 5) for e in entries]
-        mood_trend.append({"date": log["date"], "mood": round(sum(moods)/len(moods), 1) if moods else 5})
-        energy_trend.append({"date": log["date"], "energy": round(sum(energies)/len(energies), 1) if energies else 5})
-
-    cat_counts = defaultdict(int)
-    cat_mood = defaultdict(list)
-    for log in logs:
-        for e in log.get("entries", []):
-            cat_counts[e["category_id"]] += 1
-            cat_mood[e["category_id"]].append(e.get("mood", 5))
-
     cat_consistency = [
         {
-            "name": c["name"], "icon": c["icon"], "color": c["color"],
-            "count": cat_counts.get(str(c["_id"]), 0),
-            "percentage": round((cat_counts.get(str(c["_id"]), 0) / max(len(logs), 1)) * 100),
-            "avg_mood": round(sum(cat_mood.get(str(c["_id"]), [5])) / max(len(cat_mood.get(str(c["_id"]), [5])), 1), 1),
+            "name": c["name"], "icon": c["icon"], "color": c["color"], "id": str(c["_id"]),
+            "count": cat_stats_map.get(str(c["_id"]), {}).get("count", 0),
+            "percentage": round((cat_stats_map.get(str(c["_id"]), {}).get("count", 0) / max(logs_count, 1)) * 100),
+            "avg_mood": round(cat_stats_map.get(str(c["_id"]), {}).get("avg_mood", 5) or 5, 1),
+            "time_spent": cat_stats_map.get(str(c["_id"]), {}).get("time_spent", 0)
         }
         for c in categories
     ]
-
-    weekly_data = defaultdict(lambda: {"logs": 0, "mood_sum": 0, "energy_sum": 0})
-    for log in logs:
-        try:
-            d = datetime.strptime(log["date"], "%Y-%m-%d")
-            week_key = f"W{d.isocalendar()[1]}"
-            weekly_data[week_key]["logs"] += 1
-            entries = log.get("entries", [])
-            if entries:
-                weekly_data[week_key]["mood_sum"] += sum(e.get("mood", 5) for e in entries) / len(entries)
-                weekly_data[week_key]["energy_sum"] += sum(e.get("energy", 5) for e in entries) / len(entries)
-        except Exception:
-            pass
-
+    
     weekly_summary = [
-        {"week": k, "logs": v["logs"],
-         "avg_mood": round(v["mood_sum"]/max(v["logs"],1), 1),
-         "avg_energy": round(v["energy_sum"]/max(v["logs"],1), 1)}
-        for k, v in sorted(weekly_data.items())
+        {
+            "week": f"W{w['_id']}",
+            "logs": w["logs"],
+            "avg_mood": round(w["mood_sum"] / max(w["logs"], 1), 1),
+            "avg_energy": round(w["energy_sum"] / max(w["logs"], 1), 1)
+        }
+        for w in agg_result["weekly_summary"]
     ]
-
-    user = db.users.find_one({"_id": ObjectId(uid)})
+    
+    # 2. Parallel fetch for Goals and Manifestations (small result sets)
+    goals = list(db.goals.aggregate([
+        {"$match": {"user_id": uid}},
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+    ]))
+    goal_counts = {g["_id"]: g["count"] for g in goals}
+    
+    manifestations_count = db.manifestations.count_documents({"user_id": uid, "status": "active"})
+    
     result = {
-        "streak": user.get("streak", 0),
-        "longest_streak": user.get("longest_streak", 0),
-        "total_logs": len(logs),
+        "streak": current_user.get("streak", 0),
+        "longest_streak": current_user.get("longest_streak", 0),
+        "total_logs": logs_count,
+        "total_time_spent": sum(c["time_spent"] for c in cat_consistency),
         "heatmap": heatmap,
         "mood_trend": mood_trend,
         "energy_trend": energy_trend,
+        "time_spent_trend": time_spent_trend,
         "weekly_summary": weekly_summary,
         "category_consistency": cat_consistency,
         "goals": {
-            "total": len(goals),
-            "completed": len([g for g in goals if g["status"] == "completed"]),
-            "active": len([g for g in goals if g["status"] == "active"]),
+            "total": sum(goal_counts.values()),
+            "completed": goal_counts.get("completed", 0),
+            "active": goal_counts.get("active", 0),
         },
-        "active_manifestations": len(manifestations),
+        "active_manifestations": manifestations_count,
     }
-    cache_set(cache_key, result, ttl=120)
+
+    cache_set(cache_key, result, ttl=300) # Increased TTL for optimized dashboard
     return result
 
 

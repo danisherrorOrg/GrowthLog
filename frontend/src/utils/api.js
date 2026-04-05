@@ -13,9 +13,11 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    // Only redirect if it's a 401 and we're not already trying to log in/register
+    if (err.response?.status === 401 && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Simple and effective: forces a complete state wipe
+      window.location.href = '/login?expired=true';
     }
     return Promise.reject(err);
   }

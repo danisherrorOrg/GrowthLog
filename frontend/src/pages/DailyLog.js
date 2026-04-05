@@ -4,6 +4,8 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../utils/errors';
+
 
 const EMOTIONS = ['Motivated', 'Anxious', 'Proud', 'Frustrated', 'Grateful', 'Tired', 'Inspired', 'Calm', 'Overwhelmed', 'Hopeful', 'Focused', 'Distracted'];
 
@@ -49,20 +51,23 @@ export default function DailyLog() {
           setOverallRating(existing.overall_rating || 5);
           const map = {};
           existing.entries.forEach((e) => {
-            map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [] };
+            map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [], time_spent: e.time_spent || 0 };
           });
           setEntries(map);
         } else {
           const map = {};
-          cats.forEach((c) => { map[c.id] = { text: '', mood: 5, energy: 5, emotions: [] }; });
+          cats.forEach((c) => { map[c.id] = { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 }; });
           setEntries(map);
         }
       })
-      .catch(() => {
+      .catch((e) => {
         setError(true);
-        toast.error('Failed to load log data');
+        toast.error(getErrorMessage(e, 'Failed to load log data'));
       })
+
+
       .finally(() => setLoading(false));
+
   }, []);
 
   const updateEntry = (catId, field, val) => {
@@ -85,6 +90,7 @@ export default function DailyLog() {
       mood: e.mood,
       energy: e.energy,
       emotions: e.emotions,
+      time_spent: parseInt(e.time_spent) || 0,
     }));
 
     setSaving(true);
@@ -95,8 +101,9 @@ export default function DailyLog() {
       else toast.success('✦ Log saved!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save log');
+      toast.error(getErrorMessage(err, 'Failed to save log'));
     } finally {
+
       setSaving(false);
     }
   };
@@ -142,7 +149,8 @@ export default function DailyLog() {
       <div className="page-body">
         {/* Category entries */}
         {categories.map((cat) => {
-          const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [] };
+          const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 };
+
           return (
             <div key={cat.id} className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${cat.color}` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -184,6 +192,12 @@ export default function DailyLog() {
                     <span style={{ fontSize: 16 }}>⚡</span>
                   </div>
                 </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Time Invested (min)</label>
+                  <input type="number" className="form-input" value={entry.time_spent}
+                    onChange={(e) => updateEntry(cat.id, 'time_spent', Math.min(1440, Math.max(0, parseInt(e.target.value) || 0)))}
+                    placeholder="0" min="0" max="1440" />
+                </div>
               </div>
 
               <div style={{ marginTop: 16 }}>
@@ -206,7 +220,13 @@ export default function DailyLog() {
           <h3 style={{ fontSize: 18, marginBottom: 16 }}>Overall Day</h3>
           <div className="form-group">
             <label className="form-label">Highlight of the day</label>
-            <input className="form-input" value={highlight} onChange={(e) => setHighlight(e.target.value)} placeholder="What's the one thing that stood out today?" />
+            <textarea 
+              className="form-textarea" 
+              value={highlight} 
+              onChange={(e) => setHighlight(e.target.value)} 
+              placeholder="What's the one thing that stood out today?" 
+              style={{ minHeight: 80 }}
+            />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Overall day rating — {overallRating}/10</label>

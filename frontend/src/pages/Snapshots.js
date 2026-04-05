@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 export default function Snapshots() {
   const navigate = useNavigate();
@@ -59,8 +61,10 @@ export default function Snapshots() {
       setEditSnap(null);
       setForm({ description: '', values: '', mood: 5, date: '' });
       load();
-    } catch { toast.error('Failed to save snapshot'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to save snapshot')); }
+
     finally { setLoading(false); }
+
   };
 
   const handleDelete = async (snap) => {
@@ -77,11 +81,20 @@ export default function Snapshots() {
       return;
     }
     if (compareA.id === snap.id) {
+      // Deselect A, also clear B
       setCompareA(null);
+      setCompareB(null);
+      setCompareResult(null);
+      return;
+    }
+    if (compareB && compareB.id === snap.id) {
+      // Deselect B — let user pick a different "Now"
+      setCompareB(null);
       setCompareResult(null);
       return;
     }
     setCompareB(snap);
+    setCompareResult(null);
   };
 
   const runCompare = async () => {
@@ -90,7 +103,8 @@ export default function Snapshots() {
     try {
       const r = await API.get(`/snapshots/compare?snap1_id=${compareA.id}&snap2_id=${compareB.id}`);
       setCompareResult(r.data);
-    } catch { toast.error('Failed to compare snapshots'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to compare snapshots')); }
+
     finally { setComparing(false); }
   };
 
@@ -122,20 +136,37 @@ export default function Snapshots() {
         {/* Compare Mode UI */}
         {compareMode && (
           <div className="card" style={{ background: 'var(--mist)', border: '1px dashed rgba(13,13,13,0.2)', marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, marginBottom: 8 }}>
-              {!compareA ? '① Click a snapshot to select it as "Then"' : !compareB ? '② Click another snapshot to compare as "Now"' : '✓ Ready to compare'}
+            <h3 style={{ fontSize: 15, marginBottom: 12 }}>
+              {!compareA ? '① Click a snapshot below to select "Then"'
+                : !compareB ? '② Click another snapshot to select "Now"'
+                : '✓ Ready — run the comparison below'}
             </h3>
-            {compareA && compareB && !compareResult && (
-              <button className="btn btn-primary btn-sm" onClick={runCompare} disabled={comparing} style={{ marginTop: 8 }}>
-                {comparing ? 'Comparing...' : 'Run Comparison'}
-              </button>
-            )}
-            {compareA && !compareB && (
-              <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(107,140,107,0.1)', borderRadius: 8, fontSize: 13, display: 'inline-block' }}>
-                Selected: <strong>{format(parseISO(compareA.date), 'MMM d, yyyy')}</strong>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ padding: '6px 12px', background: compareA ? 'rgba(107,140,107,0.15)' : 'rgba(13,13,13,0.05)', border: `1px solid ${compareA ? 'var(--sage)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 8, fontSize: 13 }}>
+                <span style={{ color: 'rgba(13,13,13,0.4)', marginRight: 6 }}>Then:</span>
+                <strong>{compareA ? format(parseISO(compareA.date), 'MMM d, yyyy') : '—'}</strong>
               </div>
-            )}
-            {compareA && compareB && <button className="btn btn-outline btn-sm" style={{ marginTop: 8, marginLeft: 8 }} onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>Clear Selection</button>}
+              <span style={{ color: 'rgba(13,13,13,0.3)', fontSize: 16 }}>⇄</span>
+              <div style={{ padding: '6px 12px', background: compareB ? 'rgba(201,168,76,0.12)' : 'rgba(13,13,13,0.05)', border: `1px solid ${compareB ? 'var(--gold)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 8, fontSize: 13 }}>
+                <span style={{ color: 'rgba(13,13,13,0.4)', marginRight: 6 }}>Now:</span>
+                <strong>{compareB ? format(parseISO(compareB.date), 'MMM d, yyyy') : '—'}</strong>
+              </div>
+              {compareA && compareB && !compareResult && (
+                <button className="btn btn-primary btn-sm" onClick={runCompare} disabled={comparing}>
+                  {comparing ? 'Comparing...' : 'Run Comparison ⇄'}
+                </button>
+              )}
+              {compareResult && (
+                <button className="btn btn-outline btn-sm" onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>
+                  ↺ Compare Different
+                </button>
+              )}
+              {(compareA || compareB) && (
+                <button className="btn btn-ghost btn-sm" style={{ color: 'rgba(13,13,13,0.4)' }} onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         )}
 

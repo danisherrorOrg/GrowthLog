@@ -1,21 +1,30 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { format, parseISO } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
+
+
 
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [stats, setStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [pwMode, setPwMode] = useState(false);
+  const [emailMode, setEmailMode] = useState(false);
   const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC' });
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm: '' });
+  const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+
 
   useEffect(() => {
     if (user) {
@@ -32,31 +41,72 @@ export default function Profile() {
       await refreshUser();
       toast.success('Profile updated!');
       setEditMode(false);
-    } catch { toast.error('Failed to update profile'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update profile')); }
+
+
     finally { setLoading(false); }
   };
 
   const handleChangePassword = async () => {
-    if (!pwForm.current_password || !pwForm.new_password) return toast.error('Fill all fields');
-    if (pwForm.new_password.length < 6) return toast.error('New password must be at least 6 characters');
-    if (pwForm.new_password !== pwForm.confirm) return toast.error('Passwords do not match');
+    if (!pwForm.current_password || !pwForm.new_password || !pwForm.confirm) {
+      return toast.error('Please fill in all password fields');
+    }
+    if (pwForm.new_password.length < 6) {
+      return toast.error('New password must be at least 6 characters long');
+    }
+    if (pwForm.new_password !== pwForm.confirm) {
+      return toast.error('New passwords do not match');
+    }
+    
     setLoading(true);
     try {
       await API.put('/auth/password', { current_password: pwForm.current_password, new_password: pwForm.new_password });
-      toast.success('Password changed!');
+      toast.success('Password changed successfully!');
       setPwMode(false);
       setPwForm({ current_password: '', new_password: '', confirm: '' });
-    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to change password'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to change password')); }
+
     finally { setLoading(false); }
   };
 
-  const handleVerifyEmail = () => {
+  const handleChangeEmail = async () => {
+    if (!emailForm.new_email || !emailForm.password) return toast.error('Fill all fields');
+    setLoading(true);
+    try {
+      await API.put('/auth/email', { new_email: emailForm.new_email, password: emailForm.password });
+      await refreshUser();
+      toast.success('Email updated successfully!');
+      setEmailMode(false);
+      setEmailForm({ new_email: '', password: '' });
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to update email')); }
+
+    finally { setLoading(false); }
+  };
+
+  const handleTogglePublic = async () => {
+    setLoading(true);
+    try {
+      await API.put('/auth/public', { is_public: !user?.is_public });
+      await refreshUser();
+      toast.success(user?.is_public ? 'Profile is now Private' : 'Profile is now Public!');
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to change privacy settings')); }
+
+
+    finally { setLoading(false); }
+  };
+
+  const handleVerifyEmail = async () => {
     setVerifying(true);
-    setTimeout(() => {
+    try {
+      await API.post('/auth/verify/send');
+      toast.success('Verification link sent! Check your email (and console for this demo).');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to send verification link.'));
+
+
+    } finally {
       setVerifying(false);
-      setIsVerified(true);
-      toast.success('Email successfully verified!');
-    }, 1500);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -68,10 +118,12 @@ export default function Profile() {
       toast.success('Account and all data successfully deleted.');
       logout();
       navigate('/login');
-    } catch {
-      toast.error('Failed to delete account.');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to delete account.'));
       setLoading(false);
     }
+
+
   };
 
   const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';
@@ -84,14 +136,31 @@ export default function Profile() {
       </div>
 
       <div className="page-body">
-        {!isVerified && (
-          <div style={{ marginBottom: 20, padding: '12px 16px', background: 'rgba(201,168,76,0.1)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rust)', marginBottom: 2 }}>Verify your email address</div>
-              <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>We need to verify <strong>{user?.email}</strong> to secure your account and send reminders.</div>
+        {!user?.is_verified && (
+          <div style={{ 
+            marginBottom: 24, 
+            padding: '16px 20px', 
+            background: 'var(--rust)', 
+            color: 'white',
+            borderRadius: 12, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)'
+          }}>
+            <div style={{ flex: 1, marginRight: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your email address ✦</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                We've sent a link to <strong>{user?.email}</strong>. Please verify your account to unlock all features and secure your growth data.
+              </div>
             </div>
-            <button className="btn btn-sm btn-outline" style={{ borderColor: 'var(--rust)', color: 'var(--rust)' }} onClick={handleVerifyEmail} disabled={verifying}>
-              {verifying ? 'Sending...' : 'Send Link'}
+            <button 
+              className="btn btn-sm" 
+              style={{ background: 'white', color: 'var(--rust)', border: 'none', fontWeight: 600, whiteSpace: 'nowrap' }} 
+              onClick={handleVerifyEmail} 
+              disabled={verifying}
+            >
+              {verifying ? 'Sending...' : 'Resend Link'}
             </button>
           </div>
         )}
@@ -103,13 +172,21 @@ export default function Profile() {
               <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
                 <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0 }}>{user?.avatar_emoji || '🌱'}</div>
                 <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: 24, marginBottom: 4 }}>{user?.name}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                    <h2 style={{ fontSize: 24 }}>{user?.name}</h2>
+                    {user?.is_verified && (
+                      <span className="tag tag-green" style={{ fontSize: 10, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                        Verified ✦
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>{user?.email}</p>
                   <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.45)', marginBottom: 12 }}>Member since {memberSince}</p>
                   {user?.bio && <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6, marginBottom: 12, fontStyle: 'italic' }}>"{user.bio}"</p>}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setEditMode(true)}>✎ Edit Profile</button>
                     <button className="btn btn-outline btn-sm" onClick={() => setPwMode(true)}>🔒 Change Password</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => setEmailMode(true)}>✉️ Change Email</button>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -216,6 +293,38 @@ export default function Profile() {
           </div>
         )}
 
+        {/* Social / Sharing */}
+        {!editMode && !pwMode && (
+          <div className="card" style={{ marginTop: 24, padding: 24, borderLeft: '4px solid var(--sage)', background: 'var(--mist)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ fontSize: 18, color: 'var(--sage)', marginBottom: 8 }}>Public Profile Link</h3>
+                <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', maxWidth: 600 }}>
+                  Make your aggregated stats, badges, and streaks public so you can share your progress with friends. 
+                  (Don't worry, your private daily logs, notes, and specific journal entries remain 100% hidden).
+                </p>
+              </div>
+              <button className={`btn btn-sm ${user?.is_public ? 'btn-primary' : 'btn-outline'}`} onClick={handleTogglePublic} disabled={loading}>
+                {loading ? '...' : user?.is_public ? '✓ Profile is Public' : 'Make Public'}
+              </button>
+            </div>
+            
+            {user?.is_public && (
+              <div style={{ padding: 12, background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(13,13,13,0.1)', borderRadius: 8, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{ fontSize: 20 }}>🔗</span>
+                <a href={`/u/${user?.id}`} target="_blank" rel="noreferrer" style={{ flex: 1, fontFamily: 'monospace', fontSize: 13, color: 'var(--sage)', textDecoration: 'none' }}>
+                  {window.location.origin}/u/{user?.id}
+                </a>
+                <button className="btn btn-ghost btn-sm" style={{ background: 'white', border: '1px solid rgba(13,13,13,0.1)' }} 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/u/${user?.id}`);
+                    toast.success('Link copied to clipboard!');
+                  }}>Copy Link</button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Danger Zone */}
         {!editMode && !pwMode && (
           <div className="card" style={{ marginTop: 24, padding: 24, borderLeft: '4px solid var(--rust)', background: 'var(--paper)' }}>
@@ -257,6 +366,33 @@ export default function Profile() {
               <button className="btn btn-outline" onClick={() => setPwMode(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleChangePassword} disabled={loading} style={{ flex: 1 }}>
                 {loading ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Change Email Modal */}
+      {emailMode && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEmailMode(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Change Email</h3>
+              <button className="modal-close" onClick={() => setEmailMode(false)}>✕</button>
+            </div>
+            <div className="form-group">
+              <label className="form-label">New Email Address</label>
+              <input type="email" className="form-input" value={emailForm.new_email}
+                onChange={e => setEmailForm({ ...emailForm, new_email: e.target.value })} placeholder="new@example.com" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Current Password</label>
+              <input type="password" className="form-input" value={emailForm.password}
+                onChange={e => setEmailForm({ ...emailForm, password: e.target.value })} placeholder="••••••••" />
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-outline" onClick={() => setEmailMode(false)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleChangeEmail} disabled={loading} style={{ flex: 1 }}>
+                {loading ? 'Changing...' : 'Change Email'}
               </button>
             </div>
           </div>

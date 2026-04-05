@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
+import { getErrorMessage } from '../utils/errors';
+
 
 const PROGRESS_TYPES = [
   { value: 'improvement', label: '📈 Improvement', color: 'var(--sage)' },
@@ -38,7 +40,8 @@ export default function ManifestationDetail() {
     try {
       const r = await API.get(`/manifestations/${manifestationId}`);
       setItem(r.data);
-    } catch { toast.error('Failed to load'); navigate('/manifestations'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed to load')); navigate('/manifestations'); }
+
     finally { setLoading(false); }
   };
 
@@ -55,7 +58,9 @@ export default function ManifestationDetail() {
       setProgressForm({ text: '', type: 'improvement', customType: '' });
       setShowProgressForm(false);
       load();
-    } catch { toast.error('Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
+
+
     finally { setSaving(false); }
   };
 
@@ -67,7 +72,9 @@ export default function ManifestationDetail() {
       toast.success('Progress updated!');
       setEditProgress(null);
       load();
-    } catch { toast.error('Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
+
+
     finally { setSaving(false); }
   };
 
@@ -87,7 +94,9 @@ export default function ManifestationDetail() {
       setNoteText('');
       setShowNoteInput(false);
       load();
-    } catch { toast.error('Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
+
+
     finally { setSaving(false); }
   };
 
@@ -106,8 +115,10 @@ export default function ManifestationDetail() {
       toast.success('✧ Manifestation cycle complete!');
       setShowCompleteModal(false);
       load();
-    } catch { toast.error('Failed'); }
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); }
     finally { setSaving(false); }
+
+
   };
 
   const handleDelete = async () => {
@@ -161,9 +172,11 @@ export default function ManifestationDetail() {
       <div className="page-body">
         {/* Vision card */}
         <div className="card" style={{ background: isReady ? 'var(--ink)' : 'white', marginBottom: 20 }}>
-          <blockquote style={{ fontFamily: 'Fraunces', fontSize: 20, fontStyle: 'italic',
+          <blockquote style={{
+            fontFamily: 'Fraunces', fontSize: 20, fontStyle: 'italic',
             color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.7, margin: '0 0 16px',
-            padding: '0 0 0 16px', borderLeft: `4px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}` }}>
+            padding: '0 0 0 16px', borderLeft: `4px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}`
+          }}>
             "{item.vision}"
           </blockquote>
 
