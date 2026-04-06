@@ -1,0 +1,104 @@
+import pytest
+import os
+import jwt
+from datetime import datetime, timedelta, timezone
+from main import JWT_SECRET
+ALGORITHM = "HS256"
+
+# ==========================================
+# AUTHENTICATION & AUTHORIZATION TESTS
+# ==========================================
+
+def test_missing_auth_header(client):
+    """Authorization Test: Ensure protected endpoints reject totally unauthenticated requests."""
+    resp = client.get("/auth/me")
+    assert resp.status_code == 403
+    assert "Not authenticated" in resp.json().get("detail", "")
+
+def test_malformed_auth_header(client):
+    """Authentication Test: Pass 'Bearer123' instead of 'Bearer 123'."""
+    headers = {"Authorization": "BearerThisIsJustOneWord"}
+    resp = client.get("/auth/me", headers=headers)
+    assert resp.status_code in [401, 403]
+
+def test_authorization_cross_tenant_isolation(client):
+    """Authorization Test: Strict segregation of data between legitimate users."""
+    u1_email = f"u1_{os.urandom(2).hex()}@ex.com"
+    client.post("/auth/register", json={"name": "U1", "email": u1_email, "password": "pass"})
+    u1_token = client.post("/auth/login", json={"email": u1_email, "password": "pass"}).json()["token"]
+    h1 = {"Authorization": f"Bearer {u1_token}"}
+    
+    u2_email = f"u2_{os.urandom(2).hex()}@ex.com"
+    client.post("/auth/register", json={"name": "U2", "email": u2_email, "password": "pass"})
+    u2_token = client.post("/auth/login", json={"email": u2_email, "password": "pass"}).json()["token"]
+    h2 = {"Authorization": f"Bearer {u2_token}"}
+
+    # U1 creates a category
+    cat_id = client.post("/categories", headers=h1, json={"name": "Private Cat", "icon": "🔒", "color": "#000"}).json()["id"]
+
+    # U2 tries to fetch the specific category logs
+    resp = client.get(f"/categories/{cat_id}/logs", headers=h2)
+    # The system might return 404 (not found) or [] if not strictly authorized, or 403.
+    # Our API's current logging behavior for GET /categories/{id}/logs returns [] if none found for user. Let's verify it's empty.
+    assert resp.status_code == 200
+    assert len(resp.json()) == 0
+
+    # U2 tries to update U1's category directly -> Should be caught by the DB update query matching `user_id` OR 403.
+    resp2 = client.put(f"/categories/{cat_id}", headers=h2, json={"name": "Hacked"})
+    # Since update_one relies on user_id in query, it modifies 0 documents.
+    assert resp2.status_code == 200 # It succeeds syntactically
+    
+    # Verify U1's category wasn't actually changed
+    u1_cats = client.get("/categories", headers=h1).json()
+    assert u1_cats[0]["name"] == "Private Cat"
+
+# ==========================================
+# SECURITY TEST CASES
+# ==========================================
+
+def test_security_jwt_tampering(client):
+    """Security Test: Attempting to modify the JWT payload (e.g., escalating privileges)."""
+    payload = {
+        "user_id": "507f1f77bcf86cd799439011",
+        "admin": True, # Forging admin rights
+        "v": 1,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
+    }
+    # User tries to sign it with their own secret
+    fake_token = jwt.encode(payload, "my_fake_secret", algorithm=ALGORITHM)
+    headers = {"Authorization": f"Bearer {fake_token}"}
+
+    resp = client.get("/auth/me", headers=headers)
+    assert resp.status_code == 401
+    assert "Invalid token" in resp.json().get("detail", "") or "signature" in resp.json().get("detail", "").lower()
+
+def test_security_nosql_injection_register(client):
+    """Security Test: Trying to bypass email uniqueness via regex payload in registration."""
+    # This checks if the db.users.find_one execution parses dicts dangerously
+    injection_payload = {
+        "name": "Hacker",
+        "email": {"$regex": ".*"}, # This is not a string, should be caught by Pydantic 422
+        "password": "password"
+    }
+    resp = client.post("/auth/register", json=injection_payload)
+    assert resp.status_code == 422
+
+    # Assuming we get past Pydantic by tricking it, GrowthLog's Pydantic model for EmailStr
+    # absolutely rejects dicts physically.
+    
+def test_security_xss_in_goal_titles(client, auth_headers):
+    """Security Test: Ensure titles don't crash backend processors on XSS vectors."""
+    cat_id = client.post("/categories", headers=auth_headers, json={"name": "Cat", "icon": "c", "color": "#f"}).json()["id"]
+    
+    xss = "<img src=x onerror=alert(1)>"
+    resp = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id,
+        "title": xss,
+        "deadline": "2025-12-31"
+    })
+    
+    assert resp.status_code == 200
+    # Retrieve it to ensure it wasn't horribly mangled by the DB
+    goal_id = resp.json()["id"]
+    retrieved = client.get(f"/goals/{goal_id}", headers=auth_headers).json()
+    assert retrieved["title"] == xss # Should be preserved. Escaping happens on the frontend.
