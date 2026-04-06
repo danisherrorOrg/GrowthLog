@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 import time
-from main import JWT_SECRET
+from core.config import JWT_SECRET
 ALGORITHM = "HS256"
 import jwt
 
