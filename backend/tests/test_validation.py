@@ -160,5 +160,52 @@ def test_malformed_json_body(client, auth_headers):
     headers = {**auth_headers, "Content-Type": "application/json"}
     resp = client.post("/categories", content='{"name": "broken"', headers=headers)
     # FastAPI/Uvicorn might return 400 (Bad Request) or 422 (Unprocessable Entity)
-    # depending on where the JSON parsing failure is caught.
     assert resp.status_code in [400, 422]
+
+# --- 8. Complex True Positive Payloads ---
+
+def test_complex_true_positive_payloads(client, auth_headers):
+    # 1. Create a category to use
+    cat_resp = client.post("/categories", headers=auth_headers, json={
+        "name": "True Positive Core", "icon": "✅", "color": "#00ff00"
+    })
+    assert cat_resp.status_code == 200
+    cat_id = cat_resp.json()["id"]
+
+    # 2. True Positive: Fully loaded Daily Log
+    # Ensures the system happily accepts every single optional field populated correctly
+    # User adds a detailed log with emotions array and time_spent
+    valid_log = {
+        "date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"),
+        "entries": [{
+            "category_id": cat_id,
+            "text": "Extremely detailed logging of my day.",
+            "mood": 10,
+            "energy": 9,
+            "time_spent": 120,
+            "emotions": ["focused", "happy", "accomplished"]
+        }],
+        "highlight": "Finished the testing suite!",
+        "overall_rating": 10
+    }
+    log_resp = client.post("/logs", headers=auth_headers, json=valid_log)
+    assert log_resp.status_code == 200
+    assert log_resp.json()["success"] is True
+
+    # 3. True Positive: Complex Goal with Micro Goals
+    # Ensures that nested structures in a valid payload are perfectly processed
+    valid_goal = {
+        "category_id": cat_id,
+        "title": "Master True Positives",
+        "description": "Ensure the happy path is flawless.",
+        "deadline": (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
+    }
+    goal_resp = client.post("/goals", headers=auth_headers, json=valid_goal)
+    assert goal_resp.status_code == 200
+    
+    goal_id = goal_resp.json()["id"]
+    mg_resp = client.post(f"/goals/{goal_id}/micro-goals", headers=auth_headers, json={
+        "text": "Sub-task perfectly valid",
+        "time_spent": 0
+    })
+    assert mg_resp.status_code == 200
