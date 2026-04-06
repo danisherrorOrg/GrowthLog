@@ -24,7 +24,8 @@ def test_full_user_journey_integration(client):
     h = {"Authorization": f"Bearer {token}"}
     
     # 3. Create Custom Category
-    cat_resp = client.post("/categories", headers=h, json={"name": "Career", "icon": "💼", "color": "#0000ff"})
+    cat_name = f"Career_{os.urandom(2).hex()}"
+    cat_resp = client.post("/categories", headers=h, json={"name": cat_name, "icon": "💼", "color": "#0000ff"})
     assert cat_resp.status_code == 200
     cat_id = cat_resp.json()["id"]
     

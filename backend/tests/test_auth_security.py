@@ -24,13 +24,13 @@ def test_malformed_auth_header(client):
 def test_authorization_cross_tenant_isolation(client):
     """Authorization Test: Strict segregation of data between legitimate users."""
     u1_email = f"u1_{os.urandom(2).hex()}@ex.com"
-    client.post("/auth/register", json={"name": "U1", "email": u1_email, "password": "pass"})
-    u1_token = client.post("/auth/login", json={"email": u1_email, "password": "pass"}).json()["token"]
+    client.post("/auth/register", json={"name": "U1", "email": u1_email, "password": "Password123!"})
+    u1_token = client.post("/auth/login", json={"email": u1_email, "password": "Password123!"}).json()["token"]
     h1 = {"Authorization": f"Bearer {u1_token}"}
     
     u2_email = f"u2_{os.urandom(2).hex()}@ex.com"
-    client.post("/auth/register", json={"name": "U2", "email": u2_email, "password": "pass"})
-    u2_token = client.post("/auth/login", json={"email": u2_email, "password": "pass"}).json()["token"]
+    client.post("/auth/register", json={"name": "U2", "email": u2_email, "password": "Password123!"})
+    u2_token = client.post("/auth/login", json={"email": u2_email, "password": "Password123!"}).json()["token"]
     h2 = {"Authorization": f"Bearer {u2_token}"}
 
     # U1 creates a category
