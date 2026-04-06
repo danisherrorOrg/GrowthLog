@@ -12,6 +12,12 @@
 *   **Advanced Data Visualization (Recharts)**: Integrated dynamic LineCharts (Mood/Energy trends) and PieCharts (Life Balance/Time allocation) into the Dashboard.
 *   **Methodology Branding**: Revamped Login/Register with a "5 Dimensions of Growth" infographic (Mind, Body, Career, Social, Soul).
 *   **Onboarding Nudge**: Added a "Journey Starter" welcome card to the Dashboard for new users with 0 logs.
+*   **Backend Modularization (v2.2.0)**: Refactored the monolithic `main.py` into a domain-driven structure (`api/`, `core/`, `models/`, `utils/`) for better maintainability and vertical scaling.
+*   **70+ Point Test Suite**: Built an exhaustive backend test suite covering 14 categories including Security (JWT forgery, NoSQL injection), Boundary Values, and Concurrent Load.
+*   **Improved Testing Tooling**: Developed `run_tests.sh`, a specialized stress-testing and logging utility to ensure API stability across iterations.
+*   **Atomic Streak Recalculation**: Implemented a robust, non-linear streak algorithm that handles gaps and deletions accurately, ensuring data integrity at scale.
+*   **Centralized Configuration**: Moved all secrets and environmental logic into a dedicated `core/config.py` with Pydantic-style safety checks.
+*   **Enhanced Caching Layer**: Refined the in-memory cache into `utils/cache.py` with prefix-based invalidation and TTL support.
 
 ### 🟡 Partially Done (Needs more focus)
 *   **I want to remove hardcoding as much we can**: Ongoing. We've dynamicized prompts and badge loops, but color palettes and icons are still mostly hardcoded lists.
@@ -24,7 +30,8 @@
 
 ## 🎯 Proposed Roadmap (Next Steps)
 
-### Sprint 3: Architectural Refinement
-- [ ] Implement **Smarter Caching**: Use Redis (optional) or persistent local caching for faster dashboard loads.
+### Sprint 3: Privacy & Production Grade
+- [x] Implement **Modular Architecture**: Split main API into domain-specific routers.
+- [x] Build **Advanced Stress-Testing**: Utility to verify backend stability over N runs.
 - [ ] Build a **Headless "Bring Your Own Database" mode** for privacy-conscious users.
 - [ ] Connect a real **SMTP Service** for genuine profile verification.
