@@ -243,3 +243,30 @@ def test_complex_true_negative_payloads(client, auth_headers):
         "bio": ["I", "am", "an", "array"]
     })
     assert resp3.status_code == 422
+
+# --- 10. False Positive Prevention (Boundary Testing) ---
+
+def test_false_positive_prevention_boundaries(client, auth_headers):
+    # 1. False Positive Check: Deceptive Email Formatting
+    # The system shouldn't falsely accept emails missing a TLD
+    deceptive_resp = client.post("/auth/register", json={
+        "name": "Deceptive", "email": "hacker@localhost", "password": "securepassword"
+    })
+    assert deceptive_resp.status_code == 422
+    
+    # 2. False Positive Check: Mathematical Boundary for Passwords
+    # Must be minimum 8 characters. Exactly 7 should trigger a rejection.
+    boundary_resp = client.post("/auth/register", json={
+        "name": "Boundary", "email": f"b_{os.urandom(4).hex()}@ex.com", "password": "1234567"
+    })
+    assert boundary_resp.status_code == 422
+
+    # 3. False Positive Check: Null-ish Coercion Trap
+    # Passing the literal string "null" or "undefined" as a required name.
+    # FastAPI does cast this to a string, but our domain logic might not want users named "null"
+    # Note: Pydantic *will* accept the string "null" if it's a valid string. 
+    # If we want to test strict structural rejection, we pass actual JSON `null` to a str field
+    null_trap_resp = client.post("/categories", headers=auth_headers, json={
+        "name": None, "icon": "❓", "color": "#000"
+    })
+    assert null_trap_resp.status_code == 422
