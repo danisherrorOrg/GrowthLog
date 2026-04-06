@@ -854,6 +854,9 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
     return {"success": True, "id": mg_id}
 
 
+@app.put("/goals/{goal_id}/micro-goals/{mg_id}")
+def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
     # Atomic update using positional operator
     result = db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": uid, "micro_goals.id": mg_id},
