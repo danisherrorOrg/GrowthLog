@@ -270,3 +270,40 @@ def test_false_positive_prevention_boundaries(client, auth_headers):
         "name": None, "icon": "❓", "color": "#000"
     })
     assert null_trap_resp.status_code == 422
+
+# --- 11. False Negative Prevention (Unusual but Valid) ---
+
+def test_false_negative_prevention_valid_edge_cases(client, auth_headers):
+    # 1. False Negative Check: Complex Valid Email
+    # Many validators accidentally reject "plus" addressing or unusual TLDs.
+    complex_email = f"john.doe+growthlog.test_{os.urandom(2).hex()}@my-custom-domain.technology"
+    reg_resp = client.post("/auth/register", json={
+        "name": "Complex Email User", "email": complex_email, "password": "securepassword"
+    })
+    assert reg_resp.status_code == 200
+
+    # 2. False Negative Check: Type Coercion (Stringified Integers)
+    # Frontends often send form data as strings. FastAPI/Pydantic should coerce numeric strings,
+    # NOT falsely reject them as invalid types.
+    cats = client.get("/categories", headers=auth_headers).json()
+    cat_id = cats[0]["id"]
+    
+    coercion_resp = client.post("/logs", headers=auth_headers, json={
+        "date": "2024-05-05",
+        "entries": [{
+            "category_id": cat_id,
+            "text": "Sent as string",
+            "mood": "10",   # Passed as string, but model expects int
+            "energy": "9",  # Passed as string, but model expects int
+        }]
+    })
+    assert coercion_resp.status_code == 200
+    
+    # 3. False Negative Check: Far-Future Dates
+    # Valid ISO format dates far in the future should be accepted, not falsely rejected.
+    future_goal = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id,
+        "title": "Century Goal",
+        "deadline": "2099-12-31"
+    })
+    assert future_goal.status_code == 200
