@@ -28,10 +28,19 @@
 
 ---
 
-## 🎯 Proposed Roadmap (Next Steps)
+## 🎯 Proposed Roadmap (Prioritized Next Steps)
 
-### Sprint 3: Privacy & Production Grade
-- [x] Implement **Modular Architecture**: Split main API into domain-specific routers.
-- [x] Build **Advanced Stress-Testing**: Utility to verify backend stability over N runs.
-- [ ] Build a **Headless "Bring Your Own Database" mode** for privacy-conscious users.
-- [ ] Connect a real **SMTP Service** for genuine profile verification.
+### 🔴 High Priority: AI & Insights (Phase 3 Core)
+- [ ] **Weekly Growth Letter**: Integrate an LLM (e.g., OpenAI or Gemini API) to analyze the past 7 days of logs and generate a personalized reflection email.
+- [ ] **Pattern Detection**: Implement algorithms to find correlations (e.g., "On days you log 'Career', your 'Stress' emotion increases by 40%").
+- [ ] **Production SMTP**: Connect SendGrid/Mailgun to handle the delivery of verification emails and the new Weekly Growth Letters.
+
+### 🟡 Medium Priority: Customization & Sharing
+- [ ] **Dynamic Design System**: Move hardcoded color palettes and icons into the database so users can truly personalize their categories.
+- [ ] **Premium Public Profiles**: Enhance the `/u/:userId` page with beautiful, shareable cards (like Spotify Wrapped style graphics) for social sharing.
+- [ ] **Headless "Bring Your Own Database"**: Allow power-users to supply their own MongoDB URI for ultimate privacy.
+
+### 🟢 Low Priority: Expansion (Phase 4)
+- [ ] **Voice-to-Log**: Implement browser-based speech-to-text to make logging frictionless.
+- [ ] **Accountability Hub**: Allow linking with a partner to share specific goals or daily completion status.
+- [ ] **PDF "Growth Book" Exports**: Generate elegant annual summaries of all snapshots and manifestations.

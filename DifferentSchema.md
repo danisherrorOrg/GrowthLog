@@ -1,96 +1,79 @@
-Here's a comprehensive MongoDB schema design covering all current and future features:
+# GrowthLog Documentation: MongoDB Schema Architecture
+
+This document tracks the comprehensive NoSQL schema design. It reflects the live data models powering GrowthLog (Collections 1-7) and the planned architecture for our upcoming Phase 3 & 4 roadmap (Collections 8-12).
 
 ---
 
-**COLLECTION 1: Users**
+## 🟢 LIVE COLLECTIONS (Currently Built & Active)
 
-Stores everything about the person using the app. This includes basic identity (name, email, password), their preferences (reminder time, timezone, theme), their current streak and longest streak, their account type (free or premium), and metadata like when they joined and last logged in. Also stores notification settings and whether they have an accountability partner linked.
+### **COLLECTION 1: `users`**
+Stores everything about the person using the app. This includes basic identity, aesthetic preferences, and calculated streaks.
+*   **Properties**: `_id`, `name`, `email`, `password` (hashed), `bio`, `avatar_emoji`, `timezone`, `email_notifications`, `is_public`, `is_verified`, `verification_token`, `token_version`.
+*   **Gamification**: `streak`, `longest_streak`, `last_log_date`, `created_at`.
 
----
+### **COLLECTION 2: `categories`**
+Custom life dimensions (e.g., Mind, Body, Career, Emotional).
+*   **Properties**: `_id`, `user_id`, `name`, `icon`, `color` (hex - powers the Dynamic Design System), `description`, `archived`, `created_at`.
+*   *Note: Category uniqueness is enforced by a compound index on `[user_id, name]`.*
 
-**COLLECTION 2: Categories**
+### **COLLECTION 3: `category_templates`**
+System-provided or user-saved blueprints for quick category creation.
+*   **Properties**: `_id`, `user_id` (or system), `name`, `icon`, `color`, `description`.
 
-Each user creates categories like Career, Emotional, Relationships etc. This collection stores the category name, icon, color chosen by the user, the user it belongs to, whether it's active or archived, the order in which it appears on dashboard, and which prompt template is linked to it. It also stores the date created and whether it's a system default or user-created.
+### **COLLECTION 4: `goals`**
+Actionable objectives tied to specific categories.
+*   **Properties**: `_id`, `user_id`, `category_id`, `title`, `description`, `original_deadline`, `current_deadline`, `status` (active, completed, extended, abandoned), `created_at`.
+*   **Nested Tracking**:
+    *   `micro_goals`: `[{id, text, completed, time_spent}]` (Sub-tasks)
+    *   `reflections`: `[{id, text, status_change, date}]`
+    *   `extension_history`: `[{old_deadline, new_deadline, reason, extended_at}]`
+    *   `notes`: `[{id, text, date}]`
 
----
+### **COLLECTION 5: `daily_logs`**
+The heartbeat of the app. A single document per user, per day.
+*   **Properties**: `_id`, `user_id`, `date` (YYYY-MM-DD), `highlight`, `overall_rating` (1-10), `created_at`.
+*   **Nested Entries**:
+    *   `entries`: `[{category_id, text, mood, energy, time_spent, emotions: [str]}]`
 
-**COLLECTION 3: Goals**
+### **COLLECTION 6: `manifestations`**
+Long-term vision setting (30/60/90 day cycles).
+*   **Properties**: `_id`, `user_id`, `vision`, `start_date`, `target_date`, `target_days`, `categories` (array of category IDs), `status`, `reflection`, `created_at`.
+*   **Nested Tracking**:
+    *   `progress_entries`: `[{id, text, type, date}]` (Logs of wins/losses)
+    *   `manifestation_notes`: `[{id, text, date}]`
 
-Each goal lives inside a category. A goal document stores which user and category it belongs to, the goal title and description, the original deadline, current deadline (which changes if extended), status (active, completed, extended, abandoned), and a completion note — what was achieved or learned. It also stores an array of deadline extension history — each extension has the old deadline, new deadline, and the reason given. For decomposed goals, it stores an array of micro-goals, each with their own title, deadline, and completion status.
-
----
-
-**COLLECTION 4: Daily Logs**
-
-This is the heartbeat of the app — one document per user per day. It stores the date, the user ID, and an array of category entries. Each category entry has the category ID, the written reflection text, mood score (1–10), energy score (1–10), an array of specific emotions felt (anxious, proud, motivated etc.), and whether this category was skipped that day with a reason. The document also stores an overall day rating, a highlight of the day, and any voice log file reference if the user spoke instead of typed.
-
----
-
-**COLLECTION 5: Manifestations**
-
-Stores the user's vision of who they want to become. Each document has the user ID, the written vision statement, the start date, the target date (N days), the categories it covers, and status (active or completed). On completion, it stores the reflection — what actually happened vs. what was envisioned. A user can have multiple manifestation cycles running or completed over time.
-
----
-
-**COLLECTION 6: Snapshots**
-
-Stores "who I am today" moment-in-time captures. Each snapshot has the user ID, date taken, a written self-description, an optional photo or voice note reference, the mood and energy at that moment, and key values or beliefs the user holds at that point. These are meant to be compared against future snapshots to see transformation.
-
----
-
-**COLLECTION 7: Prompts**
-
-A library of daily prompts used across the app. Each prompt has a text, the category type it belongs to (emotional, career, general etc.), the source (system-generated or AI-generated), difficulty level (light reflection vs. deep dive), and a usage count so popular prompts can be tracked. Users can also save favorite prompts.
-
----
-
-**COLLECTION 8: Streaks & Milestones**
-
-Tracks the user's consistency and achievements. Stores current streak count, longest streak ever, last log date (used to calculate if streak is broken), and an array of milestone achievements — each milestone has a name (e.g. "First 30 Days"), the date it was earned, and whether the user has seen/acknowledged it. Also stores comeback events — when a user returned after a gap.
+### **COLLECTION 7: `snapshots`**
+"State of Being" self-portraits to compare historical growth side-by-side.
+*   **Properties**: `_id`, `user_id`, `date`, `description`, `values` (Array of core values), `mood` (1-10), `created_at`.
 
 ---
 
-**COLLECTION 9: Insights**
+## 🟡 UPCOMING COLLECTIONS (Roadmap / Phase 3 & 4)
 
-Stores generated insights for the user — both system-detected and AI-generated. Each insight document has the user ID, the time period it covers (weekly, monthly, custom), the type (pattern detected, emotional trend, category imbalance, goal behavior), the insight text, which categories or goals it references, and whether the user found it helpful (thumbs up/down). This allows the insight engine to get smarter over time.
+### **COLLECTION 8: `insights` (High Priority - Soon)**
+Stores system-detected patterns and AI-generated Weekly Growth Letters.
+*   **Proposed Schema**: `user_id`, `type` (pattern, growth_letter, balance_nudge), `content` (Markdown/HTML), `date_range` (start, end), `categories_referenced`, `user_feedback` (thumbs up/down).
 
----
+### **COLLECTION 9: `ai_interactions` (High Priority - Soon)**
+Audit log of prompts sent to the LLM to govern costs and improve context.
+*   **Proposed Schema**: `user_id`, `feature_triggered` (e.g., Weekly Summary), `prompt_tokens`, `completion_tokens`, `timestamp`.
 
-**COLLECTION 10: Accountability Partners**
+### **COLLECTION 10: `accountability_links` (Low Priority)**
+Manages the relationship between a user and their trusted partner.
+*   **Proposed Schema**: `user_id_1`, `user_id_2`, `status` (pending, active), `permissions` (summary_only, full_view), `established_at`.
 
-Manages the relationship between a user and their trusted partner. Stores the user ID, the partner's user ID or email (if not yet on the app), the permission level (summary only vs. milestone notifications), status (pending, active, removed), and a log of encouragements or nudges sent between them with timestamps.
-
----
-
-**COLLECTION 11: Exports & Reports**
-
-Tracks every time a user exports their data. Stores the user ID, export type (PDF journey book, year in review, custom range), the date range covered, the file reference, and status (generating, ready, expired). This allows re-downloading past exports without regenerating them.
-
----
-
-**COLLECTION 12: Notifications**
-
-Logs all notifications sent to the user. Stores the user ID, notification type (daily reminder, streak alert, milestone, accountability nudge, insight ready), message content, delivery channel (push, email, in-app), sent timestamp, and whether it was opened or acted upon. Useful for optimizing reminder timing.
+### **COLLECTION 11: `exports` (Low Priority)**
+Tracks generation of heavy PDF "Growth Books" to prevent server stalling.
+*   **Proposed Schema**: `user_id`, `type` (annual, snapshot_comparison), `status` (processing, ready, failed), `file_url`, `expires_at`.
 
 ---
 
-**COLLECTION 13: AI Interactions**
+### 🔑 KEY RELATIONSHIPS & INDEXING
+*   **User -> Categories**: `1-to-Many`
+*   **Category -> Goals**: `1-to-Many`
+*   **User -> Daily Logs**: `1-to-Many` (Strictly 1 per date, enforced by backend logic)
 
-If the AI layer is active, this collection stores each AI interaction. The user ID, the prompt sent to AI, the response received, which feature triggered it (weekly report, letter from future self, pattern detection), the date, and a user rating of the response. This builds a feedback loop for AI quality over time.
-
----
-
-**KEY RELATIONSHIPS SUMMARY**
-
-- A **User** has many **Categories**
-- A **Category** has many **Goals**
-- A **User** has many **Daily Logs**, one per day
-- Each **Daily Log** has entries for multiple **Categories**
-- A **User** has many **Manifestations** over time
-- A **User** has many **Snapshots** over time
-- **Insights** are generated from **Daily Logs + Goals + Streaks**
-- **AI Interactions** pull from **Logs + Manifestations + Snapshots**
-
----
-
-This schema is designed so you can start with just the first 5 collections and add the rest progressively as features are built. Want me to now build the actual website?
+**Performance Indexes Currently Active:**
+*   `db.daily_logs.create_index([("user_id", ASCENDING), ("date", DESCENDING)])`
+*   `db.goals.create_index([("user_id", ASCENDING), ("status", ASCENDING)])`
+*   `db.categories.create_index([("user_id", ASCENDING), ("name", ASCENDING)], unique=True)`
