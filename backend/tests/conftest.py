@@ -6,7 +6,8 @@ from pymongo import MongoClient
 # Use a separate test database
 os.environ["DB_NAME"] = "growthlog_test"
 
-from main import app, db, client as mongo_client
+from main import app
+from core.database import db, client as mongo_client
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
