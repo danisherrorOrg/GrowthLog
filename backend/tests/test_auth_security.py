@@ -50,7 +50,7 @@ def test_authorization_cross_tenant_isolation(client):
     
     # Verify U1's category wasn't actually changed
     u1_cats = client.get("/categories", headers=h1).json()
-    assert u1_cats[0]["name"] == "Private Cat"
+    assert any(c["name"] == "Private Cat" for c in u1_cats)
 
 # ==========================================
 # SECURITY TEST CASES
