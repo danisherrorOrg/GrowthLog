@@ -209,3 +209,37 @@ def test_complex_true_positive_payloads(client, auth_headers):
         "time_spent": 0
     })
     assert mg_resp.status_code == 200
+
+# --- 9. Complex True Negative Payloads (Adversarial) ---
+
+def test_complex_true_negative_payloads(client, auth_headers):
+    # 1. True Negative: Database Type Mismatch (String where Int expected)
+    # The system should accurately reject this with a 422 Validation Error, not a 500 server crash.
+    mismatch_payload = {
+        "date": "2024-01-01",
+        "entries": [{
+            "category_id": "507f1f77bcf86cd799439011",
+            "text": "Bad Data",
+            "mood": "happy",  # Should be an int (1-10)
+            "energy": [5]     # Should be an int (1-10)
+        }]
+    }
+    resp1 = client.post("/logs", headers=auth_headers, json=mismatch_payload)
+    assert resp1.status_code == 422
+
+    # 2. True Negative: NoSQL Injection Attempt Simulation
+    # Passing an object `{"$gt": ""}` as a password to see if it bypasses login.
+    # FastAPI/Pydantic should reject this because the schema expects a string, not a dict.
+    nosql_payload = {
+        "email": "test@example.com",
+        "password": {"$gt": ""}
+    }
+    resp2 = client.post("/auth/login", json=nosql_payload)
+    assert resp2.status_code == 422
+    
+    # 3. True Negative: List where String expected
+    # Attempting to crash the update_profile endpoint
+    resp3 = client.put("/auth/profile", headers=auth_headers, json={
+        "bio": ["I", "am", "an", "array"]
+    })
+    assert resp3.status_code == 422
