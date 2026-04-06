@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, field_validator
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, field_validator, EmailStr
 from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
@@ -37,6 +38,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(bson_errors.InvalidId)
+async def invalid_id_handler(request, exc):
+    return JSONResponse(status_code=400, content={"detail": "Invalid ID format"})
+
 def get_env_variable(name):
     value = os.getenv(name)
     if value is None:
@@ -53,8 +58,9 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 SMTP_SENDER = os.getenv("SMTP_SENDER", "noreply@growthlog.app")
 
+DB_NAME = os.getenv("DB_NAME", "growthlog")
 client = MongoClient(MONGO_URL)
-db = client["growthlog"]
+db = client[DB_NAME]
 security = HTTPBearer()
 
 # --- Ensure indexes on startup ---
@@ -173,8 +179,15 @@ def validate_user_owns_category(category_id: str, user_id: str):
 
 class RegisterModel(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Name cannot be empty or only whitespace")
+        return v
 
     @field_validator("password")
     @classmethod
@@ -184,7 +197,7 @@ class RegisterModel(BaseModel):
         return v
 
 class LoginModel(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 class ProfileUpdateModel(BaseModel):
@@ -210,6 +223,13 @@ class CategoryModel(BaseModel):
     icon: str
     color: str
     description: Optional[str] = ""
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Category name cannot be empty")
+        return v
 
 class CategoryTemplateModel(BaseModel):
     name: str
@@ -452,7 +472,7 @@ def me(current_user=Depends(get_current_user)):
 
 @app.put("/auth/profile")
 def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_user)):
-    fields = clean_update(data.dict())
+    fields = clean_update(data.model_dump())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.users.update_one({"_id": current_user["_id"]}, {"$set": fields})
@@ -637,7 +657,7 @@ def delete_category_template(template_id: str, current_user=Depends(get_current_
 @app.put("/categories/{category_id}")
 def update_category(category_id: str, data: CategoryUpdateModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    fields = clean_update(data.dict())
+    fields = clean_update(data.model_dump())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     try:
@@ -736,7 +756,7 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
 @app.put("/goals/{goal_id}")
 def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    fields = clean_update(data.dict())
+    fields = clean_update(data.model_dump())
     if "deadline" in fields:
         fields["current_deadline"] = fields.pop("deadline")
     if "category_id" in fields:
@@ -854,6 +874,9 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
     return {"success": True, "id": mg_id}
 
 
+@app.put("/goals/{goal_id}/micro-goals/{mg_id}")
+def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
     # Atomic update using positional operator
     result = db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": uid, "micro_goals.id": mg_id},
@@ -985,7 +1008,7 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
         validate_user_owns_category(entry.category_id, uid)
 
     existing = db.daily_logs.find_one({"user_id": uid, "date": today})
-    entries = [e.dict() for e in data.entries]
+    entries = [e.model_dump() for e in data.entries]
     if existing:
         db.daily_logs.update_one({"_id": existing["_id"]},
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating}})
@@ -1068,7 +1091,7 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
 
 @app.put("/manifestations/{m_id}")
 def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user=Depends(get_current_user)):
-    fields = clean_update(data.dict())
+    fields = clean_update(data.model_dump())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])}, {"$set": fields})
