@@ -9,11 +9,21 @@
 GrowthLog is a decoupled **FastAPI + React** application using **MongoDB** for flexible, schema-driven growth data.
 
 ### 🧩 Core Methodology
-*   **Version**: 2.2.0
+*   **Version**: 2.2.0 (Modular)
 *   **Database**: NoSQL (MongoDB) for unstructured daily reflections.
 *   **Security**: Stateless JWT with token versioning (invalidates on password change).
 *   **Caching**: In-memory LRU cache for heavy dashboard aggregations.
 *   **Frontend**: Multi-view SPA with sophisticated Recharts visualizations.
+
+### 🏛️ Backend Architecture (Modular)
+
+GrowthLog utilizes a decoupled **FastAPI + React** application structure. The backend has been refactored into specialized modules for better maintainability:
+
+*   **`api/routers/`**: Domain-specific logic (Auth, Goals, Logs, etc.) using FastAPI `APIRouter`.
+*   **`core/`**: Foundational settings (Config, Database connection, Security primitives).
+*   **`models/`**: Centralized Pydantic v2 validation schemas.
+*   **`utils/`**: Shared utilities (Caching, Email templates, Serialization).
+*   **`main.py`**: Lightweight entry point for middleware and router mounting.
 
 ---
 

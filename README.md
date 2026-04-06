@@ -65,9 +65,11 @@ npm start
 ```
 
 ### 4. Running Tests
+You can run the full suite using standard `pytest`, or use our specialized stress-tester:
 ```bash
 cd backend
-python3 -m pytest tests -v
+./run_tests.sh 1 # Run once with full logs (-v -s)
+./run_tests.sh 5 # Repeat 5 times to check for flakiness
 ```
 
 ---
@@ -76,11 +78,14 @@ python3 -m pytest tests -v
 
 ```text
 growthlog/
-├── backend/            ← FastAPI + MongoDB
-│   ├── main.py         ← Main API Entry Point
+├── backend/            ← FastAPI + MongoDB (Modular)
+│   ├── main.py         ← Lightweight API Entry
+│   ├── api/            ← Domain Routers (Auth, Goals, etc.)
+│   ├── core/           ← Db, Config, Security
+│   ├── models/         ← Pydantic Schemas
+│   ├── utils/          ← Cache, Helpers, Email
 │   ├── tests/          ← Robust 70+ test suite
-│   ├── .env.example    ← Environment Template
-│   └── requirements.txt
+│   └── run_tests.sh    ← Backend stress-test utility
 └── frontend/           ← React + Recharts
     ├── src/
     │   ├── pages/      ← 17+ Full views (Dashboard, Growth, Snapshots, etc.)
