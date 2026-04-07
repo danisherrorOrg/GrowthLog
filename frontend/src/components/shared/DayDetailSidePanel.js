@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import API from '../utils/api';
+import API from '../../utils/api';
 import toast from 'react-hot-toast';
 
 export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) {
@@ -14,26 +14,42 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
     setIsSubmitting(true);
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
-      // Find existing log entries if any
-      const existingLog = events.find(e => e.type === 'daily_log');
-      const existingEntries = existingLog?.data?.entries || [];
-      const newEntry = { 
-        category_id: quickAdd.category_id || (events.find(e => e.category)?.category?.id), 
-        text: reflectionText 
-      };
-
-      // Note: We need the actual category ID. If not in quickAdd, we try to find it from the event.
-      // For this implementation, we'll assume the backend enriched 'id' is available or use a fallback.
       
-      const payload = {
-        date: dateStr,
-        entries: [...existingEntries.map(e => ({ category_id: e.category_id, text: e.text })), newEntry],
-        highlight: existingLog?.description || '',
-        overall_rating: existingLog?.data?.mood || 5
-      };
+      if (quickAdd && quickAdd.type.startsWith('goal')) {
+          // Add reflection to Goal
+          await API.post(`/goals/${quickAdd.source_id}/reflections`, {
+              text: reflectionText,
+              date: dateStr
+          });
+          toast.success('Reflection added to Goal!');
+      } else if (quickAdd && quickAdd.type.startsWith('manifestation')) {
+          // Add progress entry to Manifestation
+          await API.post(`/manifestations/${quickAdd.source_id}/progress`, {
+              text: reflectionText,
+              type: 'reflection',
+              date: dateStr
+          });
+          toast.success('Progress reflection added to Manifestation!');
+      } else {
+          // Default to Daily Log
+          const existingLog = events.find(e => e.type === 'daily_log');
+          const existingEntries = existingLog?.data?.entries || [];
+          const newEntry = { 
+            category_id: quickAdd?.category?.id || (events.find(e => e.category)?.category?.id), 
+            text: reflectionText 
+          };
 
-      await API.post('/logs', payload);
-      toast.success('Reflection added to your journey!');
+          const payload = {
+            date: dateStr,
+            entries: [...existingEntries.map(e => ({ category_id: e.category_id, text: e.text })), newEntry],
+            highlight: existingLog?.description || '',
+            overall_rating: existingLog?.data?.mood || 5
+          };
+
+          await API.post('/logs', payload);
+          toast.success('Reflection added to your daily log!');
+      }
+
       setReflectionText('');
       onClose(); // Close and triggers refresh in parent
     } catch (err) {
@@ -70,6 +86,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
             <h2 style={{ margin: 0, fontFamily: 'serif', fontSize: '24px' }}>{format(date, 'MMMM do, yyyy')}</h2>
         </div>
             <button 
+                type="button"
                 onClick={onClose} 
                 style={{ background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#888', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
                 onMouseOver={el => el.currentTarget.style.background = '#eee'}
@@ -91,7 +108,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                     </span>
                 </div>
                 <textarea 
-                    placeholder="What happened today? Capture a quick reflection..."
+                    placeholder={`What happened with this ${quickAdd.type.split('_')[0]}? Capture a reflection...`}
                     value={reflectionText}
                     onChange={(e) => setReflectionText(e.target.value)}
                     style={{ 
@@ -101,6 +118,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                     }}
                 />
                 <button 
+                    type="button"
                     onClick={handleQuickAdd}
                     disabled={isSubmitting || !reflectionText.trim()}
                     style={{ 

@@ -110,25 +110,28 @@ export default function JourneyFeed({ events, onEventClick }) {
                                         el.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.03)';
                                     }}
                                 >
-                                    {/* Quick Action Button */}
-                                    <button 
-                                        onClick={(ev) => {
-                                            ev.stopPropagation();
-                                            onEventClick({ ...e, action: 'quick_add' });
-                                        }}
-                                        title="Quick Reflection"
-                                        style={{ 
-                                            position: 'absolute', top: '16px', right: '16px', 
-                                            width: '28px', height: '28px', borderRadius: '50%', 
-                                            border: '1px solid #eee', background: 'white', 
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', 
-                                            justifyContent: 'center', fontSize: '18px', color: '#999'
-                                        }}
-                                        onMouseOver={el => { el.currentTarget.style.background = '#f9f9f9'; el.currentTarget.style.color = config.color; }}
-                                        onMouseOut={el => { el.currentTarget.style.background = 'white'; el.currentTarget.style.color = '#999'; }}
-                                    >
-                                        +
-                                    </button>
+                                    {/* Quick Action Button - only for Goals and Manifestations */}
+                                    {(e.type.startsWith('goal') || e.type.startsWith('manifestation')) && (
+                                        <button 
+                                            type="button"
+                                            onClick={(ev) => {
+                                                ev.stopPropagation();
+                                                onEventClick({ ...e, action: 'quick_add' });
+                                            }}
+                                            title="Quick Reflection"
+                                            style={{ 
+                                                position: 'absolute', top: '16px', right: '16px', 
+                                                width: '28px', height: '28px', borderRadius: '50%', 
+                                                border: '1px solid #eee', background: 'white', 
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                                                justifyContent: 'center', fontSize: '18px', color: '#999'
+                                            }}
+                                            onMouseOver={el => { el.currentTarget.style.background = '#f9f9f9'; el.currentTarget.style.color = config.color; }}
+                                            onMouseOut={el => { el.currentTarget.style.background = 'white'; el.currentTarget.style.color = '#999'; }}
+                                        >
+                                            +
+                                        </button>
+                                    )}
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                         <span style={{ fontSize: '16px' }}>{config.icon}</span>
