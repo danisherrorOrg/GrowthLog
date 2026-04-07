@@ -46,6 +46,9 @@ app.include_router(snapshots_router)
 app.include_router(dashboard_router)
 app.include_router(prompts_router)
 
+from api.routers.timeline import router as timeline_router
+app.include_router(timeline_router)
+
 @app.get("/")
 def root():
     return {"message": "GrowthLog API v2.2.0 Modular backend running"}
