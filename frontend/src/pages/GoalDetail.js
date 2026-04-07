@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const SORT_OPTIONS = [
@@ -45,6 +46,10 @@ export default function GoalDetail() {
   // Reflect/complete modal
   const [showReflectModal, setShowReflectModal] = useState(false);
   const [reflectForm, setReflectForm] = useState({ status: 'completed', reflection: '', new_deadline: '' });
+
+  // Edit Goal modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({ category_id: '', title: '', description: '', deadline: '' });
 
   const load = async () => {
     try {
@@ -173,6 +178,19 @@ export default function GoalDetail() {
     finally { setSaving(false); }
   };
 
+  const handleUpdateGoal = async () => {
+    if (!editForm.title || !editForm.category_id || !editForm.deadline) return toast.error('Fill all required fields');
+    setSaving(true);
+    try {
+      await API.put(`/goals/${goalId}`, editForm);
+      toast.success('Goal updated!');
+      setShowEditModal(false);
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to save goal'));
+    } finally { setSaving(false); }
+  };
+
   const handleReflect = async () => {
     if (!reflectForm.reflection.trim()) return toast.error('Write your reflection');
     if (reflectForm.status === 'extended' && !reflectForm.new_deadline) return toast.error('Set a new deadline');
@@ -228,230 +246,302 @@ export default function GoalDetail() {
       </div>
 
       <div className="page-body">
-        {/* Goal overview */}
-        <div className="card" style={{ borderLeft: `4px solid ${cat?.color || '#ccc'}`, marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              {goal.description && (
-                <p style={{ fontSize: 15, color: 'rgba(13,13,13,0.65)', lineHeight: 1.7, marginBottom: 16 }}>{goal.description}</p>
-              )}
-              <div style={{ display: 'flex', gap: 20, fontSize: 13, color: 'rgba(13,13,13,0.45)' }}>
-                <span>Created {format(new Date(goal.created_at), 'MMM d, yyyy')}</span>
-                <span>Original deadline: {format(parseISO(goal.original_deadline), 'MMM d, yyyy')}</span>
-                {goal.extension_history?.length > 0 && <span className="tag tag-gold">Extended ×{goal.extension_history.length}</span>}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 12 }}>
-              {isActive && (
-                <button className="btn btn-primary btn-sm" onClick={() => { setShowReflectModal(true); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
-                  Reflect
-                </button>
-              )}
-              <button className="btn btn-ghost btn-sm" onClick={handleDelete} style={{ color: 'var(--rust)' }}>🗑 Delete</button>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-          {/* Micro-Goals Section */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 17 }}>🎯 Micro-goals</h3>
-              <button className="btn btn-sm btn-outline" onClick={() => setShowMgInput(!showMgInput)}>+ Add</button>
-            </div>
-
-            {showMgInput && (
-              <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
-                <input className="form-input" value={mgText} onChange={e => setMgText(e.target.value)}
-                  placeholder="Small, actionable step..." style={{ marginBottom: 8 }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <label style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
-                  <input type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
-                    style={{ width: 80, padding: '4px 8px' }} min="0" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 32, alignItems: 'flex-start' }}>
+          
+          {/* Main Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            
+            {/* Goal Overview Card */}
+            <div className="card" style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: cat?.color || 'var(--sage)' }} />
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+                <div>
+                  <h3 style={{ fontSize: 24, marginBottom: 8 }}>{goal.title}</h3>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                    <span className={`tag ${goal.status === 'completed' ? 'tag-green' : isOverdue ? 'tag-rust' : 'tag-gold'}`} style={{ padding: '4px 12px' }}>
+                      {goal.status}
+                    </span>
+                    <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>
+                      Started {format(new Date(goal.created_at), 'MMM d, yyyy')}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setShowMgInput(false); setMgText(''); setMgTime(0); }}>Cancel</button>
-                  <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving}>Add Step</button>
+                  {isActive && (
+                    <button className="btn btn-primary" onClick={() => { setShowReflectModal(true); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }} style={{ borderRadius: 30 }}>
+                      Complete Goal ✦
+                    </button>
+                  )}
+                  <button className="btn btn-outline" onClick={() => { setEditForm({ category_id: goal.category_id, title: goal.title, description: goal.description || '', deadline: goal.current_deadline }); setShowEditModal(true); }} style={{ borderRadius: 30 }}>✎ Edit</button>
+                  <button className="btn btn-ghost" onClick={handleDelete} style={{ color: 'var(--rust)', opacity: 0.5 }}>🗑</button>
                 </div>
               </div>
-            )}
 
+              {goal.description && (
+                <div className="markdown-body" style={{ fontSize: 16, color: 'var(--ink)', opacity: 0.8, lineHeight: 1.8, marginBottom: 24 }}>
+                  <MarkdownRenderer content={goal.description} />
+                </div>
+              )}
 
-            {(goal.micro_goals || []).length === 0 && !showMgInput ? (
-              <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>Break this goal down into smaller steps.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(goal.micro_goals || []).map(mg => (
-                  <div key={mg.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', background: mg.completed ? 'rgba(107,140,107,0.08)' : 'var(--mist)', borderRadius: 8, border: mg.completed ? '1px solid rgba(107,140,107,0.2)' : '1px solid transparent' }}>
-                    {editMg === mg.id ? (
-                      <div>
-                        <input className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ marginBottom: 8, fontSize: 13 }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <label style={{ fontSize: 11, color: 'rgba(13,13,13,0.5)' }}>Time (min):</label>
-                          <input type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)}
-                            style={{ width: 70, padding: '2px 6px', fontSize: 12 }} min="0" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: '20px', background: 'var(--mist)', borderRadius: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Target Deadline</div>
+                  <div style={{ fontSize: 15, fontWeight: 500, color: isOverdue ? 'var(--rust)' : 'var(--ink)' }}>
+                    {format(deadline, 'MMMM d, yyyy')}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Status Window</div>
+                  <div style={{ fontSize: 15, fontWeight: 500 }}>
+                    {isOverdue ? `${Math.abs(daysLeft)} days overdue` : isActive ? `${daysLeft} days remaining` : 'Goal finalized'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Micro-goals Section */}
+            <section>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 18 }}>🎯 Implementation Steps</h3>
+                <button className="btn btn-sm btn-outline" onClick={() => setShowMgInput(!showMgInput)} style={{ borderRadius: 20 }}>
+                  {showMgInput ? 'Cancel' : '+ Add Step'}
+                </button>
+              </div>
+
+              <div className="card" style={{ padding: '8px' }}>
+                {showMgInput && (
+                  <div style={{ margin: '12px', padding: '16px', background: 'var(--cloud)', borderRadius: 12, border: '1px solid rgba(13,13,13,0.05)' }}>
+                    <input 
+                      className="form-input" 
+                      value={mgText} 
+                      onChange={e => setMgText(e.target.value)}
+                      placeholder="What is the next tiny step?" 
+                      style={{ marginBottom: 12, fontSize: 15, border: 'none', background: 'transparent', padding: 0 }} 
+                      autoFocus
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>⏱ Estimate:</span>
+                        <input type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
+                          style={{ width: 60, padding: '4px 8px', fontSize: 13 }} min="0" />
+                        <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>min</span>
+                      </div>
+                      <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving} style={{ borderRadius: 20 }}>Add to Path</button>
+                    </div>
+                  </div>
+                )}
+
+                {(goal.micro_goals || []).length === 0 && !showMgInput ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center', color: 'rgba(13,13,13,0.3)' }}>
+                    <div style={{ fontSize: 24, marginBottom: 8 }}>⚒️</div>
+                    <p style={{ fontSize: 14 }}>Deconstruct this goal into manageable chunks.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {(goal.micro_goals || []).map((mg, idx) => (
+                      <div key={mg.id} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 16, 
+                        padding: '16px 20px', 
+                        borderBottom: idx === goal.micro_goals.length - 1 ? 'none' : '1px solid rgba(13,13,13,0.04)',
+                        background: mg.completed ? 'rgba(107,140,107,0.02)' : 'transparent'
+                      }}>
+                        <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ width: 18, height: 18, cursor: 'pointer', accentColor: 'var(--sage)' }} />
+                        <div style={{ flex: 1 }}>
+                          {editMg === mg.id ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <input className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ padding: '4px 8px', fontSize: 14 }} />
+                              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                <input type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)} style={{ width: 60, padding: '2px 6px', fontSize: 12 }} />
+                                <span style={{ fontSize: 11, opacity: 0.5 }}>min</span>
+                                <div style={{ flex: 1 }} />
+                                <button className="btn btn-ghost btn-sm" onClick={() => setEditMg(null)}>Cancel</button>
+                                <button className="btn btn-primary btn-sm" onClick={() => handleUpdateMg(mg.id)}>Save</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="markdown-body" style={{ 
+                                fontSize: 15, 
+                                color: mg.completed ? 'rgba(13,13,13,0.3)' : 'var(--ink)', 
+                                textDecoration: mg.completed ? 'line-through' : 'none' 
+                              }}>
+                                <MarkdownRenderer content={mg.text} />
+                              </div>
+                              {mg.time_spent > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', marginTop: 4, display: 'block' }}>Estimated {mg.time_spent} min</span>}
+                            </>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button className="btn btn-outline btn-sm" onClick={() => setEditMg(null)} style={{ fontSize: 11 }}>Cancel</button>
-                          <button className="btn btn-primary btn-sm" onClick={() => handleUpdateMg(mg.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                        <div style={{ display: 'flex', gap: 8, opacity: 0.3 }}>
+                          <button onClick={() => { setEditMg(mg.id); setEditMgText(mg.text); setEditMgTime(mg.time_spent || 0); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>✎</button>
+                          <button onClick={() => handleDeleteMg(mg.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+            
+            {/* Reflections Section */}
+            <section>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 18 }}>💭 Evolution Track</h3>
+                <button className="btn btn-sm btn-ghost" onClick={() => setShowReflectionInput(!showReflectionInput)}>Record Insights</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {showReflectionInput && (
+                  <div className="card" style={{ padding: '16px', background: 'var(--cloud)', border: '1px solid var(--sage-light)' }}>
+                    <textarea className="form-textarea" value={reflectionText} onChange={e => setReflectionText(e.target.value)}
+                      placeholder="What are you learning about this journey?" style={{ minHeight: 100, marginBottom: 12, border: 'none', background: 'transparent', padding: 0 }} autoFocus />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                      <button className="btn btn-outline btn-sm" onClick={() => setShowReflectionInput(false)}>Cancel</button>
+                      <button className="btn btn-primary btn-sm" onClick={handleAddReflection} disabled={saving}>Save Insight</button>
+                    </div>
+                  </div>
+                )}
+
+                {goal.reflection && (
+                  <div className="card" style={{ padding: '20px', background: 'var(--mist)', borderLeft: '4px solid var(--sage)' }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 700, marginBottom: 8 }}>Final Outcome</div>
+                    <div className="markdown-body" style={{ fontSize: 14, fontStyle: 'italic', lineHeight: 1.6 }}><MarkdownRenderer content={goal.reflection} /></div>
+                  </div>
+                )}
+
+                {(goal.reflections || []).slice().reverse().map((r, i) => (
+                  <div key={r.id || i} className="card" style={{ padding: '16px 20px' }}>
+                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{format(new Date(r.date), 'MMM d, yyyy')}</span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        {r.status_change && <span style={{ color: 'var(--sage)', fontWeight: 600 }}>{r.status_change}</span>}
+                        <button onClick={() => { setEditReflectionId(r.id); setEditReflectionText(r.text); }} className="btn btn-ghost" style={{ padding: 0, opacity: 0.3, fontSize: 12 }}>✎</button>
+                        <button onClick={() => handleDeleteReflection(r.id)} className="btn btn-ghost" style={{ padding: 0, opacity: 0.3, fontSize: 12, color: 'var(--rust)' }}>✕</button>
+                      </div>
+                    </div>
+                    {editReflectionId === r.id ? (
+                      <div style={{ marginTop: 8 }}>
+                        <textarea className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 80, fontSize: 13, marginBottom: 8 }} />
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditReflectionId(null)}>Cancel</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => handleUpdateReflection(r.id)}>Update</button>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                        <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
-                          {mg.time_spent > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 2, display: 'block' }}>⏱ {mg.time_spent} min spent</span>}
-                        </div>
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          <button onClick={() => { setEditMg(mg.id); setEditMgText(mg.text); setEditMgTime(mg.time_spent || 0); }}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
-                          <button onClick={() => handleDeleteMg(mg.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
-                        </div>
+                      <div className="markdown-body" style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
+                        <MarkdownRenderer content={r.text} />
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-            )}
+            </section>
 
-          </div>
-
-          {/* Notes Section */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 17 }}>📝 Notes</h3>
-              <button className="btn btn-sm btn-outline" onClick={() => setShowNoteInput(!showNoteInput)}>+ Add Note</button>
-            </div>
-
-            {showNoteInput && (
-              <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
-                <textarea className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
-                  placeholder="Quick note, idea, or reminder about this goal..." style={{ minHeight: 80, marginBottom: 8 }} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setShowNoteInput(false); setNoteText(''); }}>Cancel</button>
-                  <button className="btn btn-primary btn-sm" onClick={handleAddNote} disabled={saving}>Save Note</button>
-                </div>
+            {/* Notes Section */}
+            <section>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontSize: 18 }}>📝 Field Notes</h3>
+                <button className="btn btn-sm btn-ghost" onClick={() => setShowNoteInput(!showNoteInput)}>Add Note</button>
               </div>
-            )}
 
-            {(goal.notes || []).length === 0 && !showNoteInput ? (
-              <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>No notes yet. Add thoughts, ideas, or reminders.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {showNoteInput && (
+                <div className="card" style={{ padding: '16px', marginBottom: 12, background: 'var(--cloud)' }}>
+                  <textarea className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
+                    placeholder="Quick thought or reminder..." style={{ minHeight: 80, marginBottom: 12, border: 'none', background: 'transparent', padding: 0 }} autoFocus />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => setShowNoteInput(false)}>Cancel</button>
+                    <button className="btn btn-primary btn-sm" onClick={handleAddNote} disabled={saving}>Save</button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(goal.notes || []).slice().reverse().map(note => (
-                  <div key={note.id} style={{ padding: '10px 12px', background: 'var(--mist)', borderRadius: 8, position: 'relative' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 4 }}>
-                      {format(new Date(note.date), 'MMM d, yyyy')}
+                  <div key={note.id} style={{ padding: '12px 16px', background: 'white', borderRadius: 12, border: '1px solid rgba(13,13,13,0.04)', boxShadow: '0 2px 4px rgba(13,13,13,0.02)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.3)', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{format(new Date(note.date), 'MMM d, yyyy · p')}</span>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => { setEditNoteId(note.id); setEditNoteText(note.text); }} className="btn btn-ghost" style={{ padding: 0, opacity: 0.3, fontSize: 11 }}>✎ Edit</button>
+                        <button onClick={() => handleDeleteNote(note.id)} className="btn btn-ghost" style={{ padding: 0, opacity: 0.3, fontSize: 11, color: 'var(--rust)' }}>✕</button>
+                      </div>
                     </div>
                     {editNoteId === note.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button className="btn btn-sm btn-outline" onClick={() => setEditNoteId(null)} style={{ fontSize: 11 }}>Cancel</button>
-                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateNote(note.id)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
+                      <div style={{ marginTop: 8 }}>
+                        <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 12, marginBottom: 8 }} />
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setEditNoteId(null)}>Cancel</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => handleUpdateNote(note.id)}>Save</button>
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
-                        <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-                          <button onClick={() => { setEditNoteId(note.id); setEditNoteText(note.text); }}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
-                          <button onClick={() => handleDeleteNote(note.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
-                        </div>
-                      </>
+                      <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)' }}><MarkdownRenderer content={note.text} /></div>
                     )}
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </section>
 
-          {/* Reflections Section */}
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 17 }}>💭 Reflections</h3>
-              <button className="btn btn-sm btn-outline" onClick={() => setShowReflectionInput(!showReflectionInput)}>+ Add</button>
-            </div>
-
-            {showReflectionInput && (
-              <div style={{ marginBottom: 16, padding: '12px', background: 'var(--mist)', borderRadius: 10 }}>
-                <textarea className="form-textarea" value={reflectionText} onChange={e => setReflectionText(e.target.value)}
-                  placeholder="What progress did you make? What did you learn?" style={{ minHeight: 80, marginBottom: 8 }} />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => { setShowReflectionInput(false); setReflectionText(''); }}>Cancel</button>
-                  <button className="btn btn-primary btn-sm" onClick={handleAddReflection} disabled={saving}>Save</button>
-                </div>
-              </div>
-            )}
-
-            {goal.reflection && (
-              <div style={{ padding: '10px 14px', background: 'rgba(107,140,107,0.1)', borderRadius: 8, marginBottom: 10, borderLeft: '3px solid var(--sage)' }}>
-                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', marginBottom: 4 }}>Final Reflection</div>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(13,13,13,0.65)', margin: 0 }}>{goal.reflection}</p>
-              </div>
-            )}
-
-            {(goal.reflections || []).length === 0 && !goal.reflection && !showReflectionInput ? (
-              <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.35)', fontStyle: 'italic' }}>No reflections yet.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(goal.reflections || []).slice().reverse().map((r, i) => (
-                  <div key={r.id || i} style={{ padding: '10px 12px', background: 'var(--mist)', borderRadius: 8, borderLeft: '2px solid rgba(13,13,13,0.1)', position: 'relative' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
-                      {format(new Date(r.date), 'MMM d, yyyy')}
-                      {r.status_change && <span style={{ marginLeft: 6, color: 'var(--sage)' }}>· {r.status_change}</span>}
-                    </div>
-                    {editReflectionId === (r.id || i) ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <textarea className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 60, fontSize: 13 }} />
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button className="btn btn-sm btn-outline" onClick={() => setEditReflectionId(null)} style={{ fontSize: 11 }}>Cancel</button>
-                          <button className="btn btn-sm btn-primary" onClick={() => handleUpdateReflection(r.id || i)} disabled={saving} style={{ fontSize: 11 }}>Save</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
-                        {r.id && (
-                          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-                            <button onClick={() => { setEditReflectionId(r.id || i); setEditReflectionText(r.text); }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
-                            <button onClick={() => handleDeleteReflection(r.id)}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Extension history */}
+        {/* Extensions history - simplified */}
         {goal.extension_history?.length > 0 && (
-          <div className="card" style={{ marginTop: 20 }}>
-            <h3 style={{ fontSize: 17, marginBottom: 12 }}>🔄 Extension History</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid rgba(13,13,13,0.05)' }}>
+            <h3 style={{ fontSize: 14, textTransform: 'uppercase', color: 'rgba(13,13,13,0.3)', letterSpacing: 1, marginBottom: 16 }}>Deadline History</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               {goal.extension_history.map((h, i) => (
-                <div key={i} style={{ padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13 }}>
-                  <div style={{ display: 'flex', gap: 12, color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>
-                    <span>From: {format(parseISO(h.old_deadline), 'MMM d, yyyy')}</span>
-                    <span>→</span>
-                    <span>To: {format(parseISO(h.new_deadline), 'MMM d, yyyy')}</span>
-                  </div>
-                  {h.reason && <p style={{ margin: 0, fontStyle: 'italic', color: 'rgba(13,13,13,0.6)' }}>{h.reason}</p>}
+                <div key={i} className="tag tag-mist" style={{ padding: '6px 12px', fontSize: 12 }}>
+                  {format(parseISO(h.old_deadline), 'MMM d')} → {format(parseISO(h.new_deadline), 'MMM d, yyyy')}
                 </div>
               ))}
             </div>
           </div>
         )}
       </div>
+
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <h3>Edit Goal</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select className="form-select" value={editForm.category_id} onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Goal Title</label>
+              <input className="form-input" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="What do you want to achieve?" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Description (optional)</label>
+              <textarea className="form-textarea" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 120 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Target Deadline</label>
+              <input type="date" className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" onClick={() => setShowEditModal(false)} style={{ flex: 1 }}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleUpdateGoal} disabled={saving} style={{ flex: 1 }}>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reflect Modal */}
       {showReflectModal && (

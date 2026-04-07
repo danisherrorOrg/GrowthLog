@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 export default function AllLogs() {
   const navigate = useNavigate();
@@ -136,7 +137,9 @@ export default function AllLogs() {
                         {log.highlight && (
                           <div style={{ marginBottom: 24, padding: '20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '5px solid var(--sage)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                             <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', fontWeight: 800, display: 'block', marginBottom: 8 }}>The Day's Peak</label>
-                            <p style={{ margin: 0, fontStyle: 'italic', color: 'var(--ink)', fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>"{log.highlight}"</p>
+                            <div className="markdown-body" style={{ margin: 0, fontStyle: 'italic', color: 'var(--ink)', fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
+                              <MarkdownRenderer content={log.highlight} />
+                            </div>
                           </div>
                         )}
 
@@ -154,9 +157,9 @@ export default function AllLogs() {
                                     <span className="tag tag-mist" style={{ fontSize: 10 }}>Energy {entry.energy}</span>
                                   </div>
                                 </div>
-                                <p style={{ fontSize: 14, margin: 0, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6 }}>
-                                  {entry.text || <span style={{ fontStyle: 'italic', opacity: 0.5 }}>No detailed notes...</span>}
-                                </p>
+                                <div className="markdown-body" style={{ fontSize: 14, margin: 0, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6 }}>
+                                  {entry.text ? <MarkdownRenderer content={entry.text} /> : <span style={{ fontStyle: 'italic', opacity: 0.5 }}>No detailed notes...</span>}
+                                </div>
                               </div>
                             );
                           })}

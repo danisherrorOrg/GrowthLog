@@ -11,6 +11,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar
 } from 'recharts';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -22,7 +23,15 @@ export default function Dashboard() {
   const [quote, setQuote] = useState(null);
 
   useEffect(() => {
-    API.get('/prompts/quote').then(r => setQuote(r.data)).catch(() => {});
+    API.get('/quotes/random').then(r => {
+      if (r.data) {
+        setQuote({ text: r.data.content, author: r.data.author });
+      } else {
+        API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+      }
+    }).catch(() => {
+      API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+    });
   }, []);
 
   useEffect(() => {
@@ -180,7 +189,7 @@ export default function Dashboard() {
             borderRadius: 20
           }}>
             <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 12 }}>“</div>
-            <p style={{ 
+            <div className="markdown-body" style={{ 
               fontFamily: 'Fraunces', 
               fontSize: 20, 
               color: 'var(--ink)', 
@@ -189,8 +198,8 @@ export default function Dashboard() {
               fontStyle: 'italic',
               maxWidth: 600
             }}>
-              {quote.text}
-            </p>
+              <MarkdownRenderer content={quote.text} />
+            </div>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)' }}>
               — {quote.author}
             </div>
@@ -273,9 +282,15 @@ export default function Dashboard() {
                       <span className="tag tag-mist" style={{ fontSize: 10 }}>No entry</span>
                     )}
                   </div>
-                  <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: hoveredData.highlight ? 'normal' : 'italic', margin: 0, lineHeight: 1.4 }}>
-                    {hoveredData.highlight || (hoveredData.rating ? "Detailed log captured for this day." : "Take a moment to reflect and log today's growth.")}
-                  </p>
+                  <div className="markdown-body" style={{ fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: hoveredData.highlight ? 'normal' : 'italic', margin: 0, lineHeight: 1.4 }}>
+                    {hoveredData.highlight ? (
+                      <MarkdownRenderer content={hoveredData.highlight} />
+                    ) : (
+                      <p style={{ margin: 0, fontSize: 12, fontStyle: 'italic' }}>
+                        {hoveredData.rating ? "Detailed log captured for this day." : "Take a moment to reflect and log today's growth."}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', opacity: 0.5 }}>
@@ -446,12 +461,28 @@ export default function Dashboard() {
               <button className="btn btn-ghost btn-sm" onClick={() => navigate('/manifestations')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--gold)' }}>
+              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--sage)' }}>
                 {data?.active_manifestations || 0}
               </div>
               <div>
                 <div style={{ fontSize: 15, color: 'rgba(245,240,232,0.8)', marginBottom: 4 }}>Active visions</div>
                 <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.4)' }}>Manifesting your future self</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)' }}>
+            <div className="section-title" style={{ color: 'var(--paper)' }}>
+              <span>Action Board</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/todos')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--gold)' }}>
+                {data?.todos_pending || 0}
+              </div>
+              <div>
+                <div style={{ fontSize: 15, color: 'rgba(245,240,232,0.8)', marginBottom: 4 }}>Pending actions</div>
+                <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.4)' }}>What's your next step?</div>
               </div>
             </div>
           </div>

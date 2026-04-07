@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const SORT_OPTIONS = [
@@ -176,135 +177,142 @@ export default function Goals() {
 
       <div className="page-body">
         {overdue.length > 0 && (
-          <div className="card" style={{ background: 'rgba(196,98,58,0.08)', border: '1px solid rgba(196,98,58,0.2)', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, color: 'var(--rust)', marginBottom: 8 }}>⚠️ {overdue.length} goal{overdue.length > 1 ? 's' : ''} past deadline</h3>
-            <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>These goals need your reflection — complete, extend, or acknowledge them.</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-              {overdue.map(g => (
-                <button key={g.id} className="btn btn-sm" style={{ background: 'var(--rust)', color: 'white' }}
-                  onClick={() => { setReflectGoal(g); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
-                  {g.title} →
-                </button>
-              ))}
+          <div className="card" style={{ background: 'rgba(196,98,58,0.04)', border: '1px solid rgba(196,98,58,0.1)', marginBottom: 24, padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: 15, color: 'var(--rust)', marginBottom: 2 }}>⚠️ {overdue.length} Action Required</h3>
+                <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>Goals past their target deadline need reflection.</p>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {overdue.map(g => (
+                  <button key={g.id} className="btn btn-sm btn-danger" style={{ borderRadius: 20, fontSize: 11, padding: '4px 12px' }}
+                    onClick={() => { setReflectGoal(g); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
+                    {g.title}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['active', 'completed', 'extended', 'abandoned', 'all'].map(f => (
-              <button key={f} className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-outline'}`} onClick={() => setFilter(f)}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-          <button className="btn btn-primary" onClick={openCreate}>+ New Goal</button>
-        </div>
+        {/* Unified Toolbar */}
+        <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+              {['active', 'completed', 'all'].map(f => (
+                <button 
+                  key={f} 
+                  className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`} 
+                  onClick={() => setFilter(f)}
+                  style={{ borderRadius: 8, padding: '6px 16px', fontSize: 12 }}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
 
-        {/* Sort + Filter Row */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', textTransform: 'uppercase', letterSpacing: 1 }}>Sort</span>
-            <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '6px 10px', fontSize: 13, height: 'auto' }}>
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <button className="btn btn-sm btn-outline" onClick={() => setSortOrder(s => s === 'desc' ? 'asc' : 'desc')}>
-              {sortOrder === 'desc' ? '↓' : '↑'}
-            </button>
+            <div className="divider-v" style={{ width: 1, height: 24, background: 'rgba(13,13,13,0.1)' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <select className="form-select" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '6px 12px', fontSize: 12, height: 'auto', border: 'none', background: 'transparent', fontWeight: 500 }}>
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <button 
+                className="btn btn-ghost btn-sm" 
+                onClick={() => setSortOrder(s => s === 'desc' ? 'asc' : 'desc')}
+                style={{ padding: 4, width: 28, height: 28 }}
+              >
+                {sortOrder === 'desc' ? '↓' : '↑'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', textTransform: 'uppercase', fontWeight: 600 }}>In</span>
+              <select className="form-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '6px 12px', fontSize: 12, height: 'auto', border: 'none', background: 'transparent', fontWeight: 500 }}>
+                <option value="">All Categories</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+              </select>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', textTransform: 'uppercase', letterSpacing: 1 }}>Category</span>
-            <select className="form-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '6px 10px', fontSize: 13, height: 'auto' }}>
-              <option value="">All</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
-          </div>
+
+          <button className="btn btn-primary" onClick={openCreate} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
+            + New Goal
+          </button>
         </div>
 
         {filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">◇</div>
-            <h3>No goals here</h3>
-            <p>Set a meaningful goal. Give it a deadline. Show up.</p>
-            <button className="btn btn-primary" onClick={openCreate}>+ Create Goal</button>
+            <h3>Your Path is Clear</h3>
+            <p>Define what growth looks like for you. Set your first major target.</p>
+            <button className="btn btn-primary" onClick={openCreate} style={{ borderRadius: 30 }}>+ Create Goal</button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="auto-grid">
             {filtered.map((goal) => {
               const cat = getCat(goal.category_id);
               const deadline = parseISO(goal.current_deadline);
               const daysLeft = differenceInDays(deadline, new Date());
+              const totalDays = differenceInDays(deadline, parseISO(goal.created_at)) || 1;
+              const progress = Math.max(0, Math.min(100, 100 - (daysLeft / totalDays * 100)));
               const isOverdue = goal.status === 'active' && isPast(deadline);
               const extended = goal.extension_history?.length > 0;
 
               return (
-                <div key={goal.id} className="card" style={{ borderLeft: `4px solid ${cat?.color || '#ccc'}` }}>
+                <div key={goal.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        {cat && <span>{cat.icon}</span>}
-                        <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', textTransform: 'uppercase', letterSpacing: 1 }}>{cat?.name}</span>
-                        {extended && <span className="tag tag-gold" style={{ fontSize: 11 }}>Extended ×{goal.extension_history.length}</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 20 }}>{cat?.icon || '🎯'}</span>
+                      <div>
+                        <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>{cat?.name || 'Category'}</div>
+                        <h3 style={{ fontSize: 16, marginTop: 1 }}>{goal.title}</h3>
                       </div>
-                      <h3 style={{ fontSize: 18, marginBottom: 4 }}>{goal.title}</h3>
-                      {goal.description && <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.55)', marginBottom: 8 }}>{goal.description}</p>}
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13 }}>
-                        <span style={{ color: isOverdue ? 'var(--rust)' : daysLeft <= 7 ? '#c9a84c' : 'rgba(13,13,13,0.45)' }}>
-                          {isOverdue ? `⚠️ ${Math.abs(daysLeft)}d overdue` : goal.status === 'active' ? `◇ ${daysLeft}d left` : `Deadline: ${format(deadline, 'MMM d, yyyy')}`}
-                        </span>
-                        <span className={`tag ${goal.status === 'completed' ? 'tag-green' : goal.status === 'extended' ? 'tag-gold' : goal.status === 'abandoned' ? 'tag-rust' : 'tag-mist'}`}>
-                          {goal.status}
-                        </span>
-                      </div>
-
-                      {goal.reflection && (
-                        <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
-                          "{goal.reflection}"
-                        </div>
-                      )}
-
-                      {goal.notes?.length > 0 && (
-                        <div style={{ marginTop: 10 }}>
-                          <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, color: 'rgba(13,13,13,0.35)', marginBottom: 6 }}>
-                            Notes ({goal.notes.length})
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {goal.notes.slice(-3).map((r, i) => (
-                              <div key={r.id || i} style={{ padding: '8px 12px', background: 'var(--mist)', borderRadius: 8, fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', borderLeft: '2px solid rgba(13,13,13,0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                                <div>
-                                  <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
-                                    {format(new Date(r.date), 'MMM d, yyyy')}
-                                  </div>
-                                  "{r.text}"
-                                </div>
-                                {r.id && (
-                                  <button onClick={() => handleDeleteNote(goal, r.id)}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'rgba(13,13,13,0.2)', flexShrink: 0 }}>✕</button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
+                    <span className={`tag ${goal.status === 'completed' ? 'tag-green' : isOverdue ? 'tag-rust' : 'tag-mist'}`} style={{ fontSize: 10 }}>
+                      {isOverdue ? 'Overdue' : goal.status}
+                    </span>
+                  </div>
 
-                    <div style={{ display: 'flex', gap: 6, marginLeft: 12, flexShrink: 0, flexDirection: 'column', alignItems: 'flex-end' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-sm btn-outline" onClick={() => navigate(`/goals/${goal.id}`)} title="View Detail">◈ Detail</button>
-                        <button className="btn btn-sm btn-outline" onClick={() => openEdit(goal)} title="Edit">✎</button>
+                  <div style={{ flex: 1 }}>
+                    {goal.description && (
+                      <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', minHeight: 60 }}>
+                        <MarkdownRenderer content={goal.description} />
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {['active', 'extended'].includes(goal.status) && (
-                          <>
-                            <button className="btn btn-sm btn-outline" onClick={() => { setAddNoteGoal(goal); setNewNoteText(''); }} title="Add note">+ Note</button>
-                            <button className="btn btn-sm btn-outline" onClick={() => { setReflectGoal(goal); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
-                              Reflect
-                            </button>
-                          </>
-                        )}
-                        <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(goal)} title="Delete" style={{ color: 'rgba(13,13,13,0.3)' }}>🗑</button>
+                    )}
+                  </div>
+
+                  {/* Progress Indicator */}
+                  {goal.status === 'active' && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 6, fontWeight: 500 }}>
+                        <span style={{ color: isOverdue ? 'var(--rust)' : 'rgba(13,13,13,0.4)' }}>
+                          {isOverdue ? `${Math.abs(daysLeft)}d Overdue` : `${daysLeft} days left`}
+                        </span>
+                        <span style={{ color: 'rgba(13,13,13,0.3)' }}>Target: {format(deadline, 'MMM d')}</span>
                       </div>
+                      <div className="progress-bar" style={{ height: 4 }}>
+                        <div 
+                          className="progress-fill" 
+                          style={{ 
+                            width: `${progress}%`, 
+                            background: isOverdue ? 'var(--rust)' : progress > 80 ? 'var(--gold)' : 'var(--sage)'
+                          }} 
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="divider" style={{ margin: '8px 0' }} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {(goal.notes || []).length > 0 && <span title="Notes" style={{ fontSize: 12, color: 'rgba(13,13,13,0.3)' }}>📝 {goal.notes.length}</span>}
+                      {extended && <span title="Extensions" style={{ fontSize: 12, color: 'var(--gold)' }}>🔄 {goal.extension_history.length}</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-sm btn-outline" onClick={() => navigate(`/goals/${goal.id}`)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20 }}>Explore</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => openEdit(goal)} style={{ padding: 4 }}>✎</button>
+                      <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(goal)} style={{ padding: 4, color: 'rgba(13,13,13,0.2)' }}>🗑</button>
                     </div>
                   </div>
                 </div>
@@ -363,6 +371,7 @@ export default function Goals() {
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
               <textarea className="form-textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 80 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Deadline</label>
@@ -393,6 +402,7 @@ export default function Goals() {
               <label className="form-label">What's on your mind about this goal?</label>
               <textarea className="form-textarea" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)}
                 placeholder="Progress made, obstacles, insights, next steps..." style={{ minHeight: 120 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setAddNoteGoal(null)} style={{ flex: 1 }}>Cancel</button>
@@ -431,6 +441,7 @@ export default function Goals() {
                 {reflectForm.status === 'completed' ? 'What did you achieve or learn?' : reflectForm.status === 'extended' ? 'Why do you need more time?' : 'Why are you moving on?'}
               </label>
               <textarea className="form-textarea" value={reflectForm.reflection} onChange={(e) => setReflectForm({ ...reflectForm, reflection: e.target.value })} placeholder="Be honest with yourself..." />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">

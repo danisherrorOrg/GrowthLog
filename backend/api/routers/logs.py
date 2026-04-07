@@ -27,7 +27,9 @@ def recalculate_user_streak(uid: str):
     temp_streak = 0
     
     last_log = dates[0]
-    if last_log != today and last_log != yesterday:
+    # If the last log is older than yesterday, the streak is broken.
+    # We use >= yesterday to stay active even if log date is "tomorrow" in UTC terms.
+    if last_log < yesterday:
         current_streak = 0
     else:
         check_date = last_log
@@ -89,15 +91,19 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating}})
         cache_invalidate(f"dashboard:{uid}")
         cache_invalidate(f"stats:{uid}")
+        from utils.activity import log_activity
+        log_activity(uid, "update", "log", str(existing["_id"]), "Updated daily log")
         return {"success": True, "updated": True}
 
-    db.daily_logs.insert_one({
+    result = db.daily_logs.insert_one({
         "user_id": uid, "date": today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
         "created_at": utcnow(),
     })
     
     streak = recalculate_user_streak(uid)
+    from utils.activity import log_activity
+    log_activity(uid, "create", "log", str(result.inserted_id), "Created daily log")
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True, "streak": streak}
@@ -109,6 +115,8 @@ def delete_log(date: str, current_user=Depends(get_current_user)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Log not found")
     recalculate_user_streak(uid)
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "log", date, "Deleted daily log")
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True}

@@ -13,6 +13,9 @@
   --shadow: rgba(13,13,13,0.08);
   --radius: 16px;
   --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px var(--shadow), 0 2px 8px rgba(13,13,13,0.02);
+  --shadow-md: 0 4px 12px var(--shadow), 0 8px 32px rgba(13,13,13,0.06);
+  --shadow-lg: 0 12px 24px var(--shadow), 0 24px 64px rgba(13,13,13,0.12);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -240,16 +243,29 @@ h1, h2, h3, h4 {
   background: white;
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: 0 1px 3px var(--shadow), 0 4px 16px rgba(13,13,13,0.04);
-  border: 1px solid rgba(13,13,13,0.06);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(13,13,13,0.05);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.card:hover { 
+  transform: translateY(-2px); 
+  box-shadow: var(--shadow-md); 
 }
 
 .card-sm { padding: 16px; }
 
 /* Grid */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+/* Dashboard-specific grid */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+}
 
 /* Stat cards */
 .stat-card {
@@ -688,3 +704,26 @@ h1, h2, h3, h4 {
 
 /* Toasts */
 .toaster { font-family: 'DM Sans', sans-serif !important; }
+
+/* Markdown Container */
+.md-body, .markdown-body {
+  line-height: 1.6;
+  max-height: none;
+  overflow-x: hidden;
+  word-break: break-word;
+  padding-right: 0;
+}
+
+.md-body p, .markdown-body p { margin-bottom: 12px; }
+.md-body p:last-child, .markdown-body p:last-child { margin-bottom: 0; }
+.md-body ul, .markdown-body ul, .md-body ol, .markdown-body ol { padding-left: 20px; margin-bottom: 12px; }
+
+/* Custom Scrollbar for Markdown content */
+.md-body::-webkit-scrollbar, .markdown-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.md-body::-webkit-scrollbar-thumb, .markdown-body::-webkit-scrollbar-thumb {
+  background: rgba(13,13,13,0.1);
+  border-radius: 10px;
+}

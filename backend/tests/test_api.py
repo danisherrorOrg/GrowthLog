@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 # --- 1. Auth Tests ---
@@ -55,6 +55,10 @@ def test_category_lifecycle(client, auth_headers):
     resp = client.get("/categories", headers=auth_headers)
     assert any(c["id"] == cat_id for c in resp.json())
 
+    # Activity Log Check
+    resp = client.get("/activity", headers=auth_headers)
+    assert any(l["entity_id"] == cat_id and l["action"] == "create" for l in resp.json())
+
 # --- 3. Goal Tests ---
 
 def test_goal_with_microgoals(client, auth_headers):
@@ -67,7 +71,7 @@ def test_goal_with_microgoals(client, auth_headers):
         "category_id": cat_id,
         "title": "Master the Tests",
         "description": "Write all the tests",
-        "deadline": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+        "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
     }
     resp = client.post("/goals", headers=auth_headers, json=goal_data)
     assert resp.status_code == 200
@@ -93,12 +97,16 @@ def test_goal_with_microgoals(client, auth_headers):
     assert goal["micro_goals"][0]["completed"] is True
     assert goal["micro_goals"][0]["text"] == "Write the FIRST test updated"
 
+    # Activity Log Check
+    resp = client.get("/activity", headers=auth_headers)
+    assert any(l["entity_id"] == goal_id and l["action"] == "create" for l in resp.json())
+
 # --- 4. Daily Log Tests ---
 
 def test_daily_log_and_streak(client, auth_headers):
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     log_data = {
         "date": today,
@@ -276,11 +284,20 @@ def test_prompts_availability(client, auth_headers):
     assert resp.status_code == 200
     assert len(resp.json()) > 0
 
-def test_admin_nudge(client):
-    # This currently doesn't require auth in main.py, but it uses BackgroundTasks
+def test_admin_nudge_logic(client):
+    """Verify that the nudge endpoint identifies a silent (unlogged) user."""
+    from core.database import db
+    import os
+    
+    # 1. Create a verified user who HAS NOT logged today
+    email = f"silent_{os.urandom(4).hex()}@example.com"
+    client.post("/auth/register", json={"name": "Silent User", "email": email, "password": "Password123!"})
+    db.users.update_one({"email": email}, {"$set": {"is_verified": True}})
+    
+    # 2. Call Nudge
     resp = client.post("/admin/nudge-silent-users")
     assert resp.status_code == 200
-    assert "nudge_count" in resp.json()
+    assert resp.json()["nudge_count"] >= 1
 
 # --- 12. Validation Tests ---
 
@@ -307,13 +324,13 @@ def test_streak_complex_scenarios(client, auth_headers):
     cat_id = cats[0]["id"]
     
     # 1. Log for yesterday
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": yesterday, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "y"}]
     })
     
     # 2. Log for today
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": today, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "t"}]
     })
@@ -354,7 +371,7 @@ def test_cascading_category_deletion(client, auth_headers):
     }).json()
     
     # 2. Log an entry for this category
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": today, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "log"}]
     })
@@ -394,7 +411,7 @@ def test_manifestation_date_options(client, auth_headers):
         "vision": "Check dates", "target_days": 10, "categories": []
     }).json()
     
-    expected_date = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
+    expected_date = (datetime.now(timezone.utc) + timedelta(days=10)).strftime("%Y-%m-%d")
     assert m["target_date"] == expected_date
 
 # --- 14. High Volume & Integrity ---
@@ -415,7 +432,7 @@ def test_category_log_filtering(client, auth_headers):
     cat_id = cat["id"]
     
     # Create a log from 10 days ago
-    past_date = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
+    past_date = (datetime.now(timezone.utc) - timedelta(days=10)).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": past_date, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "past"}]
     })
@@ -429,3 +446,58 @@ def test_category_log_filtering(client, auth_headers):
     resp = client.get(f"/categories/{cat_id}/logs?days=5", headers=auth_headers)
     assert resp.status_code == 200
     assert len(resp.json()) == 0
+
+# --- 15. Multi-User Security Tests ---
+
+def test_cross_user_isolation(client, auth_headers, other_user_headers):
+    """Verify that users cannot access or modify each other's data."""
+    # 1. Setup: User A creates a Category, Goal, and Manifestation
+    cat = client.post("/categories", headers=auth_headers, json={"name": "User A Cat", "icon": "A", "color": "#000"}).json()
+    cat_id = cat["id"]
+    
+    goal = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "User A Goal", "deadline": "2025-12-31"
+    }).json()
+    goal_id = goal["id"]
+    
+    man = client.post("/manifestations", headers=auth_headers, json={
+        "vision": "User A Vision", "target_days": 10, "categories": []
+    }).json()
+    man_id = man["id"]
+    
+    # 2. Test Isolation for Other User
+    # View Category
+    resp = client.get(f"/categories", headers=other_user_headers)
+    assert not any(c["id"] == cat_id for c in resp.json())
+    
+    # View Goal
+    resp = client.get(f"/goals/{goal_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Edit Goal
+    resp = client.put(f"/goals/{goal_id}", headers=other_user_headers, json={"title": "Hacked"})
+    assert resp.status_code == 404
+    
+    # Delete Goal
+    resp = client.delete(f"/goals/{goal_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # View Manifestation
+    resp = client.get(f"/manifestations/{man_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Add Progress to Manifestation
+    resp = client.post(f"/manifestations/{man_id}/progress", headers=other_user_headers, json={"text": "Evil"})
+    assert resp.status_code == 404
+
+    # Add Note to Goal
+    resp = client.post(f"/goals/{goal_id}/notes", headers=other_user_headers, json={"text": "Evil Note"})
+    assert resp.status_code == 404
+
+    # Archive Manifestation
+    resp = client.put(f"/manifestations/{man_id}/archive", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Delete Manifestation
+    resp = client.delete(f"/manifestations/{man_id}", headers=other_user_headers)
+    assert resp.status_code == 404

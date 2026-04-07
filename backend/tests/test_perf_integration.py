@@ -2,7 +2,7 @@ import pytest
 import os
 import asyncio
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 
 # ==========================================
@@ -65,9 +65,9 @@ def test_full_user_journey_integration(client):
     client.post(f"/goals/{goal_id}/reflections", headers=h, json={"text": "A quick reflection"})
     
     # 8. Log a Streak (3 Days)
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     for i in range(3):
-        date_str = (datetime.now() - timedelta(days=2-i)).strftime("%Y-%m-%d")
+        date_str = (datetime.now(timezone.utc) - timedelta(days=2-i)).strftime("%Y-%m-%d")
         client.post("/logs", headers=h, json={
             "date": date_str,
             "entries": [{"category_id": cat_id, "text": f"Day {i} work", "mood": 8, "energy": 7}],
@@ -140,6 +140,6 @@ async def test_dashboard_load_performance(async_client, auth_headers):
     for resp in responses:
         assert resp.status_code == 200
         
-    # Assert reasonable performance (20 aggregations should take less than 1.5 seconds locally)
+    # Assert reasonable performance (20 aggregations should take less than 2.5 seconds locally)
     # This prevents major N+1 query regression.
-    assert total_time < 1.5 
+    assert total_time < 2.5

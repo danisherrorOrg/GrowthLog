@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import API from '../../utils/api';
 import toast from 'react-hot-toast';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
 
 export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) {
   const [reflectionText, setReflectionText] = useState('');
@@ -114,9 +115,10 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                     style={{ 
                         width: '100%', minHeight: '100px', padding: '12px', borderRadius: '12px', 
                         border: '1px solid #eee', outline: 'none', fontSize: '14px', fontFamily: 'inherit',
-                        resize: 'none', marginBottom: '12px'
+                        resize: 'none', marginBottom: '4px'
                     }}
                 />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginBottom: '12px' }}>Markdown supported</div>
                 <button 
                     type="button"
                     onClick={handleQuickAdd}
@@ -184,7 +186,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                                 )}
                             </div>
                             <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#111', fontFamily: 'serif' }}>{e.title}</div>
-                            {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5, marginBottom: e.data?.entries ? 16 : 0 }}>{e.description}</div>}
+                            {e.description && <div className="markdown-body" style={{ fontSize: '15px', color: '#555', lineHeight: 1.5, marginBottom: e.data?.entries ? 16 : 0 }}><MarkdownRenderer content={e.description} /></div>}
                             
                             {e.type === 'daily_log' && e.data?.entries && e.data.entries.length > 0 && (
                                 <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '20px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
@@ -211,7 +213,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                                                 {group.entries.map((entry, idx) => (
                                                     <div key={idx} style={{ display: 'flex', gap: '10px' }}>
                                                         <div style={{ minWidth: '3px', background: group.color, borderRadius: 2, opacity: 0.4 }} />
-                                                        <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.4 }}>{entry.text}</div>
+                                                        <div className="markdown-body" style={{ fontSize: '14px', color: '#444', lineHeight: 1.4 }}><MarkdownRenderer content={entry.text} /></div>
                                                     </div>
                                                 ))}
                                             </div>

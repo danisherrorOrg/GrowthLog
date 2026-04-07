@@ -54,6 +54,22 @@ def auth_headers(client, test_user_data):
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture
+def other_user_headers(client):
+    """Register and login a second user."""
+    data = {
+        "name": "Other User",
+        "email": f"other_{os.urandom(4).hex()}@example.com",
+        "password": "Password123!"
+    }
+    client.post("/auth/register", json=data)
+    response = client.post("/auth/login", json={
+        "email": data["email"],
+        "password": data["password"]
+    })
+    token = response.json()["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture
 async def async_client():
     from httpx import AsyncClient
     async with AsyncClient(app=app, base_url="http://test") as ac:

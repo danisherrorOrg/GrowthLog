@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
+import './styles/markdown.css';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,6 +23,13 @@ import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import VerifyEmail from './pages/VerifyEmail';
 import CalendarTimeline from './pages/CalendarTimeline';
+import Todos from './pages/Todos';
+import Quotes from './pages/Quotes';
+import Books from './pages/Books';
+import BookDetail from './pages/BookDetail';
+import Reframes from './pages/Reframes';
+import ActivityLog from './pages/ActivityLog';
+import Thoughts from './pages/Thoughts';
 
 
 function PrivateRoute({ children }) {
@@ -66,6 +74,13 @@ export default function App() {
             <Route path="snapshots" element={<Snapshots />} />
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
             <Route path="timeline" element={<CalendarTimeline />} />
+            <Route path="todos" element={<Todos />} />
+            <Route path="quotes" element={<Quotes />} />
+            <Route path="books" element={<Books />} />
+            <Route path="books/:bookId" element={<BookDetail />} />
+            <Route path="reframes" element={<Reframes />} />
+            <Route path="activity" element={<ActivityLog />} />
+            <Route path="thoughts" element={<Thoughts />} />
             <Route path="growth" element={<Growth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />

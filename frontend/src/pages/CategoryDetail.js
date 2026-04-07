@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 export default function CategoryDetail() {
@@ -82,7 +83,9 @@ export default function CategoryDetail() {
           <span style={{ fontSize: 48, lineHeight: 1 }}>{category.icon}</span>
           <div>
             <h2 style={{ fontSize: 28, marginBottom: 4 }}>{category.name}</h2>
-            <p style={{ color: 'rgba(13,13,13,0.6)', margin: 0 }}>{category.description || 'No description provided.'}</p>
+            <div className="markdown-body" style={{ color: 'rgba(13,13,13,0.6)', margin: 0 }}>
+              {category.description ? <MarkdownRenderer content={category.description} /> : 'No description provided.'}
+            </div>
           </div>
         </div>
       </div>
@@ -157,7 +160,9 @@ export default function CategoryDetail() {
                     </div>
                     {log.entries.map((entry, i) => (
                       <div key={i}>
-                        <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--ink)', margin: 0 }}>{entry.text}</p>
+                        <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--ink)', margin: 0 }}>
+                          <MarkdownRenderer content={entry.text} />
+                        </div>
                         <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span>Mood</span>

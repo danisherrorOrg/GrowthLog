@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 export default function SnapshotDetail() {
@@ -92,112 +93,128 @@ export default function SnapshotDetail() {
         <p style={{ color: 'rgba(13,13,13,0.45)' }}>{format(parseISO(snap.date), 'EEEE, MMMM d, yyyy')}</p>
       </div>
 
-      <div className="page-body">
-        {/* Snapshot Card */}
-        <div className="card" style={{ marginBottom: 24 }}>
-          {editMode ? (
-            <div>
-              <div className="form-group">
-                <label className="form-label">Who are you today?</label>
-                <textarea className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                  style={{ minHeight: 160 }} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Current Values / Beliefs (comma separated)</label>
-                <input className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })}
-                  placeholder="honesty, growth, patience..." />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Mood — {form.mood}/10</label>
-                <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
-                  onChange={e => setForm({ ...form, mood: +e.target.value })}
-                  style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'Fraunces', fontSize: 28, color: 'var(--sage)' }}>{snap.mood}/10</span>
-                    <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>mood</span>
-                  </div>
+      <div className="page-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {/* Main Record Card */}
+          <div className="card" style={{ padding: 40 }}>
+            {editMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ fontSize: 20, margin: 0 }}>Edit Record</h3>
+                  <button className="btn btn-ghost" onClick={() => setEditMode(false)}>✕</button>
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => setEditMode(true)}>✎ Edit</button>
-                  <button className="btn btn-ghost btn-sm" onClick={handleDelete} style={{ color: 'var(--rust)' }}>🗑</button>
+                
+                <div className="form-group">
+                  <label className="form-label">Journal Entry</label>
+                  <textarea className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                    style={{ minHeight: 240, fontSize: 16, lineHeight: 1.6 }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                   <div className="form-group">
+                     <label className="form-label">Values (comma separated)</label>
+                     <input className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} />
+                   </div>
+                   <div className="form-group">
+                     <label className="form-label">Mood Score ({form.mood}/10)</label>
+                     <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
+                       onChange={e => setForm({ ...form, mood: +e.target.value })}
+                       style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
+                   </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn btn-empty" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
+                  <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
+                    {saving ? 'Saving...' : 'Update Snapshot'}
+                  </button>
                 </div>
               </div>
-
-              <p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 20 }}>
-                "{snap.description}"
-              </p>
-
-              {snap.values?.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 8 }}>
-                    Values & Beliefs at this time
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {snap.values.map(v => <span key={v} className="tag tag-mist">{v}</span>)}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Compare Section */}
-        {others.length > 0 && (
-          <div className="card">
-            <h3 style={{ fontSize: 17, marginBottom: 16 }}>⇄ Compare with Another Snapshot</h3>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-              <select className="form-select" value={compareId} onChange={e => { setCompareId(e.target.value); setCompareSnap(null); }}
-                style={{ flex: 1, padding: '8px 12px', fontSize: 13 }}>
-                <option value="">Select a snapshot to compare...</option>
-                {others.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {format(parseISO(s.date), 'MMM d, yyyy')} — Mood {s.mood}/10
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-primary" onClick={handleCompare} disabled={!compareId || comparing}>
-                {comparing ? 'Comparing...' : 'Compare'}
-              </button>
-              {compareSnap && <button className="btn btn-outline" onClick={() => { setCompareSnap(null); setCompareId(''); }}>Clear</button>}
-            </div>
-
-            {compareSnap && (
-              <div className="grid-2" style={{ gap: 16 }}>
-                {[{ label: 'This Snapshot', s: snap, accent: 'rgba(13,13,13,0.4)' }, { label: 'Compared Snapshot', s: compareSnap, accent: 'var(--sage)' }].map(({ label, s, accent }) => (
-                  <div key={label} style={{ padding: 16, background: 'var(--mist)', borderRadius: 12, borderTop: `3px solid ${accent}` }}>
-                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: accent, marginBottom: 6 }}>
-                      {label} · {format(parseISO(s.date), 'MMM d, yyyy')}
+            ) : (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ fontSize: 36, fontFamily: 'Fraunces', color: 'var(--sage)' }}>{snap.mood}<span style={{ fontSize: 16, opacity: 0.3 }}>/10</span></div>
+                    <div>
+                       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>Mood Score</div>
+                       <div style={{ fontSize: 13, fontWeight: 500 }}>Captured {format(parseISO(snap.date), 'MMMM d')}</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontFamily: 'Fraunces', fontSize: 22, color: 'var(--sage)' }}>{s.mood}/10</span>
-                      <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>mood</span>
-                    </div>
-                    <p style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 1.7, color: 'var(--ink)', marginBottom: 12 }}>
-                      "{s.description.slice(0, 280)}{s.description.length > 280 ? '...' : ''}"
-                    </p>
-                    {s.values?.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {s.values.map(v => <span key={v} className="tag tag-mist" style={{ fontSize: 11 }}>{v}</span>)}
-                      </div>
-                    )}
                   </div>
-                ))}
+                  <div className="tag tag-mist" style={{ fontSize: 10, letterSpacing: 1 }}>HISTORICAL RECORD</div>
+                </div>
+
+                <blockquote className="markdown-body" style={{ 
+                  fontSize: 20, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', 
+                  fontFamily: 'Fraunces', marginBottom: 40, borderLeft: '4px solid var(--sage)', paddingLeft: 32
+                }}>
+                  <MarkdownRenderer content={snap.description} />
+                </blockquote>
+
+                {snap.values?.length > 0 && (
+                  <div style={{ paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.05)' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 16, fontWeight: 700 }}>
+                      Anchored Values & Beliefs
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {snap.values.map(v => <span key={v} className="tag tag-mist" style={{ padding: '6px 16px', fontSize: 12 }}>{v}</span>)}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
+
+        {/* Sidebar: Utils & Comparison */}
+        <div style={{ position: 'sticky', top: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="card">
+            <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 20 }}>Actions</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+               <button className="btn btn-outline" onClick={() => setEditMode(!editMode)} style={{ justifyContent: 'center' }}>
+                 {editMode ? 'Cancel Edit' : '✎ Edit Snapshot'}
+               </button>
+               <button className="btn btn-ghost" onClick={handleDelete} style={{ color: 'var(--rust)', justifyContent: 'center' }}>
+                 🗑 Delete Permanently
+               </button>
+            </div>
+          </div>
+
+          {others.length > 0 && (
+            <div className="card">
+              <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 20 }}>Contrast Analysis</h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <select className="form-select" value={compareId} onChange={e => { setCompareId(e.target.value); setCompareSnap(null); }}
+                  style={{ width: '100%', padding: '10px 14px', fontSize: 13 }}>
+                  <option value="">Compare with...</option>
+                  {others.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {format(parseISO(s.date), 'MMM d, yyyy')} (Mood {s.mood})
+                    </option>
+                  ))}
+                </select>
+                
+                <button className="btn btn-primary" onClick={handleCompare} disabled={!compareId || comparing} style={{ width: '100%' }}>
+                  {comparing ? 'Analyzing...' : 'Run Comparison Analysis ⇄'}
+                </button>
+
+                {compareSnap && (
+                  <div style={{ marginTop: 8, padding: 16, background: 'var(--mist)', borderRadius: 12, borderTop: '2px solid var(--sage)' }}>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--sage)', fontWeight: 700, marginBottom: 8 }}>Contrast Target</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                       <span style={{ fontSize: 20, fontFamily: 'Fraunces', color: 'var(--ink)' }}>{compareSnap.mood}/10</span>
+                       <span style={{ fontSize: 10, opacity: 0.4 }}>{format(parseISO(compareSnap.date), 'MMM d, yyyy')}</span>
+                    </div>
+                    <div className="markdown-body" style={{ fontSize: 12, fontStyle: 'italic', color: 'rgba(13,13,13,0.6)', maxHeight: 120, overflow: 'hidden' }}>
+                       <MarkdownRenderer content={compareSnap.description} />
+                    </div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => { setCompareSnap(null); setCompareId(''); }} style={{ marginTop: 12, fontSize: 10, padding: 0 }}>✕ Clear analysis</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

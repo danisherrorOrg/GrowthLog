@@ -314,3 +314,34 @@ def test_get_timeline_multi_category(client, auth_headers, test_user_data):
     assert cat1_id in log_cat_ids
     assert cat2_id in log_cat_ids
     assert len(log_event["categories"]) == 2
+
+def test_get_timeline_multi_category_goal(client, auth_headers, test_user_data):
+    """Verify that goals are correctly filtered in the timeline when using category lists."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # 1. Create a category
+    cat_oid = db.categories.insert_one({"user_id": uid, "name": "Deep Work", "icon": "🧠", "color": "#4a90e2"}).inserted_id
+    cat_id = str(cat_oid)
+    
+    # 2. Create a goal with this category
+    goal_oid = db.goals.insert_one({
+        "user_id": uid,
+        "category_id": cat_id,
+        "title": "Deep Focus Goal",
+        "created_at": datetime(2026, 9, 1),
+        "status": "active"
+    }).inserted_id
+    goal_id = str(goal_oid)
+
+    # 3. Request timeline with a list of categories including this one
+    other_cat_id = "507f1f77bcf86cd799439011"
+    response = client.get(f"/timeline?category_ids={other_cat_id},{cat_id}", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    events = data["events"]
+    
+    # Verify the goal appeared
+    goal_events = [e for e in events if e.get("source_id") == goal_id or e.get("id") == f"{goal_id}_created"]
+    assert len(goal_events) > 0, f"Goal not found with multi-cat filter. Response: {data}"
+    assert goal_events[0]["category"]["id"] == cat_id
