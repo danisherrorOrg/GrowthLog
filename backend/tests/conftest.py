@@ -2,9 +2,14 @@ import pytest
 import os
 from fastapi.testclient import TestClient
 from pymongo import MongoClient
+from unittest.mock import patch, MagicMock
 
 # Use a separate test database
 os.environ["DB_NAME"] = "growthlog_test"
+
+# CRITICAL: Mock send_email BEFORE any other imports to prevent real emails in tests
+# (Other modules import this from utils.email, so we must patch it before they do)
+mock_send_email = patch("utils.email.send_email").start()
 
 from main import app
 from core.database import db, client as mongo_client
