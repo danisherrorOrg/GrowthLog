@@ -4,7 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
-
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 const PROGRESS_TYPES = [
   { value: 'improvement', label: '📈 Improvement', color: 'var(--sage)' },
@@ -172,18 +172,21 @@ export default function ManifestationDetail() {
       <div className="page-body">
         {/* Vision card */}
         <div className="card" style={{ background: isReady ? 'var(--ink)' : 'white', marginBottom: 20 }}>
-          <blockquote style={{
+          <blockquote className="markdown-body" style={{
             fontFamily: 'Fraunces', fontSize: 20, fontStyle: 'italic',
             color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.7, margin: '0 0 16px',
             padding: '0 0 0 16px', borderLeft: `4px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}`
           }}>
-            "{item.vision}"
+            <MarkdownRenderer content={item.vision} />
           </blockquote>
 
           {item.notes && (
-            <p style={{ fontSize: 14, color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.5)', fontStyle: 'italic', marginBottom: 16 }}>
-              Notes: {item.notes}
-            </p>
+            <div style={{ fontSize: 14, color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.5)', fontStyle: 'italic', marginBottom: 16 }}>
+              <span>Notes:</span>
+              <div className="markdown-body" style={{ marginTop: 4 }}>
+                <MarkdownRenderer content={item.notes} />
+              </div>
+            </div>
           )}
 
           {isActive && (
@@ -200,7 +203,9 @@ export default function ManifestationDetail() {
           {item.reflection && (
             <div style={{ padding: '12px 16px', background: isReady ? 'rgba(255,255,255,0.1)' : 'var(--mist)', borderRadius: 10, marginBottom: 16 }}>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: isReady ? 'var(--gold)' : 'var(--sage)', marginBottom: 6 }}>Final Reflection</div>
-              <p style={{ fontSize: 14, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.8)' : 'rgba(13,13,13,0.65)', margin: 0 }}>{item.reflection}</p>
+              <div className="markdown-body" style={{ fontSize: 14, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.8)' : 'rgba(13,13,13,0.65)', margin: 0 }}>
+                <MarkdownRenderer content={item.reflection} />
+              </div>
             </div>
           )}
 
@@ -303,7 +308,9 @@ export default function ManifestationDetail() {
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✕</button>
                             </div>
                           </div>
-                          <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{e.text}</p>
+                          <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>
+                            <MarkdownRenderer content={e.text} />
+                          </div>
                         </>
                       )}
                     </div>
@@ -338,7 +345,9 @@ export default function ManifestationDetail() {
                 {notes.slice().reverse().map(note => (
                   <div key={note.id} style={{ padding: '10px 12px', background: 'var(--mist)', borderRadius: 8, position: 'relative' }}>
                     <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 4 }}>{format(new Date(note.date), 'MMM d, yyyy')}</div>
-                    <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
+                    <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>
+                      <MarkdownRenderer content={note.text} />
+                    </div>
                     <button onClick={() => handleDeleteNote(note.id)}
                       style={{ position: 'absolute', top: 8, right: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>
                       ✕
@@ -359,8 +368,8 @@ export default function ManifestationDetail() {
               <h3>Complete This Cycle ✧</h3>
               <button className="modal-close" onClick={() => setShowCompleteModal(false)}>✕</button>
             </div>
-            <blockquote style={{ fontFamily: 'Fraunces', fontSize: 16, fontStyle: 'italic', color: 'var(--ink)', padding: '12px 16px', background: 'var(--mist)', borderRadius: 10, borderLeft: '3px solid var(--gold)', marginBottom: 20 }}>
-              "{item.vision}"
+            <blockquote className="markdown-body" style={{ fontFamily: 'Fraunces', fontSize: 16, fontStyle: 'italic', color: 'var(--ink)', padding: '12px 16px', background: 'var(--mist)', borderRadius: 10, borderLeft: '3px solid var(--gold)', marginBottom: 20 }}>
+              <MarkdownRenderer content={item.vision} />
             </blockquote>
             <div className="form-group">
               <label className="form-label">How close did you get? What changed?</label>

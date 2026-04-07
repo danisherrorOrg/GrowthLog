@@ -11,6 +11,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar
 } from 'recharts';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -281,9 +282,15 @@ export default function Dashboard() {
                       <span className="tag tag-mist" style={{ fontSize: 10 }}>No entry</span>
                     )}
                   </div>
-                  <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: hoveredData.highlight ? 'normal' : 'italic', margin: 0, lineHeight: 1.4 }}>
-                    {hoveredData.highlight || (hoveredData.rating ? "Detailed log captured for this day." : "Take a moment to reflect and log today's growth.")}
-                  </p>
+                  <div className="markdown-body" style={{ fontSize: 12, color: 'rgba(13,13,13,0.6)', fontStyle: hoveredData.highlight ? 'normal' : 'italic', margin: 0, lineHeight: 1.4 }}>
+                    {hoveredData.highlight ? (
+                      <MarkdownRenderer content={hoveredData.highlight} />
+                    ) : (
+                      <p style={{ margin: 0, fontSize: 12, fontStyle: 'italic' }}>
+                        {hoveredData.rating ? "Detailed log captured for this day." : "Take a moment to reflect and log today's growth."}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', opacity: 0.5 }}>

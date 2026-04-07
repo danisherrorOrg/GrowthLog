@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const SORT_OPTIONS = [
@@ -233,7 +234,9 @@ export default function GoalDetail() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
               {goal.description && (
-                <p style={{ fontSize: 15, color: 'rgba(13,13,13,0.65)', lineHeight: 1.7, marginBottom: 16 }}>{goal.description}</p>
+                <div className="markdown-body" style={{ fontSize: 15, color: 'rgba(13,13,13,0.65)', lineHeight: 1.7, marginBottom: 16 }}>
+                  <MarkdownRenderer content={goal.description} />
+                </div>
               )}
               <div style={{ display: 'flex', gap: 20, fontSize: 13, color: 'rgba(13,13,13,0.45)' }}>
                 <span>Created {format(new Date(goal.created_at), 'MMM d, yyyy')}</span>
@@ -300,7 +303,9 @@ export default function GoalDetail() {
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                         <input type="checkbox" checked={!!mg.completed} onChange={() => handleToggleMg(mg.id)} style={{ marginTop: 3, cursor: 'pointer', accentColor: 'var(--sage)' }} />
                         <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, textDecoration: mg.completed ? 'line-through' : 'none' }}>{mg.text}</p>
+                          <div className="markdown-body" style={{ fontSize: 13, color: mg.completed ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.4, textDecoration: mg.completed ? 'line-through' : 'none' }}>
+                            <MarkdownRenderer content={mg.text} />
+                          </div>
                           {mg.time_spent > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 2, display: 'block' }}>⏱ {mg.time_spent} min spent</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 4 }}>
@@ -355,7 +360,7 @@ export default function GoalDetail() {
                       </div>
                     ) : (
                       <>
-                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}>{note.text}</p>
+                        <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', margin: 0, lineHeight: 1.5 }}><MarkdownRenderer content={note.text} /></div>
                         <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
                           <button onClick={() => { setEditNoteId(note.id); setEditNoteText(note.text); }}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'rgba(13,13,13,0.25)', padding: 2 }}>✎</button>
@@ -391,7 +396,7 @@ export default function GoalDetail() {
             {goal.reflection && (
               <div style={{ padding: '10px 14px', background: 'rgba(107,140,107,0.1)', borderRadius: 8, marginBottom: 10, borderLeft: '3px solid var(--sage)' }}>
                 <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', marginBottom: 4 }}>Final Reflection</div>
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(13,13,13,0.65)', margin: 0 }}>{goal.reflection}</p>
+                <div className="markdown-body" style={{ fontSize: 13, fontStyle: 'italic', color: 'rgba(13,13,13,0.65)', margin: 0 }}><MarkdownRenderer content={goal.reflection} /></div>
               </div>
             )}
 
@@ -415,7 +420,7 @@ export default function GoalDetail() {
                       </div>
                     ) : (
                       <>
-                        <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}>{r.text}</p>
+                        <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic', margin: 0 }}><MarkdownRenderer content={r.text} /></div>
                         {r.id && (
                           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
                             <button onClick={() => { setEditReflectionId(r.id || i); setEditReflectionText(r.text); }}

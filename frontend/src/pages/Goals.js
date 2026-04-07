@@ -261,7 +261,7 @@ export default function Goals() {
 
                       {goal.reflection && (
                         <div className="markdown-body" style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
-                          <MarkdownRenderer content={`"${goal.reflection}"`} />
+                          <MarkdownRenderer content={goal.reflection} />
                         </div>
                       )}
 
@@ -277,7 +277,7 @@ export default function Goals() {
                                   <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
                                     {format(new Date(r.date), 'MMM d, yyyy')}
                                   </div>
-                                  <div className="markdown-body"><MarkdownRenderer content={`"${r.text}"`} /></div>
+                                  <div className="markdown-body"><MarkdownRenderer content={r.text} /></div>
                                 </div>
                                 {r.id && (
                                   <button onClick={() => handleDeleteNote(goal, r.id)}
