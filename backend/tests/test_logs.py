@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from core.database import db
 
 def test_daily_log_lifecycle(client, auth_headers):
@@ -7,7 +7,7 @@ def test_daily_log_lifecycle(client, auth_headers):
     # 1. Setup - Get category
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # 2. Create Log (also tests update if date exists)
     log_data = {
@@ -44,8 +44,8 @@ def test_streak_calculation_on_delete(client, auth_headers):
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
     
-    today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     
     # Log for yesterday
     client.post("/logs", headers=auth_headers, json={
@@ -77,7 +77,7 @@ def test_get_logs_range(client, auth_headers):
     
     # Create logs for last 3 days
     for i in range(3):
-        date = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        date = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
         client.post("/logs", headers=auth_headers, json={
             "date": date, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": f"log {i}"}]
         })

@@ -27,7 +27,9 @@ def recalculate_user_streak(uid: str):
     temp_streak = 0
     
     last_log = dates[0]
-    if last_log != today and last_log != yesterday:
+    # If the last log is older than yesterday, the streak is broken.
+    # We use >= yesterday to stay active even if log date is "tomorrow" in UTC terms.
+    if last_log < yesterday:
         current_streak = 0
     else:
         check_date = last_log

@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 # --- 1. Auth Tests ---
@@ -71,7 +71,7 @@ def test_goal_with_microgoals(client, auth_headers):
         "category_id": cat_id,
         "title": "Master the Tests",
         "description": "Write all the tests",
-        "deadline": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
+        "deadline": (datetime.now(timezone.utc) + timedelta(days=7)).strftime("%Y-%m-%d")
     }
     resp = client.post("/goals", headers=auth_headers, json=goal_data)
     assert resp.status_code == 200
@@ -106,7 +106,7 @@ def test_goal_with_microgoals(client, auth_headers):
 def test_daily_log_and_streak(client, auth_headers):
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     log_data = {
         "date": today,
@@ -324,13 +324,13 @@ def test_streak_complex_scenarios(client, auth_headers):
     cat_id = cats[0]["id"]
     
     # 1. Log for yesterday
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": yesterday, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "y"}]
     })
     
     # 2. Log for today
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": today, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "t"}]
     })
@@ -371,7 +371,7 @@ def test_cascading_category_deletion(client, auth_headers):
     }).json()
     
     # 2. Log an entry for this category
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": today, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "log"}]
     })
@@ -411,7 +411,7 @@ def test_manifestation_date_options(client, auth_headers):
         "vision": "Check dates", "target_days": 10, "categories": []
     }).json()
     
-    expected_date = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
+    expected_date = (datetime.now(timezone.utc) + timedelta(days=10)).strftime("%Y-%m-%d")
     assert m["target_date"] == expected_date
 
 # --- 14. High Volume & Integrity ---
@@ -432,7 +432,7 @@ def test_category_log_filtering(client, auth_headers):
     cat_id = cat["id"]
     
     # Create a log from 10 days ago
-    past_date = (datetime.now() - timedelta(days=10)).strftime("%Y-%m-%d")
+    past_date = (datetime.now(timezone.utc) - timedelta(days=10)).strftime("%Y-%m-%d")
     client.post("/logs", headers=auth_headers, json={
         "date": past_date, "entries": [{"category_id": cat_id, "mood": 5, "energy": 5, "text": "past"}]
     })
