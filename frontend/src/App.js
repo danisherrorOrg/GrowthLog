@@ -26,6 +26,7 @@ import CalendarTimeline from './pages/CalendarTimeline';
 import Todos from './pages/Todos';
 import Quotes from './pages/Quotes';
 import Books from './pages/Books';
+import BookDetail from './pages/BookDetail';
 import Reframes from './pages/Reframes';
 import ActivityLog from './pages/ActivityLog';
 import Thoughts from './pages/Thoughts';
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="todos" element={<Todos />} />
             <Route path="quotes" element={<Quotes />} />
             <Route path="books" element={<Books />} />
+            <Route path="books/:bookId" element={<BookDetail />} />
             <Route path="reframes" element={<Reframes />} />
             <Route path="activity" element={<ActivityLog />} />
             <Route path="thoughts" element={<Thoughts />} />

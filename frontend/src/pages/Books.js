@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
@@ -149,33 +150,43 @@ export default function Books() {
 
         <div className="grid-3" style={{ gap: 24 }}>
           {filteredBooks.map(b => (
-            <div key={b.id} className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                 <div style={{ fontSize: 40 }}>{b.cover_emoji || '📖'}</div>
-                 <select 
-                   className="form-select" 
-                   style={{ width: 'auto', padding: '4px 24px 4px 8px', fontSize: 12, height: 'auto' }}
-                   value={b.status}
-                   onChange={(e) => updateBookStatus(b.id, e.target.value)}
-                 >
-                   <option value="reading">Reading</option>
-                   <option value="finished">Finished</option>
-                   <option value="wish-list">Wishlist</option>
-                 </select>
-               </div>
-               
-               <div>
-                 <h3 style={{ margin: '0 0 4px 0', fontSize: 18, color: 'var(--ink)' }}>{b.title}</h3>
-                 <p style={{ margin: 0, fontSize: 14, color: 'rgba(13,13,13,0.6)' }}>by {b.author}</p>
-               </div>
-
-               <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                 <div style={{ fontSize: 12, fontWeight: 500 }}>
-                   <StatusIcon status={b.status} />
+            <Link key={b.id} to={`/books/${b.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div className="card card-hover" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                   <div style={{ fontSize: 40 }}>{b.cover_emoji || '📖'}</div>
+                   <div className={`tag ${b.status === 'reading' ? 'tag-green' : b.status === 'finished' ? 'tag-gold' : 'tag-mist'}`} style={{ fontSize: 10 }}>
+                     {b.status}
+                   </div>
                  </div>
-                 <button onClick={() => deleteBook(b.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
-               </div>
-            </div>
+                 
+                 <div>
+                   <h3 style={{ margin: '0 0 4px 0', fontSize: 18, color: 'var(--ink)' }}>{b.title}</h3>
+                   <p style={{ margin: 0, fontSize: 14, color: 'rgba(13,13,13,0.6)' }}>by {b.author}</p>
+                 </div>
+
+                 {b.status !== 'wish-list' && (
+                   <div style={{ marginTop: 'auto' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'rgba(13,13,13,0.4)', marginBottom: 4 }}>
+                       <span>Progress</span>
+                       <span>{b.progress_percentage || 0}%</span>
+                     </div>
+                     <div className="progress-bar" style={{ height: 6 }}>
+                       <div className="progress-fill" style={{ width: `${b.progress_percentage || 0}%`, background: 'var(--sage)' }} />
+                     </div>
+                   </div>
+                 )}
+
+                 <div style={{ marginTop: b.status === 'wish-list' ? 'auto' : 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                   <div style={{ fontSize: 12, fontWeight: 500 }}>
+                     {b.status === 'finished' && b.rating && <span style={{ color: 'var(--gold)' }}>★ {b.rating}/10</span>}
+                   </div>
+                   <button 
+                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteBook(b.id); }} 
+                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5, padding: 4 }}
+                   >✕</button>
+                 </div>
+              </div>
+            </Link>
           ))}
         </div>
         
