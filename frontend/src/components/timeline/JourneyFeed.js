@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
 
 export default function JourneyFeed({ events, onEventClick }) {
   if (!events || events.length === 0) {
@@ -156,7 +157,7 @@ export default function JourneyFeed({ events, onEventClick }) {
                                         )}
                                     </div>
                                     <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '6px', color: '#111' }}>{e.title}</div>
-                                    {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5 }}>{e.description}</div>}
+                                    {e.description && <div className="markdown-body" style={{ fontSize: '15px', color: '#555', lineHeight: 1.5 }}><MarkdownRenderer content={e.description} /></div>}
                                     
                                     {e.data && e.data.mood && (
                                         <div style={{ marginTop: '12px', fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: 6 }}>

@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const SORT_OPTIONS = [
@@ -248,7 +249,7 @@ export default function Goals() {
                         {extended && <span className="tag tag-gold" style={{ fontSize: 11 }}>Extended ×{goal.extension_history.length}</span>}
                       </div>
                       <h3 style={{ fontSize: 18, marginBottom: 4 }}>{goal.title}</h3>
-                      {goal.description && <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.55)', marginBottom: 8 }}>{goal.description}</p>}
+                      {goal.description && <div className="markdown-body" style={{ fontSize: 14, color: 'rgba(13,13,13,0.55)', marginBottom: 8 }}><MarkdownRenderer content={goal.description} /></div>}
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13 }}>
                         <span style={{ color: isOverdue ? 'var(--rust)' : daysLeft <= 7 ? '#c9a84c' : 'rgba(13,13,13,0.45)' }}>
                           {isOverdue ? `⚠️ ${Math.abs(daysLeft)}d overdue` : goal.status === 'active' ? `◇ ${daysLeft}d left` : `Deadline: ${format(deadline, 'MMM d, yyyy')}`}
@@ -259,8 +260,8 @@ export default function Goals() {
                       </div>
 
                       {goal.reflection && (
-                        <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
-                          "{goal.reflection}"
+                        <div className="markdown-body" style={{ marginTop: 10, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic' }}>
+                          <MarkdownRenderer content={`"${goal.reflection}"`} />
                         </div>
                       )}
 
@@ -276,7 +277,7 @@ export default function Goals() {
                                   <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
                                     {format(new Date(r.date), 'MMM d, yyyy')}
                                   </div>
-                                  "{r.text}"
+                                  <div className="markdown-body"><MarkdownRenderer content={`"${r.text}"`} /></div>
                                 </div>
                                 {r.id && (
                                   <button onClick={() => handleDeleteNote(goal, r.id)}

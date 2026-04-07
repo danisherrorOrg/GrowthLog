@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
@@ -187,7 +188,7 @@ export default function Categories() {
                   </div>
                 </div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
-                {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>{cat.description}</p>}
+                {cat.description && <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}><MarkdownRenderer content={cat.description} /></div>}
                 <button className="btn btn-outline btn-sm" onClick={() => handleViewLogs(cat)} style={{ marginTop: 'auto', width: '100%' }}>
                   View Detail & Logs →
                 </button>
@@ -222,7 +223,7 @@ export default function Categories() {
                     </div>
                   </div>
                   <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
-                  {cat.description && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>{cat.description}</p>}
+                  {cat.description && <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}><MarkdownRenderer content={cat.description} /></div>}
                   <span className="tag tag-mist" style={{ fontSize: 11, marginTop: 8, display: 'inline-block' }}>Archived</span>
                 </div>
               ))}

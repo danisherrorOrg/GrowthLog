@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 export default function Snapshots() {
@@ -187,9 +188,9 @@ export default function Snapshots() {
                     <span style={{ fontFamily: 'Fraunces', fontSize: 24, color: 'var(--sage)' }}>{s.mood}/10</span>
                     <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>mood</span>
                   </div>
-                  <p style={{ fontSize: 14, fontStyle: 'italic', lineHeight: 1.6, color: 'var(--ink)', marginBottom: 10 }}>
-                    "{s.description.slice(0, 240)}{s.description.length > 240 ? '...' : ''}"
-                  </p>
+                  <div className="markdown-body" style={{ fontSize: 14, fontStyle: 'italic', lineHeight: 1.6, color: 'var(--ink)', marginBottom: 10 }}>
+                    <MarkdownRenderer content={`"${s.description.slice(0, 240)}${s.description.length > 240 ? '...' : ''}"`} />
+                  </div>
                   {s.values?.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {s.values.map(v => <span key={v} className="tag tag-mist" style={{ fontSize: 11 }}>{v}</span>)}
@@ -252,9 +253,9 @@ export default function Snapshots() {
                     </div>
                   </div>
 
-                  <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink)', marginBottom: 16, fontStyle: 'italic' }}>
-                    "{snap.description.slice(0, 300)}{snap.description.length > 300 ? '...' : ''}"
-                  </p>
+                  <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink)', marginBottom: 16, fontStyle: 'italic' }}>
+                    <MarkdownRenderer content={`"${snap.description.slice(0, 300)}${snap.description.length > 300 ? '...' : ''}"`} />
+                  </div>
 
                   {snap.values?.length > 0 && (
                     <div>

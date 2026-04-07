@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 const PROGRESS_TYPES = [
@@ -208,14 +209,14 @@ export default function Manifestations() {
                     </div>
                   </div>
 
-                  <blockquote style={{ fontFamily: 'Fraunces', fontSize: 17, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.6, margin: '0 0 16px', padding: '0 0 0 12px', borderLeft: `3px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}` }}>
-                    "{item.vision}"
+                  <blockquote className="markdown-body" style={{ fontFamily: 'Fraunces', fontSize: 17, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.6, margin: '0 0 16px', padding: '0 0 0 12px', borderLeft: `3px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}` }}>
+                    <MarkdownRenderer content={`"${item.vision}"`} />
                   </blockquote>
 
                   {item.notes && (
-                    <p style={{ fontSize: 13, color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', marginBottom: 12, fontStyle: 'italic' }}>
-                      Notes: {item.notes}
-                    </p>
+                    <div className="markdown-body" style={{ fontSize: 13, color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', marginBottom: 12, fontStyle: 'italic' }}>
+                      <MarkdownRenderer content={`**Notes:** ${item.notes}`} />
+                    </div>
                   )}
 
                   {isActive && (
@@ -245,7 +246,7 @@ export default function Manifestations() {
                                 <div style={{ fontSize: 10, color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
                                   {pt?.label} · {format(new Date(e.date), 'MMM d, yyyy')}
                                 </div>
-                                <span style={{ color: isReady ? 'rgba(245,240,232,0.8)' : 'rgba(13,13,13,0.7)' }}>{e.text}</span>
+                                <span className="markdown-body" style={{ color: isReady ? 'rgba(245,240,232,0.8)' : 'rgba(13,13,13,0.7)' }}><MarkdownRenderer content={e.text} /></span>
                               </div>
                             );
                           })}
@@ -261,8 +262,8 @@ export default function Manifestations() {
                   )}
 
                   {item.reflection && (
-                    <div style={{ padding: '10px 14px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.7)' : 'rgba(13,13,13,0.6)', marginBottom: 12 }}>
-                      Reflection: {item.reflection}
+                    <div className="markdown-body" style={{ padding: '10px 14px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.7)' : 'rgba(13,13,13,0.6)', marginBottom: 12 }}>
+                      <MarkdownRenderer content={`**Reflection:** ${item.reflection}`} />
                     </div>
                   )}
 

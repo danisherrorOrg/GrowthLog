@@ -147,7 +147,7 @@ function TodoCard({ todo, onToggle, onDelete }) {
       />
       <div style={{ flex: 1, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? 'rgba(13,13,13,0.5)' : 'var(--ink)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 500 }}>{todo.title}</span>
+          <div className="markdown-body" style={{ fontSize: 15, fontWeight: 500 }}><MarkdownRenderer content={todo.title} /></div>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: priorityColors[todo.priority] || 'var(--mist)' }} title={`${todo.priority} priority`} />
         </div>
         {todo.description && <div style={{ fontSize: 12, marginTop: 4, color: 'rgba(13,13,13,0.6)' }}><MarkdownRenderer content={todo.description} /></div>}
