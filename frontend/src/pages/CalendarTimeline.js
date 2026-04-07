@@ -109,16 +109,18 @@ export default function CalendarTimeline() {
   };
 
   return (
-    <div className="page timeline-page">
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+    <div className="page timeline-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: 'none', paddingBottom: 0 }}>
         <div>
-          <h2>Growth Timeline & Calendar</h2>
-          <p style={{ color: 'rgba(0,0,0,0.5)' }}>Your journey over time ({total} events found)</p>
+          <h2 style={{ fontSize: '36px', marginBottom: '4px' }}>Growth Journey</h2>
+          <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: '15px' }}>{total} events found • {format(period, 'MMMM yyyy')}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.03)', padding: 4, borderRadius: 12 }}>
             <button 
               className="btn btn-ghost"
               style={{
+                fontSize: '13px',
+                padding: '6px 16px',
                 background: view === 'calendar' ? 'white' : 'transparent',
                 boxShadow: view === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 color: view === 'calendar' ? 'black' : '#888'
@@ -130,6 +132,8 @@ export default function CalendarTimeline() {
             <button 
               className="btn btn-ghost"
               style={{
+                fontSize: '13px',
+                padding: '6px 16px',
                 background: view === 'timeline' ? 'white' : 'transparent',
                 boxShadow: view === 'timeline' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 color: view === 'timeline' ? 'black' : '#888'
@@ -141,95 +145,156 @@ export default function CalendarTimeline() {
         </div>
       </div>
 
-      {/* Advanced Filter Bar */}
-      <div style={{ 
-        background: 'white', padding: '16px 20px', borderRadius: '16px', 
-        border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-        marginBottom: '24px', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap'
-      }}>
-        <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
-            <input 
-                type="text" 
-                placeholder="Search your growth..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '10px', border: '1px solid #eee', outline: 'none', fontSize: '14px' }}
-            />
-        </div>
-        
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>Categories:</span>
-            {categories.map(cat => (
-                <button 
-                    key={cat.id}
-                    onClick={() => {
-                        setSelectedCategories(prev => 
-                            prev.includes(cat.id) ? prev.filter(id => id !== cat.id) : [...prev, cat.id]
-                        )
-                    }}
-                    style={{ 
-                        padding: '6px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer',
-                        background: selectedCategories.includes(cat.id) ? cat.color : '#f5f5f5',
-                        color: selectedCategories.includes(cat.id) ? 'white' : '#666',
-                        border: 'none', transition: 'all 0.2s'
-                    }}
-                >
-                    {cat.icon} {cat.name}
-                </button>
-            ))}
+      <div style={{ display: 'flex', gap: '40px', marginTop: '20px', alignItems: 'flex-start' }}>
+        {/* Left Sidebar: Filters & Categories */}
+        <aside style={{ width: '220px', flexShrink: 0, position: 'sticky', top: '24px' }}>
+            <div style={{ marginBottom: '32px' }}>
+                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#999', marginBottom: '16px' }}>Filter by Growth</h4>
+                <div style={{ position: 'relative', marginBottom: '24px' }}>
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', opacity: 0.4 }}>🔍</span>
+                    <input 
+                        type="text" 
+                        placeholder="Search..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        style={{ 
+                            width: '100%', padding: '10px 10px 10px 32px', borderRadius: '12px', 
+                            border: '1px solid rgba(0,0,0,0.08)', outline: 'none', fontSize: '14px', 
+                            background: 'white', transition: 'all 0.2s'
+                        }}
+                        onFocus={e => e.target.style.borderColor = '#c9a84c'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.08)'}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <button 
+                        onClick={() => setSelectedCategories([])}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                            borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                            background: selectedCategories.length === 0 ? 'rgba(201,168,76,0.1)' : 'transparent',
+                            color: selectedCategories.length === 0 ? '#111' : '#666',
+                            fontWeight: selectedCategories.length === 0 ? 600 : 400,
+                            textAlign: 'left', fontSize: '14px'
+                        }}
+                        onMouseOver={e => !selectedCategories.length === 0 && (e.currentTarget.style.background = 'rgba(0,0,0,0.03)') }
+                        onMouseOut={e => !selectedCategories.length === 0 && (e.currentTarget.style.background = 'transparent') }
+                    >
+                        <span style={{ width: '20px', textAlign: 'center' }}>✺</span>
+                        All Categories
+                    </button>
+                    {categories.map(cat => {
+                        const isSelected = selectedCategories.includes(cat.id);
+                        return (
+                            <button 
+                                key={cat.id}
+                                onClick={() => {
+                                    setSelectedCategories(prev => 
+                                        prev.includes(cat.id) ? prev.filter(id => id !== cat.id) : [...prev, cat.id]
+                                    )
+                                }}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                                    borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                                    background: isSelected ? `${cat.color}15` : 'transparent',
+                                    color: isSelected ? '#111' : '#666',
+                                    fontWeight: isSelected ? 600 : 400,
+                                    textAlign: 'left', fontSize: '14px',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                                onMouseOver={e => !isSelected && (e.currentTarget.style.background = 'rgba(0,0,0,0.03)') }
+                                onMouseOut={e => !isSelected && (e.currentTarget.style.background = 'transparent') }
+                            >
+                                {isSelected && (
+                                    <div style={{ 
+                                        position: 'absolute', left: 0, top: '20%', bottom: '20%', 
+                                        width: '3px', background: cat.color, borderRadius: '0 4px 4px 0' 
+                                    }} />
+                                )}
+                                <span style={{ width: '20px', textAlign: 'center', fontSize: '16px' }}>{cat.icon}</span>
+                                {cat.name}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '24px' }}>
+                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#999', marginBottom: '16px' }}>Quick Travel</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('7d')}>7 Days</button>
+                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('30d')}>30 Days</button>
+                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('ytd')}>YTD</button>
+                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('today')}>Today</button>
+                </div>
+            </div>
+            
             {(searchQuery || selectedCategories.length > 0) && (
                 <button 
                     className="btn btn-ghost" 
-                    style={{ fontSize: '12px', color: '#e76f51', padding: '4px 8px' }}
+                    style={{ fontSize: '13px', color: '#e76f51', marginTop: '24px', width: '100%', justifyContent: 'center' }}
                     onClick={() => {
                         setSearchQuery('');
                         setSelectedCategories([]);
                     }}
                 >
-                    Clear All
+                    Reset Filters
                 </button>
             )}
-        </div>
+        </aside>
 
-        <div style={{ display: 'flex', gap: '8px', borderLeft: '1px solid #eee', paddingLeft: '16px' }}>
-            <button className="btn btn-ghost" style={{ fontSize: '12px', padding: '4px 8px' }} onClick={() => setShortcut('7d')}>7 Days</button>
-            <button className="btn btn-ghost" style={{ fontSize: '12px', padding: '4px 8px' }} onClick={() => setShortcut('30d')}>30 Days</button>
-            <button className="btn btn-ghost" style={{ fontSize: '12px', padding: '4px 8px' }} onClick={() => setShortcut('ytd')}>YTD</button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-        <button className="btn btn-ghost" onClick={handlePrevMonth}>&larr; Prev</button>
-        <h3 style={{ margin: 0, fontFamily: 'serif', fontSize: '1.5rem' }}>{format(period, 'MMMM yyyy')}</h3>
-        <button className="btn btn-ghost" onClick={handleNextMonth}>Next &rarr;</button>
-      </div>
-
-      {loading && page === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>Loading your journey...</div>
-      ) : (
-        view === 'calendar' ? (
-          <CalendarView events={events} period={period} onDayClick={setSelectedDate} />
-        ) : (
-          <>
-            <JourneyFeed 
-                events={events} 
-                onEventClick={(e) => {
-                    if (e.action === 'quick_add') {
-                        setQuickAddContext(e);
-                        setSelectedDate(new Date(e.date));
-                    } else if (e.date) {
-                        setQuickAddContext(null);
-                        setSelectedDate(new Date(e.date));
-                    }
-                }} 
-            />
-            <div ref={lastElementRef} style={{ height: '20px', margin: '20px 0', textAlign: 'center', color: '#888', fontSize: '14px' }}>
-                {loadingMore ? 'Loading more...' : (!hasMore && events.length > 0 ? "You've reached the beginning of your journey ✨" : "")}
+        {/* Main Content Area */}
+        <main style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px', alignItems: 'center', gap: '24px' }}>
+                <button className="btn btn-ghost" style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, justifyContent: 'center' }} onClick={handlePrevMonth}>&larr;</button>
+                <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                    <h3 style={{ margin: 0, fontFamily: 'Fraunces, serif', fontSize: '2rem' }}>{format(period, 'MMMM')}</h3>
+                    <span style={{ fontSize: '14px', color: '#888', letterSpacing: '2px', fontWeight: 300 }}>{format(period, 'yyyy')}</span>
+                </div>
+                <button className="btn btn-ghost" style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, justifyContent: 'center' }} onClick={handleNextMonth}>&rarr;</button>
             </div>
-          </>
-        )
-      )}
+
+            {loading && page === 0 ? (
+                <div style={{ textAlign: 'center', padding: '80px 40px', color: '#888', background: 'rgba(0,0,0,0.01)', borderRadius: '24px' }}>
+                    <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 20px' }} />
+                    <h3 style={{ fontSize: '18px', color: '#444' }}>Gathering your memories...</h3>
+                    <p style={{ fontSize: '14px' }}>Checking {format(period, 'MMMM yyyy')}</p>
+                </div>
+            ) : (
+                view === 'calendar' ? (
+                <CalendarView events={events} period={period} onDayClick={setSelectedDate} />
+                ) : (
+                <>
+                    <JourneyFeed 
+                        events={events} 
+                        onEventClick={(e) => {
+                            if (e.action === 'quick_add') {
+                                setQuickAddContext(e);
+                                setSelectedDate(new Date(e.date));
+                            } else if (e.date) {
+                                setQuickAddContext(null);
+                                setSelectedDate(new Date(e.date));
+                            }
+                        }} 
+                    />
+                    <div ref={lastElementRef} style={{ height: '40px', margin: '40px 0', textAlign: 'center', color: '#999', fontSize: '14px' }}>
+                        {loadingMore ? (
+                            <div className="skeleton" style={{ width: '120px', height: '14px', margin: '0 auto' }} />
+                        ) : (!hasMore && events.length > 0 ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                                <div style={{ height: '1px', background: '#eee', flex: 1, maxWidth: '100px' }} />
+                                <span>You've reached the beginning of your journey ✨</span>
+                                <div style={{ height: '1px', background: '#eee', flex: 1, maxWidth: '100px' }} />
+                            </div>
+                        ) : "")}
+                    </div>
+                </>
+                )
+            )}
+        </main>
+      </div>
       
       {selectedDate && (
         <DayDetailSidePanel 
