@@ -43,10 +43,10 @@ def test_authorization_cross_tenant_isolation(client):
     assert resp.status_code == 200
     assert len(resp.json()) == 0
 
-    # U2 tries to update U1's category directly -> Should be caught by the DB update query matching `user_id` OR 403.
+    # U2 tries to update U1's category directly -> Should return 404 (Security hardening)
     resp2 = client.put(f"/categories/{cat_id}", headers=h2, json={"name": "Hacked"})
-    # Since update_one relies on user_id in query, it modifies 0 documents.
-    assert resp2.status_code == 200 # It succeeds syntactically
+    # Since update_one relies on user_id in query, it modifies 0 documents and returns 404.
+    assert resp2.status_code == 404
     
     # Verify U1's category wasn't actually changed
     u1_cats = client.get("/categories", headers=h1).json()

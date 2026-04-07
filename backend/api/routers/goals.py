@@ -69,7 +69,9 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
         validate_user_owns_category(fields["category_id"], uid)
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
-    db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid}, {"$set": fields})
+    result = db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid}, {"$set": fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "goal", goal_id, "Updated goal details")
     cache_invalidate(f"dashboard:{uid}")
@@ -103,8 +105,10 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
             "reason": data.reflection, "extended_at": utcnow().isoformat(),
         }}})
         update["current_deadline"] = data.new_deadline
-    db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
-                        {"$set": update, "$push": {"reflections": ref_entry}})
+    result = db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
+                                {"$set": update, "$push": {"reflections": ref_entry}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "goal", goal_id, "Added goal reflection")
     cache_invalidate(f"dashboard:{uid}")
@@ -117,8 +121,10 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
     uid = str(current_user["_id"])
     entry = {"id": str(ObjectId()), "text": data.text, "status_change": None,
              "date": data.date or utcnow().isoformat()}
-    db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
-                        {"$push": {"reflections": entry}})
+    result = db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
+                                {"$push": {"reflections": entry}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "create", "goal_reflection", goal_id, "Added a reflection to a goal")
     cache_invalidate(f"dashboard:{uid}")
@@ -127,10 +133,12 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
 @router.delete("/{goal_id}/reflections/{reflection_id}")
 def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    db.goals.update_one(
+    result = db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": uid},
         {"$pull": {"reflections": {"id": reflection_id}}}
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "goal_reflection", goal_id, "Deleted a goal reflection")
     cache_invalidate(f"dashboard:{uid}")
@@ -155,8 +163,10 @@ def update_goal_reflection(goal_id: str, reflection_id: str, data: NoteModel, cu
 def add_goal_note(goal_id: str, data: NoteModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     note = {"id": str(ObjectId()), "text": data.text, "date": utcnow().isoformat()}
-    db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
-                        {"$push": {"notes": note}})
+    result = db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
+                                {"$push": {"notes": note}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "create", "goal_note", goal_id, "Added a note to a goal")
     return {"success": True}
@@ -164,8 +174,10 @@ def add_goal_note(goal_id: str, data: NoteModel, current_user=Depends(get_curren
 @router.delete("/{goal_id}/notes/{note_id}")
 def delete_goal_note(goal_id: str, note_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
-                        {"$pull": {"notes": {"id": note_id}}})
+    result = db.goals.update_one({"_id": ObjectId(goal_id), "user_id": uid},
+                                {"$pull": {"notes": {"id": note_id}}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "goal_note", goal_id, "Deleted a note from a goal")
     return {"success": True}
@@ -188,10 +200,12 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
     uid = str(current_user["_id"])
     mg_id = str(ObjectId())
     mg = {"id": mg_id, "text": data.text, "completed": False, "time_spent": data.time_spent or 0}
-    db.goals.update_one(
+    result = db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": uid},
         {"$push": {"micro_goals": mg}}
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "create", "micro_goal", goal_id, "Added a micro-goal")
     cache_invalidate(f"dashboard:{uid}")
@@ -242,10 +256,12 @@ def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
 @router.delete("/{goal_id}/micro-goals/{mg_id}")
 def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    db.goals.update_one(
+    result = db.goals.update_one(
         {"_id": ObjectId(goal_id), "user_id": uid},
         {"$pull": {"micro_goals": {"id": mg_id}}}
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "micro_goal", goal_id, "Deleted a micro-goal")
     cache_invalidate(f"dashboard:{uid}")

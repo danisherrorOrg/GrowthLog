@@ -86,3 +86,21 @@ def test_get_logs_range(client, auth_headers):
     resp = client.get("/logs?days=2", headers=auth_headers)
     assert resp.status_code == 200
     assert len(resp.json()) == 3
+
+def test_log_cross_user_isolation(client, auth_headers, other_user_headers):
+    """Verify that users cannot access or modify each other's logs."""
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # 1. User A creates a log
+    client.post("/logs", headers=auth_headers, json={
+        "date": today, "entries": [], "highlight": "Secret"
+    })
+    
+    # 2. User B tries to fetch it by date
+    resp = client.get(f"/logs/{today}", headers=other_user_headers)
+    assert resp.json() is None
+    
+    # 3. User B tries to delete it
+    resp = client.delete(f"/logs/{today}", headers=other_user_headers)
+    assert resp.status_code == 404

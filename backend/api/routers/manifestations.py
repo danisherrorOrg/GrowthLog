@@ -81,7 +81,9 @@ def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": uid}, {"$set": fields})
+    result = db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": uid}, {"$set": fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "manifestation", m_id, "Updated manifestation details")
     cache_invalidate(f"dashboard:{uid}")
@@ -102,8 +104,10 @@ def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
 
 @router.put("/{m_id}/archive")
 def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-                                 {"$set": {"status": "archived"}})
+    result = db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
+                                         {"$set": {"status": "archived"}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "update", "manifestation", m_id, "Archived a manifestation")
@@ -114,8 +118,10 @@ def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
 @router.post("/{m_id}/progress")
 def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, current_user=Depends(get_current_user)):
     entry = {"id": str(ObjectId()), "text": data.text, "type": data.type, "date": utcnow().isoformat()}
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-                                 {"$push": {"progress_entries": entry}})
+    result = db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
+                                         {"$push": {"progress_entries": entry}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "create", "manifestation_progress", m_id, "Added progress to manifestation")
@@ -159,8 +165,10 @@ def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends
 @router.post("/{m_id}/notes")
 def add_manifestation_note(m_id: str, data: NoteModel, current_user=Depends(get_current_user)):
     note = {"id": str(ObjectId()), "text": data.text, "date": utcnow().isoformat()}
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-                                 {"$push": {"manifestation_notes": note}})
+    result = db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
+                                         {"$push": {"manifestation_notes": note}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "create", "manifestation_note", m_id, "Added a note to manifestation")
@@ -168,8 +176,10 @@ def add_manifestation_note(m_id: str, data: NoteModel, current_user=Depends(get_
 
 @router.delete("/{m_id}/notes/{note_id}")
 def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_current_user)):
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
-                                 {"$pull": {"manifestation_notes": {"id": note_id}}})
+    result = db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
+                                         {"$pull": {"manifestation_notes": {"id": note_id}}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "delete", "manifestation_note", m_id, "Deleted a note from manifestation")
@@ -177,10 +187,12 @@ def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_
 
 @router.put("/{m_id}/complete")
 def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_user=Depends(get_current_user)):
-    db.manifestations.update_one(
+    result = db.manifestations.update_one(
         {"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
         {"$set": {"status": "completed", "reflection": data.text, "completed_at": utcnow()}}
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "complete", "manifestation", m_id, "Completed a manifestation")

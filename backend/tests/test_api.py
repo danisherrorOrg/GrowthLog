@@ -446,3 +446,58 @@ def test_category_log_filtering(client, auth_headers):
     resp = client.get(f"/categories/{cat_id}/logs?days=5", headers=auth_headers)
     assert resp.status_code == 200
     assert len(resp.json()) == 0
+
+# --- 15. Multi-User Security Tests ---
+
+def test_cross_user_isolation(client, auth_headers, other_user_headers):
+    """Verify that users cannot access or modify each other's data."""
+    # 1. Setup: User A creates a Category, Goal, and Manifestation
+    cat = client.post("/categories", headers=auth_headers, json={"name": "User A Cat", "icon": "A", "color": "#000"}).json()
+    cat_id = cat["id"]
+    
+    goal = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "User A Goal", "deadline": "2025-12-31"
+    }).json()
+    goal_id = goal["id"]
+    
+    man = client.post("/manifestations", headers=auth_headers, json={
+        "vision": "User A Vision", "target_days": 10, "categories": []
+    }).json()
+    man_id = man["id"]
+    
+    # 2. Test Isolation for Other User
+    # View Category
+    resp = client.get(f"/categories", headers=other_user_headers)
+    assert not any(c["id"] == cat_id for c in resp.json())
+    
+    # View Goal
+    resp = client.get(f"/goals/{goal_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Edit Goal
+    resp = client.put(f"/goals/{goal_id}", headers=other_user_headers, json={"title": "Hacked"})
+    assert resp.status_code == 404
+    
+    # Delete Goal
+    resp = client.delete(f"/goals/{goal_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # View Manifestation
+    resp = client.get(f"/manifestations/{man_id}", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Add Progress to Manifestation
+    resp = client.post(f"/manifestations/{man_id}/progress", headers=other_user_headers, json={"text": "Evil"})
+    assert resp.status_code == 404
+
+    # Add Note to Goal
+    resp = client.post(f"/goals/{goal_id}/notes", headers=other_user_headers, json={"text": "Evil Note"})
+    assert resp.status_code == 404
+
+    # Archive Manifestation
+    resp = client.put(f"/manifestations/{man_id}/archive", headers=other_user_headers)
+    assert resp.status_code == 404
+    
+    # Delete Manifestation
+    resp = client.delete(f"/manifestations/{man_id}", headers=other_user_headers)
+    assert resp.status_code == 404
