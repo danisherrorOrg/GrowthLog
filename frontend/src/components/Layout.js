@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const NAV = [
   { to: '/dashboard', icon: '◈', label: 'Dashboard' },
@@ -18,6 +18,7 @@ export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   // Refresh user data (streak, etc.) on every page navigation
   useEffect(() => {
@@ -29,12 +30,36 @@ export default function Layout() {
     navigate('/login');
   };
 
+  const toggleSidebar = () => setIsSidebarVisible(!isSidebarVisible);
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={`app-shell ${!isSidebarVisible ? 'sidebar-hidden' : ''}`}>
+      {/* Floating Toggle Button (Only visible when sidebar is hidden) */}
+      {!isSidebarVisible && (
+        <button 
+          className="sidebar-toggle-floating"
+          onClick={toggleSidebar}
+          title="Show Sidebar"
+        >
+          ☰
+        </button>
+      )}
+
+      <aside className={`sidebar ${!isSidebarVisible ? 'hidden' : ''}`}>
         <div className="sidebar-logo">
-          <h1>GrowthLog</h1>
-          <span>Personal Journal</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1>GrowthLog</h1>
+              <span>Personal Journal</span>
+            </div>
+            <button 
+              className="sidebar-toggle-btn"
+              onClick={toggleSidebar}
+              title="Hide Sidebar"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <nav className="sidebar-nav">
@@ -68,7 +93,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      <main className="main-content">
+      <main className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
         <Outlet />
       </main>
     </div>
