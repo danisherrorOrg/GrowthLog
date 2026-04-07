@@ -1,0 +1,38 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-7.4.3, pluggy-1.6.0
+rootdir: /Users/danishmahajan/Desktop/projects/GrowthLog/backend
+configfile: pytest.ini
+plugins: asyncio-0.21.1, anyio-3.7.1
+asyncio: mode=auto
+collected 1 item
+
+tests/test_isolation_exhaustive.py F                                     [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_exhaustive_isolation ___________________________
+tests/test_isolation_exhaustive.py:66: in test_exhaustive_isolation
+    log_id = log["id"]
+E   KeyError: 'id'
+=============================== warnings summary ===============================
+main.py:40
+  /Users/danishmahajan/Desktop/projects/GrowthLog/backend/main.py:40: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+../../../../Library/Python/3.9/lib/python/site-packages/fastapi/applications.py:4547
+  /Users/danishmahajan/Library/Python/3.9/lib/python/site-packages/fastapi/applications.py:4547: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_isolation_exhaustive.py::test_exhaustive_isolation - KeyErr...
+======================== 1 failed, 2 warnings in 3.31s =========================

@@ -51,7 +51,9 @@ def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depend
     fields = clean_update(data.model_dump())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
-    db.snapshots.update_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    result = db.snapshots.update_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])}, {"$set": fields})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "update", "snapshot", snap_id, "Updated a snapshot")
