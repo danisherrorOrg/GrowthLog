@@ -263,12 +263,23 @@ export default function CalendarTimeline() {
                 <div className="sidebar-fade-bottom" />
             </div>
 
-            {/* Anchored Bottom: Quick Travel & Reset */}
+            {/* Anchored Bottom: Jump to Date & Reset */}
             <div style={{ flexShrink: 0, borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '16px', marginTop: '8px' }}>
-                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Quick Travel</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '12px' }}>
-                    <button className="btn btn-ghost" style={{ fontSize: '11px', background: 'white', border: '1px solid #eee', padding: '6px' }} onClick={() => setShortcut('7d')}>7 Days</button>
-                    <button className="btn btn-ghost" style={{ fontSize: '11px', background: 'white', border: '1px solid #eee', padding: '6px' }} onClick={() => setShortcut('ytd')}>YTD</button>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Jump to Date</h4>
+                <div style={{ position: 'relative', marginBottom: '16px' }}>
+                    <input 
+                        type="date" 
+                        value={format(period, 'yyyy-MM-dd')}
+                        onChange={(e) => {
+                            const d = new Date(e.target.value);
+                            if (!isNaN(d.getTime())) setPeriod(d);
+                        }}
+                        style={{ 
+                            width: '100%', padding: '8px 10px', borderRadius: '10px', 
+                            border: '1.5px solid rgba(0,0,0,0.05)', outline: 'none', fontSize: '13px', 
+                            background: 'white', cursor: 'pointer', color: '#555'
+                        }}
+                    />
                 </div>
                 
                 {(searchQuery || selectedCategories.length > 0 || period.toDateString() !== new Date().toDateString()) && (
