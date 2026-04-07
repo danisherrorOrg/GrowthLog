@@ -189,7 +189,7 @@ export default function Dashboard() {
             borderRadius: 20
           }}>
             <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 12 }}>“</div>
-            <p style={{ 
+            <div className="markdown-body" style={{ 
               fontFamily: 'Fraunces', 
               fontSize: 20, 
               color: 'var(--ink)', 
@@ -198,8 +198,8 @@ export default function Dashboard() {
               fontStyle: 'italic',
               maxWidth: 600
             }}>
-              {quote.text}
-            </p>
+              <MarkdownRenderer content={quote.text} />
+            </div>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)' }}>
               — {quote.author}
             </div>

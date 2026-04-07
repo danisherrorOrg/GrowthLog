@@ -4,6 +4,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
+import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 
 
 export default function SnapshotDetail() {
@@ -135,9 +136,9 @@ export default function SnapshotDetail() {
                 </div>
               </div>
 
-              <p style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 20 }}>
-                "{snap.description}"
-              </p>
+              <div className="markdown-body" style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', marginBottom: 20 }}>
+                <MarkdownRenderer content={snap.description} />
+              </div>
 
               {snap.values?.length > 0 && (
                 <div>
@@ -184,9 +185,9 @@ export default function SnapshotDetail() {
                       <span style={{ fontFamily: 'Fraunces', fontSize: 22, color: 'var(--sage)' }}>{s.mood}/10</span>
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>mood</span>
                     </div>
-                    <p style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 1.7, color: 'var(--ink)', marginBottom: 12 }}>
-                      "{s.description.slice(0, 280)}{s.description.length > 280 ? '...' : ''}"
-                    </p>
+                    <div className="markdown-body" style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 1.7, color: 'var(--ink)', marginBottom: 12 }}>
+                      <MarkdownRenderer content={s.description.length > 280 ? `${s.description.slice(0, 280)}...` : s.description} />
+                    </div>
                     {s.values?.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {s.values.map(v => <span key={v} className="tag tag-mist" style={{ fontSize: 11 }}>{v}</span>)}
