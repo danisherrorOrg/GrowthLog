@@ -56,7 +56,9 @@ export default function JourneyFeed({ events, onEventClick }) {
         {Object.entries(groupedEvents).map(([date, dayEvents], dayIdx) => {
             const moodSum = dayEvents.reduce((acc, e) => acc + (e.data?.mood || 0), 0);
             const moodAvg = dayEvents.some(e => e.data?.mood) ? (moodSum / dayEvents.filter(e => e.data?.mood).length).toFixed(1) : null;
-            const uniqueCats = [...new Set(dayEvents.filter(e => e.category).map(e => e.category.name))];
+            const uniqueCats = [...new Set(
+                dayEvents.flatMap(e => (e.categories || (e.category ? [e.category] : []))).map(c => c.name)
+            )];
 
             return (
                 <div key={date} style={{ position: 'relative', zIndex: 1, marginBottom: '40px' }}>
@@ -133,11 +135,25 @@ export default function JourneyFeed({ events, onEventClick }) {
                                         </button>
                                     )}
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                        <span style={{ fontSize: '16px' }}>{config.icon}</span>
-                                        <span style={{ fontSize: '12px', color: config.color, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
-                                            {e.type.replace('_', ' ')}
-                                        </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                        {/* Show all category badges */}
+                                        {e.categories && e.categories.length > 0 ? (
+                                            e.categories.map((cat, idx) => (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: `${cat.color}15`, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${cat.color}33` }}>
+                                                    <span style={{ fontSize: '12px' }}>{cat.icon}</span>
+                                                    <span style={{ fontSize: '10px', color: cat.color, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                                                        {cat.name}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: `${config.color}15`, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${config.color}33` }}>
+                                                <span>{config.icon}</span>
+                                                <span style={{ fontSize: '10px', color: config.color, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                                                    {e.type.replace('_', ' ')}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '6px', color: '#111' }}>{e.title}</div>
                                     {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5 }}>{e.description}</div>}

@@ -157,12 +157,25 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
 
                     return (
                         <div key={e.id} style={{ background: 'white', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span>{config.icon}</span>
-                                    <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1px' }}>
-                                        {e.type.replace('_', ' ')}
-                                    </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    {e.categories && e.categories.length > 0 ? (
+                                        e.categories.map((cat, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: `${cat.color}15`, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${cat.color}33` }}>
+                                                <span style={{ fontSize: '12px' }}>{cat.icon}</span>
+                                                <span style={{ fontSize: '10px', color: cat.color, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                                                    {cat.name}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <span>{config.icon}</span>
+                                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1px' }}>
+                                                {e.type.replace('_', ' ')}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                                 {e.data && e.data.mood && (
                                     <div style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 8px', borderRadius: 12, color: '#666' }}>

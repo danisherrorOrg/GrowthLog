@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from bson import ObjectId
 
@@ -22,26 +22,35 @@ def get_timeline(
     events = []
 
     # Parse category_ids
-    cat_filter = None
+    cat_list = None
     if category_ids:
-        cat_filter = category_ids.split(",")
+        cat_list = category_ids.split(",")
 
-    # Fetch categories for enrichment
-    categories = list(db.categories.find({"user_id": uid}))
+    # Fetch categories for enrichment with dual-type support
+    uid_obj = ObjectId(uid) if ObjectId.is_valid(uid) else None
+    uid_query = {"user_id": {"$in": [uid, uid_obj]}}
+    db_categories = list(db.categories.find(uid_query))
+    print(f"DEBUG BACKEND: uid={uid}, uid_obj={uid_obj}, found_cats={len(db_categories)}")
+    for c in db_categories:
+        print(f"DEBUG BACKEND: cat_id={str(c['_id'])}, user_id_in_db={c.get('user_id')}, type={type(c.get('user_id'))}")
+
     cat_map = {str(c["_id"]): {
+        "id": str(c["_id"]),
         "name": c.get("name", "General"), 
         "icon": c.get("icon", "📁"), 
         "color": c.get("color", "#888")
-    } for c in categories}
+    } for c in db_categories}
 
     # 1. Daily Logs
-    log_query = {"user_id": uid}
+    log_query = {"$or": [
+        {"user_id": uid},
+        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
+    ]}
     if start_date or end_date:
         log_query["date"] = {}
         if start_date: log_query["date"]["$gte"] = start_date
         if end_date: log_query["date"]["$lte"] = end_date
     
-    # If search is present, we filter by highlight or any entry text
     if q:
         log_query["$or"] = [
             {"highlight": {"$regex": q, "$options": "i"}},
@@ -50,25 +59,46 @@ def get_timeline(
         
     logs = db.daily_logs.find(log_query)
     for log in logs:
-        enriched_entries = []
-        for entry in log.get("entries", []):
-            cid = str(entry.get("category_id"))
-            # Filter entries by category if specified
-            if cat_filter and cid not in cat_filter:
-                continue
+        log_entries = log.get("entries", [])
+        log_highlight = log.get("highlight", "").lower()
+        q_lower = q.lower() if q else None
+        
+        matches_filter = False
+        
+        if cat_list:
+            # If category filtering is on, we MUST have a matching entry
+            for entry in log_entries:
+                cid = str(entry.get("category_id"))
+                if cid in cat_list:
+                    # Does it also match search? (Search can match highlight or this entry)
+                    if not q or (q_lower in log_highlight) or (q_lower in entry.get("text", "").lower()):
+                        matches_filter = True
+                        break
+        else:
+            # No category filtering. Match based on search query or just include everything.
+            if not q:
+                matches_filter = True
+            elif q_lower in log_highlight:
+                matches_filter = True
+            else:
+                # Check entries for search query match even if highlight didn't match
+                matches_filter = any(q_lower in entry.get("text", "").lower() for entry in log_entries)
+
+        if not matches_filter:
+            continue
             
-            # Filter entries by search if specified
-            if q and q.lower() not in entry.get("text", "").lower() and q.lower() not in log.get("highlight", "").lower():
-                continue
-
-            cat_info = cat_map.get(cid, {"name": "General", "icon": "📁", "color": "#888"})
+        # Enrich ALL categories and ALL entries since the log as a whole matched
+        log_cats = []
+        enriched_entries = []
+        for entry in log_entries:
+            cid = str(entry.get("category_id"))
+            cat_info = cat_map.get(cid, {"id": cid, "name": "General", "icon": "📁", "color": "#888"})
             enriched_entries.append({**entry, "category": cat_info})
+            if cat_info not in log_cats:
+                log_cats.append(cat_info)
 
-        # Skip log if it has no entries after filtering (unless it matches q in the highlight)
-        if not enriched_entries and not (q and q.lower() in log.get("highlight", "").lower()):
-            if cat_filter: # If category filter is on, and no entries match, skip.
-                continue
-
+        main_cat = log_cats[0] if log_cats else {"name": "Pulse", "icon": "🔥", "color": "#6b8c6b"}
+        
         events.append({
             "id": str(log["_id"]),
             "type": "daily_log",
@@ -76,6 +106,8 @@ def get_timeline(
             "title": "Daily Log",
             "description": log.get("highlight", ""),
             "status": "logged",
+            "category": main_cat,
+            "categories": log_cats,
             "data": {
                 "mood": log.get("overall_rating", 5),
                 "entries_count": len(enriched_entries),
@@ -84,18 +116,22 @@ def get_timeline(
         })
 
     # 2. Goals
-    goal_query = {"user_id": uid}
-    if cat_filter:
-        goal_query["category_id"] = {"$in": cat_filter}
+    goal_query = {"$or": [
+        {"user_id": uid},
+        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
+    ]}
     if q:
         goal_query["$or"] = [
             {"title": {"$regex": q, "$options": "i"}},
-            {"description": {"$regex": q, "$options": "i"}},
-            {"reflection": {"$regex": q, "$options": "i"}}
+            {"description": {"$regex": q, "$options": "i"}}
         ]
-
+    if cat_list:
+        goal_query["category_id"] = {"$in": cat_list}
+        
     goals = db.goals.find(goal_query)
     for goal in goals:
+        main_cat = cat_map.get(str(goal.get("category_id")), {"id": str(goal.get("category_id")), "name": "General", "icon": "📁", "color": "#888"})
+        
         # Goal Created Event
         created_at = goal.get("created_at")
         created_date = None
@@ -113,7 +149,8 @@ def get_timeline(
                 "title": goal.get("title", ""),
                 "description": goal.get("description", ""),
                 "status": "active",
-                "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
+                "category": main_cat,
+                "categories": [main_cat]
             })
         
         # Goal Deadline Event
@@ -127,7 +164,8 @@ def get_timeline(
                 "title": goal.get("title", ""),
                 "description": goal.get("description", ""),
                 "status": goal.get("status", "active"),
-                "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
+                "category": main_cat,
+                "categories": [main_cat]
             })
 
         # Goal Completed Event
@@ -148,47 +186,68 @@ def get_timeline(
                     "title": goal.get("title", ""),
                     "description": goal.get("reflection", ""),
                     "status": goal.get("status"),
-                    "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
-                })
-                 
-    # 3. Manifestations (Manifestations don't have categories in this schema yet, but check q)
-    if not cat_filter:
-        manif_query = {"user_id": uid}
-        if q:
-            manif_query["$or"] = [
-                {"vision": {"$regex": q, "$options": "i"}},
-                {"notes": {"$regex": q, "$options": "i"}}
-            ]
-        manifestations = db.manifestations.find(manif_query)
-        for m in manifestations:
-            start_d = m.get("start_date")
-            if start_d and ((not start_date or start_d >= start_date) and (not end_date or start_d <= end_date)):
-                events.append({
-                    "id": str(m["_id"]) + "_started",
-                    "source_id": str(m["_id"]),
-                    "type": "manifestation_started",
-                    "date": start_d,
-                    "title": m.get("vision", ""),
-                    "description": m.get("notes", ""),
-                    "status": "active",
-                    "category": {"name": "Manifestation", "icon": "💫", "color": "#e76f51"}
-                })
-                
-            target = m.get("target_date")
-            if target and ((not start_date or target >= start_date) and (not end_date or target <= end_date)):
-                events.append({
-                    "id": str(m["_id"]) + "_target",
-                    "source_id": str(m["_id"]),
-                    "type": "manifestation_target",
-                    "date": target,
-                    "title": m.get("vision", ""),
-                    "description": m.get("notes", ""),
-                    "status": m.get("status", "active"),
-                    "category": {"name": "Manifestation", "icon": "💫", "color": "#e76f51"}
+                    "category": main_cat,
+                    "categories": [main_cat]
                 })
 
-    # 4. Snapshots (No categories, but check q)
-    if not cat_filter:
+    # 3. Manifestations
+    manif_query = {"$or": [
+        {"user_id": uid},
+        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
+    ]}
+    if q:
+        manif_query["$or"] = [
+            {"vision": {"$regex": q, "$options": "i"}},
+            {"notes": {"$regex": q, "$options": "i"}}
+        ]
+    if cat_list:
+        manif_query["categories"] = {"$in": cat_list}
+        
+    manifestations = db.manifestations.find(manif_query)
+    for m in manifestations:
+        m_cat_ids = m.get("categories", [])
+        m_cats = []
+        for cid in m_cat_ids:
+            cid_str = str(cid)
+            if cid_str in cat_map:
+                m_cats.append(cat_map[cid_str])
+            else:
+                # Log but add a fallback to show SOMETHING
+                print(f"DEBUG: Category {cid_str} not found in cat_map for user {uid}")
+        
+        if not m_cats:
+            m_cats = [{"id": "manifestation", "name": "Manifestation", "icon": "💫", "color": "#e76f51"}]
+        
+        start_d = m.get("start_date")
+        if start_d and ((not start_date or start_d >= start_date) and (not end_date or start_d <= end_date)):
+            events.append({
+                "id": str(m["_id"]) + "_started",
+                "source_id": str(m["_id"]),
+                "type": "manifestation_started",
+                "date": start_d,
+                "title": m.get("vision", ""),
+                "description": m.get("notes", ""),
+                "status": "active",
+                "category": m_cats[0],
+                "categories": m_cats
+            })
+            
+        target = m.get("target_date")
+        if target and ((not start_date or target >= start_date) and (not end_date or target <= end_date)):
+            events.append({
+                "id": str(m["_id"]) + "_target",
+                "source_id": str(m["_id"]),
+                "type": "manifestation_target",
+                "date": target,
+                "title": m.get("vision", ""),
+                "description": m.get("notes", ""),
+                "status": m.get("status", "active"),
+                "category": m_cats[0],
+                "categories": m_cats
+            })
+
+    # 4. Snapshots
+    if not cat_list: # Snapshots don't have categories in schema yet
         snap_query = {"user_id": uid}
         if start_date or end_date:
             snap_query["date"] = {}
@@ -196,8 +255,10 @@ def get_timeline(
             if end_date: snap_query["date"]["$lte"] = end_date
         if q:
             snap_query["description"] = {"$regex": q, "$options": "i"}
+        
         snapshots = db.snapshots.find(snap_query)
         for snap in snapshots:
+            snap_cat = {"id": "snapshot", "name": "Snapshot", "icon": "📸", "color": "#9b5de5"}
             events.append({
                 "id": str(snap["_id"]),
                 "type": "snapshot",
@@ -205,47 +266,40 @@ def get_timeline(
                 "title": "Snapshot Captured",
                 "description": snap.get("description", ""),
                 "status": "recorded",
-                "category": {"name": "Snapshot", "icon": "📸", "color": "#9b5de5"},
+                "category": snap_cat,
+                "categories": [snap_cat],
                 "data": {
                     "mood": snap.get("mood", 5)
                 }
             })
 
-    # 5. Milestones (No categories, but check q)
-    if not cat_filter:
-        user = db.users.find_one({"_id": current_user["_id"]})
+    # 5. Milestones
+    if not cat_list:
+        user = db.users.find_one({"_id": ObjectId(uid)})
         if user and "milestones" in user:
-            for ms in user["milestones"]:
-                ms_date = ms.get("earned_at")
-                ms_d = None
-                if isinstance(ms_date, datetime):
-                    ms_d = ms_date.strftime("%Y-%m-%d")
-                elif isinstance(ms_date, str):
-                    ms_d = ms_date[:10]
-                    
-                matches_q = not q or q.lower() in ms.get("type", "").lower()
-                if ms_d and matches_q and ((not start_date or ms_d >= start_date) and (not end_date or ms_d <= end_date)):
+            for mil in user["milestones"]:
+                m_date = mil.get("earned_at")
+                if m_date and ((not start_date or m_date >= start_date) and (not end_date or m_date <= end_date)):
+                    mil_cat = {"id": "milestone", "name": "Milestone", "icon": "★", "color": "#ffb703"}
                     events.append({
-                        "id": "ms_" + ms.get("type", "unknown") + "_" + (ms_d or "empty"),
+                        "id": f"milestone_{uid}_{m_date}_{mil['type']}",
                         "type": "milestone",
-                        "date": ms_d,
-                        "title": "Milestone Earned",
-                        "description": ms.get("type", ""),
+                        "date": m_date,
+                        "title": "New Achievement!",
+                        "description": mil["type"],
                         "status": "earned",
-                        "category": {"name": "Milestone", "icon": "★", "color": "#ffb703"}
+                        "category": mil_cat,
+                        "categories": [mil_cat]
                     })
 
-    # Sort events by date descending
-    def get_date_val(e):
-        return e.get("date") or "1970-01-01"
-        
-    events.sort(key=get_date_val, reverse=True)
+    # Final Sorting & Pagination
+    events.sort(key=lambda x: x["date"] or "", reverse=True)
     
-    # Apply pagination
+    total_events = len(events)
     paginated_events = events[skip : skip + limit]
     
     return {
         "events": paginated_events,
-        "total": len(events),
-        "has_more": skip + limit < len(events)
+        "total": total_events,
+        "has_more": (skip + limit) < total_events
     }

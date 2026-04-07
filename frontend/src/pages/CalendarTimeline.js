@@ -158,9 +158,9 @@ export default function CalendarTimeline() {
             />
         </div>
         
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: 600, color: '#888' }}>Categories:</span>
-            {categories.slice(0, 3).map(cat => (
+            {categories.map(cat => (
                 <button 
                     key={cat.id}
                     onClick={() => {
@@ -178,6 +178,18 @@ export default function CalendarTimeline() {
                     {cat.icon} {cat.name}
                 </button>
             ))}
+            {(searchQuery || selectedCategories.length > 0) && (
+                <button 
+                    className="btn btn-ghost" 
+                    style={{ fontSize: '12px', color: '#e76f51', padding: '4px 8px' }}
+                    onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCategories([]);
+                    }}
+                >
+                    Clear All
+                </button>
+            )}
         </div>
 
         <div style={{ display: 'flex', gap: '8px', borderLeft: '1px solid #eee', paddingLeft: '16px' }}>

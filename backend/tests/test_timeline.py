@@ -249,11 +249,68 @@ def test_get_timeline_idempotency_and_overlap(client, auth_headers, test_user_da
     events = data["events"]
     assert len(events) == 3
 
-def test_get_timeline_invalid_date_params(client, auth_headers):
-    """Verify behavior with invalid date parameters."""
-    # Current implementation uses string comparison, so it should just return empty
-    response = client.get("/timeline?start_date=not-a-date", headers=auth_headers)
+def test_get_timeline_multi_category(client, auth_headers, test_user_data):
+    """Verify that multi-category manifestations are correctly filtered and display all tags."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # Clean up before testing
+    db.categories.delete_many({"user_id": uid})
+    db.manifestations.delete_many({"user_id": uid})
+    db.daily_logs.delete_many({"user_id": uid})
+
+    # 1. Create two categories
+    cat1_oid = db.categories.insert_one({"user_id": uid, "name": "Health", "icon": "🍎", "color": "#ff0000"}).inserted_id
+    cat2_oid = db.categories.insert_one({"user_id": uid, "name": "Wealth", "icon": "💰", "color": "#00ff00"}).inserted_id
+    cat1_id = str(cat1_oid)
+    cat2_id = str(cat2_oid)
+    
+    assert db.categories.count_documents({"user_id": uid}) == 2
+
+    # 2. Add a manifestation with both categories
+    db.manifestations.insert_one({
+        "user_id": uid,
+        "vision": "Healthy & Wealthy life",
+        "categories": [cat1_id, cat2_id],
+        "start_date": "2026-08-01",
+        "status": "active"
+    })
+
+    # 3. Add a daily log with two entries
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-08-02",
+        "entries": [
+            {"category_id": cat1_id, "text": "Gym session"},
+            {"category_id": cat2_id, "text": "Stock market check"}
+        ]
+    })
+
+    # Test A: Filter by Category 1 (Health)
+    response = client.get(f"/timeline?category_ids={cat1_id}", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert data["events"] == []
-    assert data["total"] == 0
+    events = data["events"]
+    
+    manif_events = [e for e in events if e["type"] == "manifestation_started"]
+    assert len(manif_events) > 0, f"Manifestation not found with cat filter. Response: {data}"
+    manif_event = manif_events[0]
+    
+    assert "categories" in manif_event, f"Categories field missing. Event: {manif_event}"
+    returned_cat_ids = [c.get("id") for c in manif_event["categories"]]
+    
+    # Debugging print (will show up on -s)
+    print(f"DEBUG: cat1_id={cat1_id}, cat2_id={cat2_id}, returned={returned_cat_ids}")
+    
+    assert cat1_id in returned_cat_ids, f"cat1_id missing. Got: {returned_cat_ids}"
+    assert cat2_id in returned_cat_ids, f"cat2_id missing. Got: {returned_cat_ids}"
+    assert len(manif_event["categories"]) == 2
+
+    # Verify daily log
+    log_events = [e for e in events if e["type"] == "daily_log"]
+    assert len(log_events) > 0
+    log_event = log_events[0]
+    log_cat_ids = [c.get("id") for c in log_event["categories"]]
+    assert cat1_id in log_cat_ids
+    assert cat2_id in log_cat_ids
+    assert len(log_event["categories"]) == 2
