@@ -690,25 +690,23 @@ h1, h2, h3, h4 {
 .toaster { font-family: 'DM Sans', sans-serif !important; }
 
 /* Markdown Container */
-.md-body {
+.md-body, .markdown-body {
   line-height: 1.6;
-}
-
-.md-body p { margin-bottom: 12px; }
-.md-body p:last-child { margin-bottom: 0; }
-.md-body ul, .md-body ol { padding-left: 20px; margin-bottom: 12px; }
-
-.md-fixed-size {
   max-height: 250px;
   overflow-y: auto;
   padding-right: 8px;
 }
 
-.md-fixed-size::-webkit-scrollbar {
+.md-body p, .markdown-body p { margin-bottom: 12px; }
+.md-body p:last-child, .markdown-body p:last-child { margin-bottom: 0; }
+.md-body ul, .markdown-body ul, .md-body ol, .markdown-body ol { padding-left: 20px; margin-bottom: 12px; }
+
+/* Custom Scrollbar for Markdown content */
+.md-body::-webkit-scrollbar, .markdown-body::-webkit-scrollbar {
   width: 4px;
 }
 
-.md-fixed-size::-webkit-scrollbar-thumb {
+.md-body::-webkit-scrollbar-thumb, .markdown-body::-webkit-scrollbar-thumb {
   background: rgba(13,13,13,0.1);
   border-radius: 10px;
 }

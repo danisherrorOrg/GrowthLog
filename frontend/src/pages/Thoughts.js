@@ -9,6 +9,8 @@ export default function Thoughts() {
   const [thoughts, setThoughts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newThought, setNewThought] = useState('');
+  const [editingThought, setEditingThought] = useState(null);
+  const [editContent, setEditContent] = useState('');
 
   const fetchThoughts = async () => {
     try {
@@ -47,6 +49,21 @@ export default function Thoughts() {
       toast.success('Deleted');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to delete'));
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editContent.trim()) return;
+
+    try {
+      const res = await API.put(`/thoughts/${editingThought.id}`, { content: editContent });
+      setThoughts(thoughts.map(t => t.id === editingThought.id ? res.data : t));
+      setEditingThought(null);
+      setEditContent('');
+      toast.success('Thought updated');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update thought'));
     }
   };
 
@@ -94,12 +111,18 @@ export default function Thoughts() {
                      <span className={`tag ${t.sentiment === 'Positive' ? 'tag-green' : t.sentiment === 'Negative' ? 'tag-red' : 'tag-mist'}`} style={{ fontSize: 10 }}>
                        {t.sentiment}
                      </span>
+                     <button 
+                        onClick={() => { setEditingThought(t); setEditContent(t.content); }} 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)', opacity: 0.3, fontSize: 12 }}
+                     >
+                       Edit
+                     </button>
                      <button onClick={() => deleteThought(t.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
                    </div>
                  </div>
 
                  <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6 }}>
-                   <MarkdownRenderer content={t.content} className="md-fixed-size" />
+                   <MarkdownRenderer content={t.content} />
                  </div>
 
                </div>
@@ -116,6 +139,33 @@ export default function Thoughts() {
         )}
 
       </div>
+
+      {editingThought && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 600 }}>
+            <div className="modal-header">
+              <h3>Tend to Thought 🌿</h3>
+              <button className="modal-close" onClick={() => setEditingThought(null)}>✕</button>
+            </div>
+            <form onSubmit={handleUpdate}>
+              <div className="form-group">
+                <label className="form-label">Garden Correction</label>
+                <textarea 
+                  className="form-textarea" 
+                  value={editContent}
+                  onChange={e => setEditContent(e.target.value)}
+                  style={{ minHeight: 150 }}
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <button type="button" className="btn btn-outline" onClick={() => setEditingThought(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Update Thought</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

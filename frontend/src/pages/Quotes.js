@@ -10,6 +10,7 @@ export default function Quotes() {
   const [showAdd, setShowAdd] = useState(false);
   const [newQuote, setNewQuote] = useState({ content: '', author: '', source: '', tags: '' });
   const [activeTag, setActiveTag] = useState(null);
+  const [editingQuote, setEditingQuote] = useState(null);
 
   const fetchQuotes = async () => {
     try {
@@ -62,6 +63,30 @@ export default function Quotes() {
       setQuotes(quotes.map(q => q.id === id ? res.data : q));
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to update'));
+    }
+  };
+
+  const handleEditClick = (quote) => {
+    setEditingQuote({
+      ...quote,
+      tags: quote.tags.join(', ')
+    });
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editingQuote.content.trim()) return;
+
+    const tagsArray = editingQuote.tags.split(',').map(t => t.trim()).filter(t => t);
+    const payload = { ...editingQuote, tags: tagsArray };
+
+    try {
+      const res = await API.put(`/quotes/${editingQuote.id}`, payload);
+      setQuotes(quotes.map(q => q.id === editingQuote.id ? res.data : q));
+      setEditingQuote(null);
+      toast.success('Quote updated');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update quote'));
     }
   };
 
@@ -159,7 +184,7 @@ export default function Quotes() {
             <div key={q.id} className="card" style={{ position: 'relative' }}>
               <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 8, lineHeight: 1 }}>“</div>
               <div style={{ fontFamily: 'Fraunces', fontSize: 18, color: 'var(--ink)', marginBottom: 12, fontStyle: 'italic', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'hidden' }}>
-                <MarkdownRenderer content={q.content} className="md-fixed-size" />
+                <MarkdownRenderer content={q.content} />
               </div>
               <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>
                 — {q.author || 'Unknown'} {q.source && `(${q.source})`}
@@ -176,6 +201,12 @@ export default function Quotes() {
                 >
                   {q.is_favorite ? '★' : '☆'}
                 </button>
+                <button
+                  onClick={() => handleEditClick(q)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)', opacity: 0.3, fontSize: 12 }}
+                >
+                  Edit
+                </button>
                 <button onClick={() => deleteQuote(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
               </div>
             </div>
@@ -191,6 +222,62 @@ export default function Quotes() {
           </div>
         )}
       </div>
+
+      {editingQuote && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 600 }}>
+            <div className="modal-header">
+              <h3>Refine Wisdom 🗝️</h3>
+              <button className="modal-close" onClick={() => setEditingQuote(null)}>✕</button>
+            </div>
+            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">The Words</label>
+                <textarea
+                  className="form-textarea"
+                  value={editingQuote.content}
+                  onChange={e => setEditingQuote({ ...editingQuote, content: e.target.value })}
+                  required
+                  style={{ minHeight: 120 }}
+                />
+              </div>
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label">Author</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editingQuote.author}
+                    onChange={e => setEditingQuote({ ...editingQuote, author: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Source</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editingQuote.source}
+                    onChange={e => setEditingQuote({ ...editingQuote, source: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Tags (comma separated)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editingQuote.tags}
+                  onChange={e => setEditingQuote({ ...editingQuote, tags: e.target.value })}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+                <button type="button" className="btn btn-outline" onClick={() => setEditingQuote(null)}>Cancel</button>
+                <button type="submit" className="btn btn-gold">Update Vault</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

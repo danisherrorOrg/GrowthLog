@@ -34,6 +34,32 @@ def add_thought(data: ThoughtModel, current_user=Depends(get_current_user)):
     log_activity(uid, "create", "thought", str(result.inserted_id), "Recorded a thought")
     return serialize(thought)
 
+@router.put("/{thought_id}")
+def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    update_dict = clean_update(data.model_dump(exclude_unset=True))
+    
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No fields provided for update")
+
+    # If content changed, re-analyze sentiment
+    if "content" in update_dict:
+        sentiment = analyze_sentiment(update_dict["content"])
+        update_dict["sentiment"] = sentiment["label"]
+        update_dict["sentiment_score"] = sentiment["score"]
+
+    result = db.thoughts.update_one(
+        {"_id": ObjectId(thought_id), "user_id": uid},
+        {"$set": update_dict}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Thought not found")
+
+    updated_thought = db.thoughts.find_one({"_id": ObjectId(thought_id)})
+    from utils.activity import log_activity
+    log_activity(uid, "update", "thought", thought_id, "Updated a thought")
+    return serialize(updated_thought)
+
 @router.delete("/{thought_id}")
 def delete_thought(thought_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])

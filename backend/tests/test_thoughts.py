@@ -28,7 +28,24 @@ def test_thought_lifecycle(client, auth_headers):
     assert len(resp.json()) >= 2
     assert any(t["id"] == thought_id for t in resp.json())
 
-    # 4. Delete
+    # 4. Update (Edit Thought)
+    update_data = {
+        "content": "I am feeling amazing and happy!"
+    }
+    resp = client.put(f"/thoughts/{thought_id}", headers=auth_headers, json=update_data)
+    assert resp.status_code == 200
+    assert resp.json()["content"] == update_data["content"]
+    assert resp.json()["sentiment"] == "Positive"
+
+    # 4b. Update with Negative Sentiment
+    update_data_neg = {
+        "content": "This is terrible and I feel overwhelmed."
+    }
+    resp = client.put(f"/thoughts/{thought_id}", headers=auth_headers, json=update_data_neg)
+    assert resp.status_code == 200
+    assert resp.json()["sentiment"] == "Negative"
+
+    # 5. Delete
     resp = client.delete(f"/thoughts/{thought_id}", headers=auth_headers)
     assert resp.status_code == 200
     
