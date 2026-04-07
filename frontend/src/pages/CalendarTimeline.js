@@ -271,16 +271,17 @@ export default function CalendarTimeline() {
                     <button className="btn btn-ghost" style={{ fontSize: '11px', background: 'white', border: '1px solid #eee', padding: '6px' }} onClick={() => setShortcut('ytd')}>YTD</button>
                 </div>
                 
-                {(searchQuery || selectedCategories.length > 0) && (
+                {(searchQuery || selectedCategories.length > 0 || period.toDateString() !== new Date().toDateString()) && (
                     <button 
                         className="btn btn-ghost" 
                         style={{ fontSize: '12px', color: '#e76f51', background: '#fff1f0', width: '100%', justifyContent: 'center' }}
                         onClick={() => {
                             setSearchQuery('');
                             setSelectedCategories([]);
+                            setPeriod(new Date());
                         }}
                     >
-                        Reset All
+                        Reset All Filters
                     </button>
                 )}
             </div>
