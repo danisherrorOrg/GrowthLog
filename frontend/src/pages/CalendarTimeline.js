@@ -146,11 +146,45 @@ export default function CalendarTimeline() {
       </div>
 
       <div style={{ display: 'flex', gap: '40px', marginTop: '20px', alignItems: 'flex-start' }}>
-        {/* Left Sidebar: Filters & Categories */}
-        <aside style={{ width: '220px', flexShrink: 0, position: 'sticky', top: '24px' }}>
-            <div style={{ marginBottom: '32px' }}>
-                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#999', marginBottom: '16px' }}>Filter by Growth</h4>
-                <div style={{ position: 'relative', marginBottom: '24px' }}>
+        {/* Left Sidebar: Fixed Top / Scroll Middle / Fixed Bottom */}
+        <aside style={{ 
+            width: '220px', 
+            height: 'calc(100vh - 180px)', 
+            flexShrink: 0, 
+            position: 'sticky', 
+            top: '24px', 
+            display: 'flex', 
+            flexDirection: 'column',
+            background: 'rgba(255,255,255,0.4)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: '16px',
+            padding: '16px',
+            border: '1px solid rgba(0,0,0,0.03)'
+        }}>
+            <style dangerouslySetInnerHTML={{__html: `
+                .category-scroll::-webkit-scrollbar { width: 3px; }
+                .category-scroll::-webkit-scrollbar-track { background: transparent; }
+                .category-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+                .category-scroll::-webkit-scrollbar-thumb:hover { background: rgba(201,168,76,0.3); }
+                
+                .sidebar-fade-top {
+                    position: absolute; top: 0; left: 0; right: 0; height: 12px;
+                    background: linear-gradient(to bottom, rgba(253,252,249,1), transparent);
+                    z-index: 2; pointer-events: none;
+                    opacity: 0.8;
+                }
+                .sidebar-fade-bottom {
+                    position: absolute; bottom: 0; left: 0; right: 0; height: 12px;
+                    background: linear-gradient(to top, rgba(253,252,249,1), transparent);
+                    z-index: 2; pointer-events: none;
+                    opacity: 0.8;
+                }
+            `}} />
+
+            {/* Fixed Top: Filter Title & Search */}
+            <div style={{ flexShrink: 0, marginBottom: '16px' }}>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Filter by Growth</h4>
+                <div style={{ position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', opacity: 0.4 }}>🔍</span>
                     <input 
                         type="text" 
@@ -158,28 +192,38 @@ export default function CalendarTimeline() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{ 
-                            width: '100%', padding: '10px 10px 10px 32px', borderRadius: '12px', 
-                            border: '1px solid rgba(0,0,0,0.08)', outline: 'none', fontSize: '14px', 
+                            width: '100%', padding: '9px 10px 9px 32px', borderRadius: '10px', 
+                            border: '1.5px solid rgba(0,0,0,0.05)', outline: 'none', fontSize: '13px', 
                             background: 'white', transition: 'all 0.2s'
                         }}
-                        onFocus={e => e.target.style.borderColor = '#c9a84c'}
-                        onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.08)'}
                     />
                 </div>
+            </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* Scrollable Middle: Category List */}
+            <div style={{ position: 'relative', flex: 1, minHeight: 0, margin: '8px -8px' }}>
+                <div className="sidebar-fade-top" />
+                <div 
+                    className="category-scroll"
+                    style={{ 
+                        height: '100%', 
+                        overflowY: 'auto', 
+                        padding: '8px',
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '2px' 
+                    }}
+                >
                     <button 
                         onClick={() => setSelectedCategories([])}
                         style={{
                             display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
                             borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
                             background: selectedCategories.length === 0 ? 'rgba(201,168,76,0.1)' : 'transparent',
-                            color: selectedCategories.length === 0 ? '#111' : '#666',
+                            color: selectedCategories.length === 0 ? '#111' : '#777',
                             fontWeight: selectedCategories.length === 0 ? 600 : 400,
                             textAlign: 'left', fontSize: '14px'
                         }}
-                        onMouseOver={e => !selectedCategories.length === 0 && (e.currentTarget.style.background = 'rgba(0,0,0,0.03)') }
-                        onMouseOut={e => !selectedCategories.length === 0 && (e.currentTarget.style.background = 'transparent') }
                     >
                         <span style={{ width: '20px', textAlign: 'center' }}>✺</span>
                         All Categories
@@ -198,18 +242,15 @@ export default function CalendarTimeline() {
                                     display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
                                     borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.2s',
                                     background: isSelected ? `${cat.color}15` : 'transparent',
-                                    color: isSelected ? '#111' : '#666',
+                                    color: isSelected ? '#111' : '#777',
                                     fontWeight: isSelected ? 600 : 400,
                                     textAlign: 'left', fontSize: '14px',
-                                    position: 'relative',
-                                    overflow: 'hidden'
+                                    position: 'relative'
                                 }}
-                                onMouseOver={e => !isSelected && (e.currentTarget.style.background = 'rgba(0,0,0,0.03)') }
-                                onMouseOut={e => !isSelected && (e.currentTarget.style.background = 'transparent') }
                             >
                                 {isSelected && (
                                     <div style={{ 
-                                        position: 'absolute', left: 0, top: '20%', bottom: '20%', 
+                                        position: 'absolute', left: 0, top: '25%', bottom: '25%', 
                                         width: '3px', background: cat.color, borderRadius: '0 4px 4px 0' 
                                     }} />
                                 )}
@@ -219,30 +260,30 @@ export default function CalendarTimeline() {
                         );
                     })}
                 </div>
+                <div className="sidebar-fade-bottom" />
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '24px' }}>
-                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#999', marginBottom: '16px' }}>Quick Travel</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('7d')}>7 Days</button>
-                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('30d')}>30 Days</button>
-                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('ytd')}>YTD</button>
-                    <button className="btn btn-ghost" style={{ fontSize: '12px', background: 'white', border: '1px solid #eee', padding: '8px' }} onClick={() => setShortcut('today')}>Today</button>
+            {/* Anchored Bottom: Quick Travel & Reset */}
+            <div style={{ flexShrink: 0, borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '16px', marginTop: '8px' }}>
+                <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Quick Travel</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '12px' }}>
+                    <button className="btn btn-ghost" style={{ fontSize: '11px', background: 'white', border: '1px solid #eee', padding: '6px' }} onClick={() => setShortcut('7d')}>7 Days</button>
+                    <button className="btn btn-ghost" style={{ fontSize: '11px', background: 'white', border: '1px solid #eee', padding: '6px' }} onClick={() => setShortcut('ytd')}>YTD</button>
                 </div>
+                
+                {(searchQuery || selectedCategories.length > 0) && (
+                    <button 
+                        className="btn btn-ghost" 
+                        style={{ fontSize: '12px', color: '#e76f51', background: '#fff1f0', width: '100%', justifyContent: 'center' }}
+                        onClick={() => {
+                            setSearchQuery('');
+                            setSelectedCategories([]);
+                        }}
+                    >
+                        Reset All
+                    </button>
+                )}
             </div>
-            
-            {(searchQuery || selectedCategories.length > 0) && (
-                <button 
-                    className="btn btn-ghost" 
-                    style={{ fontSize: '13px', color: '#e76f51', marginTop: '24px', width: '100%', justifyContent: 'center' }}
-                    onClick={() => {
-                        setSearchQuery('');
-                        setSelectedCategories([]);
-                    }}
-                >
-                    Reset Filters
-                </button>
-            )}
         </aside>
 
         {/* Main Content Area */}
