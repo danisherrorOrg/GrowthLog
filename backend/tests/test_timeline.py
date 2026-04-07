@@ -143,3 +143,82 @@ def test_get_timeline_milestones(client, auth_headers, test_user_data):
     assert len(milestone_events) == 1
     assert milestone_events[0]["description"] == "Seven Day Streak"
     assert milestone_events[0]["date"] == "2026-04-05"
+
+def test_get_timeline_data_types(client, auth_headers, test_user_data):
+    """Verify that the timeline handles both datetime and string timestamps."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # 1. Goal with string created_at
+    db.goals.insert_one({
+        "user_id": uid,
+        "title": "String Goal",
+        "created_at": "2026-05-15T10:00:00",
+        "status": "active"
+    })
+
+    # 2. Goal with datetime created_at
+    db.goals.insert_one({
+        "user_id": uid,
+        "title": "Datetime Goal",
+        "created_at": datetime(2026, 5, 16, 10, 0, 0),
+        "status": "active"
+    })
+
+    response = client.get("/timeline?start_date=2026-05-15&end_date=2026-05-17", headers=auth_headers)
+    data = response.json()
+    assert len(data) == 2
+    titles = [e["title"] for e in data]
+    assert "String Goal" in titles
+    assert "Datetime Goal" in titles
+
+def test_get_timeline_missing_optional_fields(client, auth_headers, test_user_data):
+    """Verify that the timeline doesn't break when optional fields are missing."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # Goal without deadline
+    db.goals.insert_one({
+        "user_id": uid,
+        "title": "No Deadline Goal",
+        "created_at": datetime(2026, 6, 1),
+        "status": "active"
+        # current_deadline is missing
+    })
+
+    # Manifestation without target_date
+    db.manifestations.insert_one({
+        "user_id": uid,
+        "vision": "Vague Vision",
+        "start_date": "2026-06-02",
+        "status": "active"
+        # target_date is missing
+    })
+
+    response = client.get("/timeline?start_date=2026-06-01", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 2
+
+def test_get_timeline_idempotency_and_overlap(client, auth_headers, test_user_data):
+    """Verify that multiple events on the same day are all shown."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # Three logs on the same day (unlikely but should be handled)
+    db.daily_logs.insert_many([
+        {"user_id": uid, "date": "2026-07-01", "highlight": "Log 1"},
+        {"user_id": uid, "date": "2026-07-01", "highlight": "Log 2"},
+        {"user_id": uid, "date": "2026-07-01", "highlight": "Log 3"}
+    ])
+
+    response = client.get("/timeline?start_date=2026-07-01&end_date=2026-07-01", headers=auth_headers)
+    data = response.json()
+    assert len(data) == 3
+
+def test_get_timeline_invalid_date_params(client, auth_headers):
+    """Verify behavior with invalid date parameters."""
+    # Current implementation uses string comparison, so it should just return empty
+    response = client.get("/timeline?start_date=not-a-date", headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json() == []
