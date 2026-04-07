@@ -1,17 +1,20 @@
-# Growth Timeline & Calendar Implementation
-
-- `[/]` **Backend (FastAPI)**
-  - `[x]` Create `backend/api/routers/timeline.py` with `GET /api/timeline`
-  - `[x]` Implement aggregation logic for logs, goals, manifestations, and snapshots
-  - `[x]` Map to unified `Event` schema and sort by date
-  - `[x]` Register `timeline` router in `backend/api/main.py`
-- `[/]` **Frontend (React)**
-  - `[x]` Create `CalendarTimeline.js` page component
-  - `[x]` Build `CalendarView.js` grid component
-  - `[x]` Build `JourneyFeed.js` timeline component
-  - `[x]` Build `DayDetailSidePanel.js` drawer component
-  - `[x]` Integrate `timeline` page into App navigation
-- `[/]` **Verification**
-  - `[x]` Test unified API with sample user data
-  - `[x]` Verify day-click side panel functionality
-  - `[x]` Ensure toggle between Calendar and Timeline works smoothly
+- [ ] Backend: Update `/timeline` endpoint
+    - [ ] Add `q`, `category_ids`, `limit`, `skip` parameters
+    - [ ] Implement keyword search logic
+    - [ ] Implement category filtering logic
+    - [ ] Implement pagination logic
+- [ ] Frontend: Update `CalendarTimeline.js`
+    - [ ] Add Search & Filter Bar UI
+    - [ ] Implement category multi-select the dropdown
+    - [ ] Implement date range shortcuts
+    - [ ] Implement Infinite Scroll (Intersection Observer)
+- [ ] Frontend: Update `JourneyFeed.js`
+    - [ ] Add Daily Growth Insights card
+    - [ ] Add Staggered Entry animations (CSS)
+    - [ ] Add Quick Action (+) button on cards
+- [ ] Frontend: Update `DayDetailSidePanel.js`
+    - [ ] Add support for Quick Add Reflection
+- [ ] Verification
+    - [ ] Update `tests/test_timeline.py`
+    - [ ] Manual test of all new features
+- [ ] Final Walkthrough

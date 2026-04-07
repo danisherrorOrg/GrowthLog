@@ -12,11 +12,13 @@ def test_get_timeline_empty(client, auth_headers):
     """Verify that a new user starts with an empty timeline."""
     response = client.get("/timeline", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json() == []
+    data = response.json()
+    assert data["events"] == []
+    assert data["total"] == 0
+    assert data["has_more"] is False
 
 def test_get_timeline_aggregation(client, auth_headers, test_user_data):
     """Verify that the timeline aggregates data from multiple sources."""
-    # Crucial: Fetch the correct user that was created by auth_headers fixture
     user = db.users.find_one({"email": test_user_data["email"]})
     assert user is not None, f"User with email {test_user_data['email']} not found in DB"
     uid = str(user["_id"])
@@ -60,16 +62,18 @@ def test_get_timeline_aggregation(client, auth_headers, test_user_data):
     response = client.get("/timeline", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
+    events = data["events"]
 
     # Verify counts:
     # 1 Daily Log
     # 2 Goal events (Created, Deadline)
     # 2 Manifestation events (Started, Target)
     # 1 Snapshot
-    assert len(data) == 6
+    assert len(events) == 6
+    assert data["total"] == 6
 
     # Verify specific types and data
-    types = [event["type"] for event in data]
+    types = [event["type"] for event in events]
     assert "daily_log" in types
     assert "goal_created" in types
     assert "goal_deadline" in types
@@ -78,7 +82,7 @@ def test_get_timeline_aggregation(client, auth_headers, test_user_data):
     assert "snapshot" in types
 
     # Verify detailed data for daily_log
-    log_event = next(e for e in data if e["type"] == "daily_log")
+    log_event = next(e for e in events if e["type"] == "daily_log")
     assert "entries" in log_event["data"]
     assert len(log_event["data"]["entries"]) == 1
     assert log_event["data"]["entries"][0]["text"] == "Something cool happened"
@@ -98,8 +102,32 @@ def test_get_timeline_filtering(client, auth_headers, test_user_data):
     response = client.get("/timeline?start_date=2026-02-01&end_date=2026-02-28", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["date"] == "2026-02-01"
+    events = data["events"]
+    assert len(events) == 1
+    assert events[0]["date"] == "2026-02-01"
+
+def test_get_timeline_pagination(client, auth_headers, test_user_data):
+    """Verify that pagination (limit/skip) works."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    db.daily_logs.insert_many([
+        {"user_id": uid, "date": f"2026-08-{i:02d}", "highlight": f"Log {i}"}
+        for i in range(1, 11) # 10 logs
+    ])
+
+    # Get first 5
+    response = client.get("/timeline?limit=5&skip=0", headers=auth_headers)
+    data = response.json()
+    assert len(data["events"]) == 5
+    assert data["total"] == 10
+    assert data["has_more"] is True
+
+    # Get next 5
+    response = client.get("/timeline?limit=5&skip=5", headers=auth_headers)
+    data = response.json()
+    assert len(data["events"]) == 5
+    assert data["has_more"] is False
 
 def test_get_timeline_sorting(client, auth_headers, test_user_data):
     """Verify that the timeline is sorted by date descending."""
@@ -114,8 +142,9 @@ def test_get_timeline_sorting(client, auth_headers, test_user_data):
     
     response = client.get("/timeline", headers=auth_headers)
     data = response.json()
+    events = data["events"]
     
-    dates = [event["date"] for event in data if event["date"]]
+    dates = [event["date"] for event in events if event["date"]]
     assert len(dates) >= 2
     assert dates == sorted(dates, reverse=True)
 
@@ -138,8 +167,9 @@ def test_get_timeline_milestones(client, auth_headers, test_user_data):
     response = client.get("/timeline", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
+    events = data["events"]
     
-    milestone_events = [e for e in data if e["type"] == "milestone"]
+    milestone_events = [e for e in events if e["type"] == "milestone"]
     assert len(milestone_events) == 1
     assert milestone_events[0]["description"] == "Seven Day Streak"
     assert milestone_events[0]["date"] == "2026-04-05"
@@ -167,8 +197,9 @@ def test_get_timeline_data_types(client, auth_headers, test_user_data):
 
     response = client.get("/timeline?start_date=2026-05-15&end_date=2026-05-17", headers=auth_headers)
     data = response.json()
-    assert len(data) == 2
-    titles = [e["title"] for e in data]
+    events = data["events"]
+    assert len(events) == 2
+    titles = [e["title"] for e in events]
     assert "String Goal" in titles
     assert "Datetime Goal" in titles
 
@@ -198,7 +229,8 @@ def test_get_timeline_missing_optional_fields(client, auth_headers, test_user_da
     response = client.get("/timeline?start_date=2026-06-01", headers=auth_headers)
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 2
+    events = data["events"]
+    assert len(events) >= 2
 
 def test_get_timeline_idempotency_and_overlap(client, auth_headers, test_user_data):
     """Verify that multiple events on the same day are all shown."""
@@ -214,11 +246,14 @@ def test_get_timeline_idempotency_and_overlap(client, auth_headers, test_user_da
 
     response = client.get("/timeline?start_date=2026-07-01&end_date=2026-07-01", headers=auth_headers)
     data = response.json()
-    assert len(data) == 3
+    events = data["events"]
+    assert len(events) == 3
 
 def test_get_timeline_invalid_date_params(client, auth_headers):
     """Verify behavior with invalid date parameters."""
     # Current implementation uses string comparison, so it should just return empty
     response = client.get("/timeline?start_date=not-a-date", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json() == []
+    data = response.json()
+    assert data["events"] == []
+    assert data["total"] == 0
