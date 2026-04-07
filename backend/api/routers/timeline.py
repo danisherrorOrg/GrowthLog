@@ -17,6 +17,14 @@ def get_timeline(
     uid = str(current_user["_id"])
     events = []
 
+    # Fetch categories for enrichment
+    categories = list(db.categories.find({"user_id": uid}))
+    cat_map = {str(c["_id"]): {
+        "name": c.get("name", "General"), 
+        "icon": c.get("icon", "📁"), 
+        "color": c.get("color", "#888")
+    } for c in categories}
+
     # 1. Daily Logs
     log_query = {"user_id": uid}
     if start_date or end_date:
@@ -26,6 +34,16 @@ def get_timeline(
         
     logs = db.daily_logs.find(log_query)
     for log in logs:
+        enriched_entries = []
+        for entry in log.get("entries", []):
+            cat_info = cat_map.get(str(entry.get("category_id")), {
+                "name": "General", "icon": "📁", "color": "#888"
+            })
+            enriched_entries.append({
+                **entry,
+                "category": cat_info
+            })
+
         events.append({
             "id": str(log["_id"]),
             "type": "daily_log",
@@ -35,8 +53,8 @@ def get_timeline(
             "status": "logged",
             "data": {
                 "mood": log.get("overall_rating", 5),
-                "entries_count": len(log.get("entries", [])),
-                "entries": log.get("entries", [])
+                "entries_count": len(enriched_entries),
+                "entries": enriched_entries
             }
         })
 
@@ -61,7 +79,7 @@ def get_timeline(
                 "title": goal.get("title", ""),
                 "description": goal.get("description", ""),
                 "status": "active",
-                "category_id": goal.get("category_id")
+                "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
             })
         
         # Goal Deadline Event
@@ -75,7 +93,7 @@ def get_timeline(
                 "title": goal.get("title", ""),
                 "description": goal.get("description", ""),
                 "status": goal.get("status", "active"),
-                "category_id": goal.get("category_id")
+                "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
             })
 
         # Goal Completed Event
@@ -96,7 +114,7 @@ def get_timeline(
                     "title": goal.get("title", ""),
                     "description": goal.get("reflection", ""),
                     "status": goal.get("status"),
-                    "category_id": goal.get("category_id")
+                    "category": cat_map.get(str(goal.get("category_id")), {"name": "General", "icon": "📁", "color": "#888"})
                 })
                  
     # 3. Manifestations
@@ -112,7 +130,8 @@ def get_timeline(
                 "date": start_d,
                 "title": m.get("vision", ""),
                 "description": m.get("notes", ""),
-                "status": "active"
+                "status": "active",
+                "category": {"name": "Manifestation", "icon": "💫", "color": "#e76f51"}
             })
             
         target = m.get("target_date")
@@ -124,7 +143,8 @@ def get_timeline(
                 "date": target,
                 "title": m.get("vision", ""),
                 "description": m.get("notes", ""),
-                "status": m.get("status", "active")
+                "status": m.get("status", "active"),
+                "category": {"name": "Manifestation", "icon": "💫", "color": "#e76f51"}
             })
 
     # 4. Snapshots
@@ -142,6 +162,7 @@ def get_timeline(
             "title": "Snapshot Captured",
             "description": snap.get("description", ""),
             "status": "recorded",
+            "category": {"name": "Snapshot", "icon": "📸", "color": "#9b5de5"},
             "data": {
                 "mood": snap.get("mood", 5)
             }
@@ -165,7 +186,8 @@ def get_timeline(
                     "date": ms_d,
                     "title": "Milestone Earned",
                     "description": ms.get("type", ""),
-                    "status": "earned"
+                    "status": "earned",
+                    "category": {"name": "Milestone", "icon": "★", "color": "#ffb703"}
                 })
 
     # Sort events by date descending

@@ -25,7 +25,10 @@ export default function DayDetailSidePanel({ date, events, onClose }) {
         `}} />
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ fontSize: '12px', color: '#999', fontWeight: 600, letterSpacing: '1px' }}>SELECTED DATE</div>
             <h2 style={{ margin: 0, fontFamily: 'serif', fontSize: '24px' }}>{format(date, 'MMMM do, yyyy')}</h2>
+        </div>
             <button 
                 onClick={onClose} 
                 style={{ background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', color: '#888', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
@@ -43,6 +46,9 @@ export default function DayDetailSidePanel({ date, events, onClose }) {
             </div>
         ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 600, marginBottom: '-8px' }}>
+                    Daily Summary
+                </div>
                 {events.map(e => (
                     <div key={e.id} style={{ background: 'white', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -59,11 +65,34 @@ export default function DayDetailSidePanel({ date, events, onClose }) {
                         {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5, marginBottom: e.data?.entries ? 16 : 0 }}>{e.description}</div>}
                         
                         {e.type === 'daily_log' && e.data?.entries && e.data.entries.length > 0 && (
-                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
-                                {e.data.entries.map((entry, idx) => (
-                                    <div key={idx} style={{ display: 'flex', gap: '12px' }}>
-                                        <div style={{ minWidth: '4px', background: '#c9a84c', borderRadius: 2 }} />
-                                        <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.4 }}>{entry.text}</div>
+                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '20px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
+                                {Object.entries(
+                                    e.data.entries.reduce((acc, entry) => {
+                                        const catName = entry.category?.name || 'General';
+                                        if (!acc[catName]) acc[catName] = { 
+                                            entries: [], 
+                                            icon: entry.category?.icon || '📁', 
+                                            color: entry.category?.color || '#888' 
+                                        };
+                                        acc[catName].entries.push(entry);
+                                        return acc;
+                                    }, {})
+                                ).map(([catName, group]) => (
+                                    <div key={catName} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '14px' }}>{group.icon}</span>
+                                            <span style={{ fontSize: '11px', color: group.color, fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                                                {catName}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '4px' }}>
+                                            {group.entries.map((entry, idx) => (
+                                                <div key={idx} style={{ display: 'flex', gap: '10px' }}>
+                                                    <div style={{ minWidth: '3px', background: group.color, borderRadius: 2, opacity: 0.4 }} />
+                                                    <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.4 }}>{entry.text}</div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>

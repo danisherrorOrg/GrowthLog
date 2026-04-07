@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 
-export default function JourneyFeed({ events }) {
-  if (!events || events.length === 0) {
+export default function JourneyFeed({ events, onEventClick }) {
+   if (!events || events.length === 0) {
     return <div style={{ textAlign: 'center', padding: '60px 40px', color: '#888', background: '#fdfcf9', borderRadius: 16 }}>No events recorded for this period. Keep growing!</div>;
   }
 
@@ -26,7 +26,16 @@ export default function JourneyFeed({ events }) {
 
   return (
     <div className="journey-feed" style={{ maxWidth: '640px', margin: '0 auto', position: 'relative', paddingTop: 20 }}>
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: '26px', width: '2px', background: 'rgba(0,0,0,0.05)', zIndex: 0 }} />
+        <h3 style={{ 
+            fontFamily: 'serif', 
+            fontSize: '24px', 
+            color: '#111', 
+            marginBottom: '32px', 
+            paddingLeft: '54px'
+        }}>
+            Journey Timeline
+        </h3>
+        <div style={{ position: 'absolute', top: '70px', bottom: 0, left: '26px', width: '2px', background: 'rgba(0,0,0,0.05)', zIndex: 0 }} />
         
         {Object.entries(groupedEvents).map(([date, dayEvents]) => (
             <div key={date} style={{ position: 'relative', zIndex: 1, marginBottom: '40px' }}>
@@ -34,8 +43,11 @@ export default function JourneyFeed({ events }) {
                     <div style={{ width: '54px', textAlign: 'center', position: 'relative' }}>
                         <div style={{ width: '14px', height: '14px', background: '#c9a84c', borderRadius: '50%', border: '3px solid #fdfcf9', margin: '0 auto' }} />
                     </div>
-                    <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#333', fontFamily: 'serif' }}>
-                        {date !== 'Unknown Date' ? format(new Date(date), 'MMMM do, yyyy') : date}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ fontSize: '10px', color: '#999', fontWeight: 600, letterSpacing: '1px' }}>DATE</div>
+                        <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#333', fontFamily: 'serif' }}>
+                            {date !== 'Unknown Date' ? format(new Date(date), 'MMMM do, yyyy') : date}
+                        </div>
                     </div>
                 </div>
                 
