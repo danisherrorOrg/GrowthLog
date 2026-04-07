@@ -25,6 +25,7 @@ export default function DailyLog() {
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [smartPrompts, setSmartPrompts] = useState({});
+  const [expandedCategory, setExpandedCategory] = useState(null);
   const todayDisplay = format(targetDate, 'EEEE, MMMM d');
   const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
@@ -144,75 +145,88 @@ export default function DailyLog() {
         {/* Category entries */}
         {categories.map((cat) => {
           const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 };
+          const isExpanded = expandedCategory === cat.id;
 
           return (
             <div key={cat.id} className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${cat.color}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <span style={{ fontSize: 24 }}>{cat.icon}</span>
-                <h3 style={{ fontSize: 18 }}>{cat.name}</h3>
+              <div 
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: isExpanded ? 16 : 0 }} 
+                onClick={() => setExpandedCategory(isExpanded ? null : cat.id)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 24 }}>{cat.icon}</span>
+                  <h3 style={{ fontSize: 18, margin: 0 }}>{cat.name}</h3>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--sage)' }}>{isExpanded ? '▲' : '▼'}</span>
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label" style={{ color: 'var(--sage)', fontWeight: 600, fontStyle: 'italic' }}>
-                  "{((catName) => {
-                    const c = catName.toLowerCase();
-                    if (c.includes('mind')) return smartPrompts.mind;
-                    if (c.includes('body') || c.includes('fitness')) return smartPrompts.body;
-                    if (c.includes('career') || c.includes('work')) return smartPrompts.career;
-                    if (c.includes('social') || c.includes('relation')) return smartPrompts.social;
-                    if (c.includes('soul') || c.includes('peace')) return smartPrompts.soul;
-                    return smartPrompts.default || "What happened in this category today?";
-                  })(cat.name)}"
-                </label>
-                <textarea
-                  className="form-textarea"
-                  value={entry.text}
-                  onChange={(e) => updateEntry(cat.id, 'text', e.target.value)}
-                  placeholder={`How did your ${cat.name.toLowerCase()} show up today? What did you do, feel, or learn?`}
-                  style={{ minHeight: 80 }}
-                />
-              </div>
+              {isExpanded && (
+                <div>
+                  <div className="form-group">
+                    <label className="form-label" style={{ color: 'var(--sage)', fontWeight: 600, fontStyle: 'italic' }}>
+                      "{((catName) => {
+                        const c = catName.toLowerCase();
+                        if (c.includes('mind')) return smartPrompts.mind;
+                        if (c.includes('body') || c.includes('fitness')) return smartPrompts.body;
+                        if (c.includes('career') || c.includes('work')) return smartPrompts.career;
+                        if (c.includes('social') || c.includes('relation')) return smartPrompts.social;
+                        if (c.includes('soul') || c.includes('peace')) return smartPrompts.soul;
+                        return smartPrompts.default || "What happened in this category today?";
+                      })(cat.name)}"
+                    </label>
+                    <textarea
+                      className="form-textarea"
+                      value={entry.text}
+                      onChange={(e) => updateEntry(cat.id, 'text', e.target.value)}
+                      placeholder={`How did your ${cat.name.toLowerCase()} show up today? What did you do, feel, or learn?`}
+                      style={{ minHeight: 80 }}
+                    />
+                  </div>
 
-              <div className="grid-2">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Mood — {entry.mood}/10</label>
-                  <div className="rating-row">
-                    <span style={{ fontSize: 16 }}>😔</span>
-                    <input type="range" className="rating-slider" min={1} max={10} value={entry.mood}
-                      onChange={(e) => updateEntry(cat.id, 'mood', +e.target.value)}
-                      style={{ '--val': `${(entry.mood - 1) / 9 * 100}%` }} />
-                    <span style={{ fontSize: 16 }}>😊</span>
+                  <div className="grid-2">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Mood — {entry.mood}/10</label>
+                      <div className="rating-row">
+                        <span style={{ fontSize: 16 }}>😔</span>
+                        <input type="range" className="rating-slider" min={1} max={10} value={entry.mood}
+                          onChange={(e) => updateEntry(cat.id, 'mood', +e.target.value)}
+                          style={{ '--val': `${(entry.mood - 1) / 9 * 100}%` }} />
+                        <span style={{ fontSize: 16 }}>😊</span>
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Energy — {entry.energy}/10</label>
+                      <div className="rating-row">
+                        <span style={{ fontSize: 16 }}>😴</span>
+                        <input type="range" className="rating-slider" min={1} max={10} value={entry.energy}
+                          onChange={(e) => updateEntry(cat.id, 'energy', +e.target.value)}
+                          style={{ '--val': `${(entry.energy - 1) / 9 * 100}%`, '--color': 'var(--gold)' }} />
+                        <span style={{ fontSize: 16 }}>⚡</span>
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Time Invested (min)</label>
+                      <input type="number" className="form-input" value={entry.time_spent}
+                        onChange={(e) => updateEntry(cat.id, 'time_spent', Math.min(1440, Math.max(0, parseInt(e.target.value) || 0)))}
+                        placeholder="0" min="0" max="1440" />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 16 }}>
+                    <label className="form-label">Emotions felt (optional)</label>
+                    <div className="emotion-grid">
+                      {EMOTIONS.map((em) => (
+                        <button key={em} className={`emotion-chip ${entry.emotions?.includes(em) ? 'selected' : ''}`}
+                          onClick={() => toggleEmotion(cat.id, em)}>
+                          {em}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Energy — {entry.energy}/10</label>
-                  <div className="rating-row">
-                    <span style={{ fontSize: 16 }}>😴</span>
-                    <input type="range" className="rating-slider" min={1} max={10} value={entry.energy}
-                      onChange={(e) => updateEntry(cat.id, 'energy', +e.target.value)}
-                      style={{ '--val': `${(entry.energy - 1) / 9 * 100}%`, '--color': 'var(--gold)' }} />
-                    <span style={{ fontSize: 16 }}>⚡</span>
-                  </div>
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Time Invested (min)</label>
-                  <input type="number" className="form-input" value={entry.time_spent}
-                    onChange={(e) => updateEntry(cat.id, 'time_spent', Math.min(1440, Math.max(0, parseInt(e.target.value) || 0)))}
-                    placeholder="0" min="0" max="1440" />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 16 }}>
-                <label className="form-label">Emotions felt (optional)</label>
-                <div className="emotion-grid">
-                  {EMOTIONS.map((em) => (
-                    <button key={em} className={`emotion-chip ${entry.emotions?.includes(em) ? 'selected' : ''}`}
-                      onClick={() => toggleEmotion(cat.id, em)}>
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
