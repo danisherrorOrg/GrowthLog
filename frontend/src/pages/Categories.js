@@ -279,6 +279,7 @@ export default function Categories() {
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
               <input className="form-input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does this area mean to you?" />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Icon</label>

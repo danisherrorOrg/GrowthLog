@@ -115,9 +115,10 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                     style={{ 
                         width: '100%', minHeight: '100px', padding: '12px', borderRadius: '12px', 
                         border: '1px solid #eee', outline: 'none', fontSize: '14px', fontFamily: 'inherit',
-                        resize: 'none', marginBottom: '12px'
+                        resize: 'none', marginBottom: '4px'
                     }}
                 />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginBottom: '12px' }}>Markdown supported</div>
                 <button 
                     type="button"
                     onClick={handleQuickAdd}

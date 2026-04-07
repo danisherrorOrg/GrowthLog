@@ -29,7 +29,7 @@ export default function Quotes() {
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!newQuote.content.trim()) return;
-    
+
     const tagsArray = newQuote.tags.split(',').map(t => t.trim()).filter(t => t);
     const payload = { ...newQuote, tags: tagsArray };
 
@@ -38,6 +38,7 @@ export default function Quotes() {
       setQuotes([res.data, ...quotes]);
       setNewQuote({ content: '', author: '', source: '', tags: '' });
       setShowAdd(false);
+      setActiveTag(null);
       toast.success('Quote vaulted');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to save quote'));
@@ -68,8 +69,8 @@ export default function Quotes() {
 
   // Gather unique tags
   const allTags = [...new Set(quotes.flatMap(q => q.tags))];
-  const filteredQuotes = activeTag 
-    ? quotes.filter(q => q.tags.includes(activeTag)) 
+  const filteredQuotes = activeTag
+    ? quotes.filter(q => q.tags.includes(activeTag))
     : quotes;
 
   return (
@@ -79,66 +80,71 @@ export default function Quotes() {
           <h2>Motivation Vault 🗝️</h2>
           <p>Words of wisdom to keep you grounded.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>+ Add Quote</button>
+        {!showAdd && (
+          <button className="btn btn-primary" onClick={() => setShowAdd(true)}>
+            + Add Quote
+          </button>
+        )}
       </div>
 
-      <div className="page-body">
+      <div className="page-body" style={{ maxWidth: 800 }}>
         {showAdd && (
           <div className="card" style={{ marginBottom: 24, border: '2px solid var(--gold)' }}>
             <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <textarea 
-                  className="form-textarea" 
-                  placeholder="The quote..." 
+                <textarea
+                  className="form-textarea"
+                  placeholder="The quote..."
                   value={newQuote.content}
-                  onChange={e => setNewQuote({...newQuote, content: e.target.value})}
+                  onChange={e => setNewQuote({ ...newQuote, content: e.target.value })}
                   required
                   style={{ minHeight: 80 }}
                 />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
               </div>
               <div className="grid-3" style={{ gap: 12 }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Author (e.g. Marcus Aurelius)" 
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Author (e.g. Marcus Aurelius)"
                   value={newQuote.author}
-                  onChange={e => setNewQuote({...newQuote, author: e.target.value})}
+                  onChange={e => setNewQuote({ ...newQuote, author: e.target.value })}
                 />
-                 <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Source (e.g. Meditations)" 
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Source (e.g. Meditations)"
                   value={newQuote.source}
-                  onChange={e => setNewQuote({...newQuote, source: e.target.value})}
+                  onChange={e => setNewQuote({ ...newQuote, source: e.target.value })}
                 />
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Tags (comma separated)" 
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Tags (comma separated)"
                   value={newQuote.tags}
-                  onChange={e => setNewQuote({...newQuote, tags: e.target.value})}
+                  onChange={e => setNewQuote({ ...newQuote, tags: e.target.value })}
                 />
               </div>
               <div style={{ textAlign: 'right' }}>
-                 <button type="submit" className="btn btn-gold">Save to Vault</button>
+                <button type="submit" className="btn btn-gold">Save to Vault</button>
               </div>
             </form>
           </div>
         )}
 
         {allTags.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-            <button 
-              className={`tag ${activeTag === null ? 'tag-gold' : 'tag-mist'}`} 
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
+            <button
+              className={`tag ${activeTag === null ? 'tag-gold' : 'tag-mist'}`}
               onClick={() => setActiveTag(null)}
               style={{ padding: '6px 14px', cursor: 'pointer', border: 'none' }}
             >
               All
             </button>
             {allTags.map(tag => (
-              <button 
-                key={tag} 
-                className={`tag ${activeTag === tag ? 'tag-gold' : 'tag-mist'}`} 
+              <button
+                key={tag}
+                className={`tag ${activeTag === tag ? 'tag-gold' : 'tag-mist'}`}
                 onClick={() => setActiveTag(tag === activeTag ? null : tag)}
                 style={{ padding: '6px 14px', cursor: 'pointer', border: 'none' }}
               >
@@ -148,39 +154,40 @@ export default function Quotes() {
           </div>
         )}
 
-        <div style={{ columnCount: 3, columnGap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {filteredQuotes.map(q => (
-            <div key={q.id} className="card" style={{ breakInside: 'avoid', marginBottom: 24, position: 'relative' }}>
-               <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 8, lineHeight: 1 }}>“</div>
-               <div style={{ fontFamily: 'Fraunces', fontSize: 18, color: 'var(--ink)', marginBottom: 12, fontStyle: 'italic' }}>
-                 <MarkdownRenderer content={q.content} />
-               </div>
-               <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>
-                 — {q.author || 'Unknown'} {q.source && `(${q.source})`}
-               </div>
-               
-               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                 {q.tags.map(t => <span key={t} className="tag tag-mist" style={{ fontSize: 10 }}>{t}</span>)}
-               </div>
+            <div key={q.id} className="card" style={{ position: 'relative' }}>
+              <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 8, lineHeight: 1 }}>“</div>
+              <div style={{ fontFamily: 'Fraunces', fontSize: 18, color: 'var(--ink)', marginBottom: 12, fontStyle: 'italic', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'hidden' }}>
+                <MarkdownRenderer content={q.content} />
+              </div>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>
+                — {q.author || 'Unknown'} {q.source && `(${q.source})`}
+              </div>
 
-               <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
-                 <button 
-                   onClick={() => toggleFavorite(q.id, q.is_favorite)} 
-                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, opacity: q.is_favorite ? 1 : 0.3 }}
-                 >
-                   {q.is_favorite ? '★' : '☆'}
-                 </button>
-                 <button onClick={() => deleteQuote(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
-               </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {q.tags.map(t => <span key={t} className="tag tag-mist" style={{ fontSize: 10 }}>{t}</span>)}
+              </div>
+
+              <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => toggleFavorite(q.id, q.is_favorite)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, opacity: q.is_favorite ? 1 : 0.3 }}
+                >
+                  {q.is_favorite ? '★' : '☆'}
+                </button>
+                <button onClick={() => deleteQuote(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
+              </div>
             </div>
           ))}
         </div>
-        
+
         {filteredQuotes.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">🗝️</div>
             <h3>Your vault is empty</h3>
             <p>Save words that resonate with your journey.</p>
+            {<button className="btn btn-primary" onClick={() => setShowAdd(true)} style={{ marginTop: 16 }}>+ Add Quote</button>}
           </div>
         )}
       </div>

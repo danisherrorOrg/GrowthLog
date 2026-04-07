@@ -300,6 +300,7 @@ export default function Snapshots() {
                 placeholder="Right now I am someone who... I struggle with... I believe... I am working on..."
                 style={{ minHeight: 160 }}
               />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Current Values / Beliefs (comma separated)</label>

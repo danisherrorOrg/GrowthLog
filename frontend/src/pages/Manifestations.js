@@ -303,11 +303,13 @@ export default function Manifestations() {
               <textarea className="form-textarea" value={form.vision} onChange={(e) => setForm({ ...form, vision: e.target.value })}
                 placeholder="In 30 days, I am someone who shows up consistently, feels emotionally grounded..."
                 style={{ minHeight: 140 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Notes (optional)</label>
               <input className="form-input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Why this vision matters to you..." />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Date</label>
@@ -353,6 +355,7 @@ export default function Manifestations() {
             <div className="form-group">
               <label className="form-label">Your Vision</label>
               <textarea className="form-textarea" value={editForm.vision} onChange={(e) => setEditForm({ ...editForm, vision: e.target.value })} style={{ minHeight: 140 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Date</label>
@@ -361,6 +364,7 @@ export default function Manifestations() {
             <div className="form-group">
               <label className="form-label">Notes</label>
               <input className="form-input" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Why this vision matters..." />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setEditItem(null)} style={{ flex: 1 }}>Cancel</button>
@@ -408,6 +412,7 @@ export default function Manifestations() {
               <textarea className="form-textarea" value={progressForm.text} onChange={(e) => setProgressForm({ ...progressForm, text: e.target.value })}
                 placeholder={progressForm.type === 'improvement' ? 'What got better or what did you improve...' : progressForm.type === 'learning' ? 'What insight or lesson did you discover...' : progressForm.type === 'milestone' ? 'What milestone did you hit...' : progressForm.type === 'challenge' ? 'What challenge are you facing...' : 'Describe what happened...'}
                 style={{ minHeight: 120 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setProgressItem(null)} style={{ flex: 1 }}>Cancel</button>
@@ -437,6 +442,7 @@ export default function Manifestations() {
               <label className="form-label">How close did you get? What changed?</label>
               <textarea className="form-textarea" value={reflection} onChange={(e) => setReflection(e.target.value)}
                 placeholder="Looking back at who I said I'd become vs who I actually became..." style={{ minHeight: 140 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setCompleteItem(null)} style={{ flex: 1 }}>Cancel</button>

@@ -183,6 +183,7 @@ export default function DailyLog() {
                       placeholder={`How did your ${cat.name.toLowerCase()} show up today? What did you do, feel, or learn?`}
                       style={{ minHeight: 80 }}
                     />
+                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
                   </div>
 
                   <div className="grid-2">
@@ -243,6 +244,7 @@ export default function DailyLog() {
               placeholder="What's the one thing that stood out today?" 
               style={{ minHeight: 80 }}
             />
+            <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Overall day rating — {overallRating}/10</label>

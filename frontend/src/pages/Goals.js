@@ -364,6 +364,7 @@ export default function Goals() {
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
               <textarea className="form-textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 80 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Deadline</label>
@@ -394,6 +395,7 @@ export default function Goals() {
               <label className="form-label">What's on your mind about this goal?</label>
               <textarea className="form-textarea" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)}
                 placeholder="Progress made, obstacles, insights, next steps..." style={{ minHeight: 120 }} />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setAddNoteGoal(null)} style={{ flex: 1 }}>Cancel</button>
@@ -432,6 +434,7 @@ export default function Goals() {
                 {reflectForm.status === 'completed' ? 'What did you achieve or learn?' : reflectForm.status === 'extended' ? 'Why do you need more time?' : 'Why are you moving on?'}
               </label>
               <textarea className="form-textarea" value={reflectForm.reflection} onChange={(e) => setReflectForm({ ...reflectForm, reflection: e.target.value })} placeholder="Be honest with yourself..." />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">

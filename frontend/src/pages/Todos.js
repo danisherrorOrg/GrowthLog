@@ -87,21 +87,24 @@ export default function Todos() {
         {showAdd && (
           <div className="card" style={{ marginBottom: 24, border: '2px solid var(--sage)' }}>
             <form onSubmit={handleAdd} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="What needs to be done?" 
-                value={newTodo.title}
-                onChange={e => setNewTodo({...newTodo, title: e.target.value})}
-                autoFocus
-                style={{ flex: 1 }}
-              />
-              <select className="form-select" style={{ width: 120 }} value={newTodo.priority} onChange={e => setNewTodo({...newTodo, priority: e.target.value})}>
+              <div style={{ flex: 1 }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="What needs to be done?" 
+                  value={newTodo.title}
+                  onChange={e => setNewTodo({...newTodo, title: e.target.value})}
+                  autoFocus
+                  style={{ width: '100%' }}
+                />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
+              </div>
+              <select className="form-select" style={{ width: 120, alignSelf: 'flex-start' }} value={newTodo.priority} onChange={e => setNewTodo({...newTodo, priority: e.target.value})}>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
-              <button type="submit" className="btn btn-primary">Save</button>
+              <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>Save</button>
             </form>
           </div>
         )}
