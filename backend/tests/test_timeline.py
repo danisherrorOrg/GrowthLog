@@ -68,7 +68,7 @@ def test_get_timeline_aggregation(client, auth_headers, test_user_data):
     # 1 Snapshot
     assert len(data) == 6
 
-    # Verify specific types
+    # Verify specific types and data
     types = [event["type"] for event in data]
     assert "daily_log" in types
     assert "goal_created" in types
@@ -76,6 +76,12 @@ def test_get_timeline_aggregation(client, auth_headers, test_user_data):
     assert "manifestation_started" in types
     assert "manifestation_target" in types
     assert "snapshot" in types
+
+    # Verify detailed data for daily_log
+    log_event = next(e for e in data if e["type"] == "daily_log")
+    assert "entries" in log_event["data"]
+    assert len(log_event["data"]["entries"]) == 1
+    assert log_event["data"]["entries"][0]["text"] == "Something cool happened"
 
 def test_get_timeline_filtering(client, auth_headers, test_user_data):
     """Verify that start_date and end_date filtering works."""

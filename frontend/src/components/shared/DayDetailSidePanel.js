@@ -45,15 +45,27 @@ export default function DayDetailSidePanel({ date, events, onClose }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {events.map(e => (
                     <div key={e.id} style={{ background: 'white', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1px', marginBottom: '8px' }}>
-                            {e.type.replace('_', ' ')}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <div style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '1px' }}>
+                                {e.type.replace('_', ' ')}
+                            </div>
+                            {e.data && e.data.mood && (
+                                <div style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 8px', borderRadius: 12, color: '#666' }}>
+                                    Mood: {e.data.mood}/10
+                                </div>
+                            )}
                         </div>
-                        <div style={{ fontSize: '17px', fontWeight: 'bold', marginBottom: '8px', color: '#111' }}>{e.title}</div>
-                        {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5 }}>{e.description}</div>}
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px', color: '#111', fontFamily: 'serif' }}>{e.title}</div>
+                        {e.description && <div style={{ fontSize: '15px', color: '#555', lineHeight: 1.5, marginBottom: e.data?.entries ? 16 : 0 }}>{e.description}</div>}
                         
-                        {e.data && e.data.mood && (
-                            <div style={{ marginTop: '12px', fontSize: '13px', color: '#888', display: 'flex', gap: 6 }}>
-                                <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>Mood: {e.data.mood}/10</div>
+                        {e.type === 'daily_log' && e.data?.entries && e.data.entries.length > 0 && (
+                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid #f0f0f0', paddingTop: '16px' }}>
+                                {e.data.entries.map((entry, idx) => (
+                                    <div key={idx} style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ minWidth: '4px', background: '#c9a84c', borderRadius: 2 }} />
+                                        <div style={{ fontSize: '14px', color: '#444', lineHeight: 1.4 }}>{entry.text}</div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

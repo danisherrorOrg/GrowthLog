@@ -44,14 +44,28 @@ export default function JourneyFeed({ events }) {
                         const config = typeConfig[e.type] || { color: '#888', icon: '•' };
                         
                         return (
-                            <div key={e.id} style={{ 
-                                background: 'white', 
-                                padding: '20px', 
-                                borderRadius: '16px', 
-                                boxShadow: '0 2px 12px rgba(0,0,0,0.03)', 
-                                border: '1px solid rgba(0,0,0,0.03)',
-                                borderLeft: `4px solid ${config.color}`
-                            }}>
+                            <div 
+                                key={e.id} 
+                                onClick={() => onEventClick && onEventClick(e)}
+                                style={{ 
+                                    background: 'white', 
+                                    padding: '20px', 
+                                    borderRadius: '16px', 
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.03)', 
+                                    border: '1px solid rgba(0,0,0,0.03)',
+                                    borderLeft: `4px solid ${config.color}`,
+                                    cursor: onEventClick ? 'pointer' : 'default',
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                                }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.03)';
+                                }}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                     <span style={{ fontSize: '16px' }}>{config.icon}</span>
                                     <span style={{ fontSize: '12px', color: config.color, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>

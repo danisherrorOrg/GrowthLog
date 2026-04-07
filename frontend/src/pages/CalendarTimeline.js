@@ -89,7 +89,14 @@ export default function CalendarTimeline() {
         view === 'calendar' ? (
           <CalendarView events={events} period={period} onDayClick={setSelectedDate} />
         ) : (
-          <JourneyFeed events={events} />
+          <JourneyFeed 
+            events={events} 
+            onEventClick={(e) => {
+              if (e.date) {
+                setSelectedDate(new Date(e.date));
+              }
+            }} 
+          />
         )
       )}
       

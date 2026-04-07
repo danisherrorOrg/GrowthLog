@@ -35,7 +35,8 @@ def get_timeline(
             "status": "logged",
             "data": {
                 "mood": log.get("overall_rating", 5),
-                "entries_count": len(log.get("entries", []))
+                "entries_count": len(log.get("entries", [])),
+                "entries": log.get("entries", [])
             }
         })
 
