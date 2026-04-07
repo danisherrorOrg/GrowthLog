@@ -145,6 +145,7 @@ class ManifestationModel(BaseModel):
 class ManifestationUpdateModel(BaseModel):
     vision: Optional[str] = None
     target_date: Optional[str] = None
+    target_days: Optional[int] = None
     notes: Optional[str] = None
     categories: Optional[List[str]] = None
 

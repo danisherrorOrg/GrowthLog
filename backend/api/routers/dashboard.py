@@ -131,6 +131,7 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     goal_counts = {g["_id"]: g["count"] for g in goals}
     
     manifestations_count = db.manifestations.count_documents({"user_id": uid, "status": "active"})
+    todos_count = db.todos.count_documents({"user_id": uid, "status": "pending"})
     
     insights = []
     if cat_consistency:
@@ -191,6 +192,8 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
             "active": goal_counts.get("active", 0),
         },
         "active_manifestations": manifestations_count,
+        "todos_pending": todos_count,
+
     }
 
     cache_set(cache_key, result, ttl=300)

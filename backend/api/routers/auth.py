@@ -131,6 +131,9 @@ def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_us
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
     db.users.update_one({"_id": current_user["_id"]}, {"$set": fields})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Updated profile")
     return {"success": True}
 
 @router.put("/password")
@@ -143,6 +146,9 @@ def change_password(data: PasswordChangeModel, current_user=Depends(get_current_
         "password": hash_password(data.new_password),
         "token_version": new_version
     }})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Changed password")
     return {"success": True}
 
 @router.put("/email")
@@ -158,11 +164,17 @@ def change_email(data: EmailChangeModel, current_user=Depends(get_current_user))
         "verification_token": None,
         "verification_token_expires": None
     }})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Changed email")
     return {"success": True, "email": data.new_email, "is_verified": False}
 
 @router.put("/public")
 def toggle_public(data: PublicToggleModel, current_user=Depends(get_current_user)):
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {"is_public": data.is_public}})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Toggled public profile")
     return {"success": True, "is_public": data.is_public}
 
 @public_router.get("/u/{user_id}")

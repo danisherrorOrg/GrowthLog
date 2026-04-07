@@ -22,7 +22,15 @@ export default function Dashboard() {
   const [quote, setQuote] = useState(null);
 
   useEffect(() => {
-    API.get('/prompts/quote').then(r => setQuote(r.data)).catch(() => {});
+    API.get('/quotes/random').then(r => {
+      if (r.data) {
+        setQuote({ text: r.data.content, author: r.data.author });
+      } else {
+        API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+      }
+    }).catch(() => {
+      API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+    });
   }, []);
 
   useEffect(() => {
@@ -446,12 +454,28 @@ export default function Dashboard() {
               <button className="btn btn-ghost btn-sm" onClick={() => navigate('/manifestations')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--gold)' }}>
+              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--sage)' }}>
                 {data?.active_manifestations || 0}
               </div>
               <div>
                 <div style={{ fontSize: 15, color: 'rgba(245,240,232,0.8)', marginBottom: 4 }}>Active visions</div>
                 <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.4)' }}>Manifesting your future self</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)' }}>
+            <div className="section-title" style={{ color: 'var(--paper)' }}>
+              <span>Action Board</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/todos')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--gold)' }}>
+                {data?.todos_pending || 0}
+              </div>
+              <div>
+                <div style={{ fontSize: 15, color: 'rgba(245,240,232,0.8)', marginBottom: 4 }}>Pending actions</div>
+                <div style={{ fontSize: 13, color: 'rgba(245,240,232,0.4)' }}>What's your next step?</div>
               </div>
             </div>
           </div>

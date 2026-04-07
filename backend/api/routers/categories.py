@@ -36,6 +36,8 @@ def create_category(data: CategoryModel, current_user=Depends(get_current_user))
     try:
         result = db.categories.insert_one(cat)
         cat["id"] = str(result.inserted_id)
+        from utils.activity import log_activity
+        log_activity(uid, "create", "category", cat["id"], f"Created category: {data.name}")
         del cat["_id"]
         cache_invalidate(f"categories:{uid}")
         return cat
@@ -57,6 +59,8 @@ def create_category_template(data: CategoryTemplateModel, current_user=Depends(g
     }
     result = db.category_templates.insert_one(template)
     template["id"] = str(result.inserted_id)
+    from utils.activity import log_activity
+    log_activity(uid, "create", "category_template", template["id"], "Created a category template")
     del template["_id"]
     return template
 
@@ -64,6 +68,8 @@ def create_category_template(data: CategoryTemplateModel, current_user=Depends(g
 def delete_category_template(template_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.category_templates.delete_one({"_id": ObjectId(template_id), "user_id": uid})
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "category_template", template_id, "Deleted a category template")
     return {"success": True}
 
 
@@ -75,6 +81,8 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
         raise HTTPException(status_code=400, detail="No fields to update")
     try:
         db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": fields})
+        from utils.activity import log_activity
+        log_activity(uid, "update", "category", category_id, "Updated category details")
         cache_invalidate(f"categories:{uid}")
         cache_invalidate(f"dashboard:{uid}")
         return {"success": True}
@@ -86,6 +94,8 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
 def restore_category(category_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": False}})
+    from utils.activity import log_activity
+    log_activity(uid, "update", "category", category_id, "Restored a category")
     cache_invalidate(f"categories:{uid}")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
@@ -102,6 +112,8 @@ def delete_category(category_id: str, permanent: bool = False, current_user=Depe
         db.goals.delete_many({"user_id": uid, "category_id": category_id})
     else:
         db.categories.update_one({"_id": ObjectId(category_id), "user_id": uid}, {"$set": {"archived": True}})
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "category", category_id, "Deleted a category")
     cache_invalidate(f"categories:{uid}")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}

@@ -16,6 +16,12 @@ from api.routers.logs import router as logs_router
 from api.routers.manifestations import router as manifestations_router
 from api.routers.snapshots import router as snapshots_router
 from api.routers.dashboard import router as dashboard_router, prompts_router
+from api.routers.todos import router as todos_router
+from api.routers.quotes import router as quotes_router
+from api.routers.books import router as books_router
+from api.routers.reframes import router as reframes_router
+from api.routers.activity import router as activity_router
+from api.routers.thoughts import router as thoughts_router
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
 
@@ -45,6 +51,17 @@ app.include_router(manifestations_router)
 app.include_router(snapshots_router)
 app.include_router(dashboard_router)
 app.include_router(prompts_router)
+app.include_router(todos_router)
+app.include_router(quotes_router)
+app.include_router(books_router)
+app.include_router(reframes_router)
+app.include_router(activity_router)
+app.include_router(thoughts_router)
+
+
+
+
+
 
 from api.routers.timeline import router as timeline_router
 app.include_router(timeline_router)
@@ -65,7 +82,7 @@ def nudge_silent_users(background_tasks: BackgroundTasks):
     
     silent_users = list(db.users.find({
         "_id": {"$nin": logged_user_ids}, 
-        "email_verified": True,
+        "is_verified": True,
         "email_notifications": {"$ne": False}
     }))
     

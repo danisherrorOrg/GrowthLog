@@ -52,18 +52,38 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     }
     result = db.manifestations.insert_one(item)
     item["id"] = str(result.inserted_id)
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "create", "manifestation", item["id"], "Started a manifestation")
     del item["_id"]
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
-    cache_invalidate(f"stats:{str(current_user['_id'])}")
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return item
 
 @router.put("/{m_id}")
 def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    manifestation = db.manifestations.find_one({"_id": ObjectId(m_id), "user_id": uid})
+    if not manifestation:
+        raise HTTPException(status_code=404, detail="Not found")
+
     fields = clean_update(data.model_dump())
+    
+    # Handle logic for target_days vs target_date updates
+    if "target_days" in fields and "target_date" not in fields:
+        start_date_obj = datetime.strptime(manifestation["start_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        fields["target_date"] = (start_date_obj + timedelta(days=fields["target_days"])).strftime("%Y-%m-%d")
+    elif "target_date" in fields and "target_days" not in fields:
+        start_date_obj = datetime.strptime(manifestation["start_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        target_date_obj = datetime.strptime(fields["target_date"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        fields["target_days"] = (target_date_obj - start_date_obj).days
+
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
-    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])}, {"$set": fields})
-    uid = str(current_user["_id"])
+    
+    db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": uid}, {"$set": fields})
+    from utils.activity import log_activity
+    log_activity(uid, "update", "manifestation", m_id, "Updated manifestation details")
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True}
@@ -73,8 +93,11 @@ def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
     r = db.manifestations.delete_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
-    cache_invalidate(f"stats:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "manifestation", m_id, "Deleted a manifestation")
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}
 
 @router.put("/{m_id}/archive")
@@ -82,6 +105,8 @@ def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$set": {"status": "archived"}})
     uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "manifestation", m_id, "Archived a manifestation")
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"stats:{uid}")
     return {"success": True}
@@ -91,7 +116,10 @@ def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, curr
     entry = {"id": str(ObjectId()), "text": data.text, "type": data.type, "date": utcnow().isoformat()}
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$push": {"progress_entries": entry}})
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "create", "manifestation_progress", m_id, "Added progress to manifestation")
+    cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
 @router.put("/{m_id}/progress/{entry_id}")
@@ -109,6 +137,8 @@ def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationP
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Manifestation or progress entry not found")
         
+    from utils.activity import log_activity
+    log_activity(uid, "update", "manifestation_progress", m_id, "Updated a progress entry")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -121,6 +151,8 @@ def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Manifestation not found")
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "manifestation_progress", m_id, "Deleted a progress entry")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
 
@@ -129,12 +161,18 @@ def add_manifestation_note(m_id: str, data: NoteModel, current_user=Depends(get_
     note = {"id": str(ObjectId()), "text": data.text, "date": utcnow().isoformat()}
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$push": {"manifestation_notes": note}})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "create", "manifestation_note", m_id, "Added a note to manifestation")
     return {"success": True}
 
 @router.delete("/{m_id}/notes/{note_id}")
 def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_current_user)):
     db.manifestations.update_one({"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
                                  {"$pull": {"manifestation_notes": {"id": note_id}}})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "delete", "manifestation_note", m_id, "Deleted a note from manifestation")
     return {"success": True}
 
 @router.put("/{m_id}/complete")
@@ -143,6 +181,9 @@ def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_
         {"_id": ObjectId(m_id), "user_id": str(current_user["_id"])},
         {"$set": {"status": "completed", "reflection": data.text, "completed_at": utcnow()}}
     )
-    cache_invalidate(f"dashboard:{str(current_user['_id'])}")
-    cache_invalidate(f"stats:{str(current_user['_id'])}")
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "complete", "manifestation", m_id, "Completed a manifestation")
+    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate(f"stats:{uid}")
     return {"success": True}

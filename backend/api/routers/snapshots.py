@@ -40,6 +40,8 @@ def create_snapshot(data: SnapshotModel, current_user=Depends(get_current_user))
     }
     result = db.snapshots.insert_one(item)
     item["id"] = str(result.inserted_id)
+    from utils.activity import log_activity
+    log_activity(str(current_user["_id"]), "create", "snapshot", item["id"], "Created a snapshot")
     del item["_id"]
     cache_invalidate(f"stats:{str(current_user['_id'])}")
     return item
@@ -51,6 +53,8 @@ def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depend
         raise HTTPException(status_code=400, detail="No fields to update")
     db.snapshots.update_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])}, {"$set": fields})
     uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "snapshot", snap_id, "Updated a snapshot")
     cache_invalidate(f"stats:{uid}")
     cache_invalidate(f"dashboard:{uid}")
     return {"success": True}
@@ -60,5 +64,7 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
     r = db.snapshots.delete_one({"_id": ObjectId(snap_id), "user_id": str(current_user["_id"])})
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
+    from utils.activity import log_activity
+    log_activity(str(current_user["_id"]), "delete", "snapshot", snap_id, "Deleted a snapshot")
     cache_invalidate(f"stats:{str(current_user['_id'])}")
     return {"success": True}

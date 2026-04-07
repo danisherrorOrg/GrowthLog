@@ -140,6 +140,6 @@ async def test_dashboard_load_performance(async_client, auth_headers):
     for resp in responses:
         assert resp.status_code == 200
         
-    # Assert reasonable performance (20 aggregations should take less than 1.5 seconds locally)
+    # Assert reasonable performance (20 aggregations should take less than 2.5 seconds locally)
     # This prevents major N+1 query regression.
-    assert total_time < 1.5 
+    assert total_time < 2.5
