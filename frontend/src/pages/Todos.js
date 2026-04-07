@@ -68,6 +68,16 @@ export default function Todos() {
     }
   };
 
+  const handleEdit = async (id, updatedData) => {
+    try {
+      const res = await API.put(`/todos/${id}`, updatedData);
+      setTodos(todos.map(t => t.id === id ? res.data : t));
+      toast.success('Task updated');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update task'));
+    }
+  };
+
   if (loading) return <div className="page-body">Loading...</div>;
 
   const pending = todos.filter(t => t.status === 'pending');
@@ -116,7 +126,7 @@ export default function Todos() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {pending.length === 0 && <div style={{ color: 'rgba(13,13,13,0.4)', fontSize: 14 }}>No pending tasks!</div>}
               {pending.map(t => (
-                <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} />
+                <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} onSave={handleEdit} />
               ))}
             </div>
           </div>
@@ -126,7 +136,7 @@ export default function Todos() {
             <div className="section-title">Completed ({done.length})</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.7 }}>
               {done.map(t => (
-                <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} />
+                <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} onSave={handleEdit} />
               ))}
             </div>
           </div>
@@ -136,9 +146,47 @@ export default function Todos() {
   );
 }
 
-function TodoCard({ todo, onToggle, onDelete }) {
+function TodoCard({ todo, onToggle, onDelete, onSave }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ title: todo.title, priority: todo.priority });
+
   const isDone = todo.status === 'done';
   const priorityColors = { low: 'var(--mist)', medium: 'var(--gold)', high: 'var(--rust)' };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!editForm.title.trim()) return;
+    onSave(todo.id, editForm);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className="card card-sm" style={{ border: '1px solid var(--sage)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div style={{ flex: 1 }}>
+            <input 
+              type="text" 
+              className="form-input" 
+              value={editForm.title}
+              onChange={e => setEditForm({...editForm, title: e.target.value})}
+              autoFocus
+              style={{ width: '100%', padding: '6px 12px' }}
+            />
+          </div>
+          <select className="form-select" style={{ width: 100, padding: '6px 12px' }} value={editForm.priority} onChange={e => setEditForm({...editForm, priority: e.target.value})}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button type="submit" className="btn btn-primary btn-sm">Save</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setIsEditing(false); setEditForm({ title: todo.title, priority: todo.priority }); }}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="card card-sm" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -155,7 +203,10 @@ function TodoCard({ todo, onToggle, onDelete }) {
         </div>
         {todo.description && <div style={{ fontSize: 12, marginTop: 4, color: 'rgba(13,13,13,0.6)' }}><MarkdownRenderer content={todo.description} /></div>}
       </div>
-      <button className="btn btn-ghost" onClick={onDelete} style={{ color: 'var(--rust)', padding: 4 }}>✕</button>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <button className="btn btn-ghost" onClick={() => setIsEditing(true)} style={{ color: 'rgba(13,13,13,0.4)', padding: 4 }}>✎</button>
+        <button className="btn btn-ghost" onClick={onDelete} style={{ color: 'var(--rust)', padding: 4 }}>✕</button>
+      </div>
     </div>
   );
 }
