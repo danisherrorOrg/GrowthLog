@@ -11,6 +11,8 @@ export default function Todos() {
   const [showAdd, setShowAdd] = useState(false);
   const [newTodo, setNewTodo] = useState({ title: '', priority: 'medium', due_date: '' });
 
+  const [filter, setFilter] = useState('all');
+
   const fetchTodos = async () => {
     try {
       const res = await API.get('/todos');
@@ -80,8 +82,16 @@ export default function Todos() {
 
   if (loading) return <div className="page-body">Loading...</div>;
 
-  const pending = todos.filter(t => t.status === 'pending');
-  const done = todos.filter(t => t.status === 'done');
+  const filteredTodos = todos.filter(t => {
+    if (filter === 'all') return true;
+    if (filter === 'active') return t.status === 'pending';
+    if (filter === 'high') return t.status === 'pending' && t.priority === 'high';
+    if (filter === 'completed') return t.status === 'done';
+    return true;
+  });
+
+  const pending = filteredTodos.filter(t => t.status === 'pending');
+  const done = filteredTodos.filter(t => t.status === 'done');
 
   return (
     <div>
@@ -94,37 +104,91 @@ export default function Todos() {
       </div>
 
       <div className="page-body">
+        {/* Unified Toolbar */}
+        <div className="card" style={{ marginBottom: 40, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+            <button 
+              className={`btn btn-sm ${filter === 'all' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setFilter('all')}
+              style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'all' && { opacity: 0.6 }) }}
+            >
+              All
+            </button>
+            <button 
+              className={`btn btn-sm ${filter === 'active' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setFilter('active')}
+              style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'active' && { opacity: 0.6 }) }}
+            >
+              Active Tasks
+            </button>
+            <button 
+              className={`btn btn-sm ${filter === 'high' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setFilter('high')}
+              style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'high' && { opacity: 0.6 }) }}
+            >
+              High Priority
+            </button>
+            <button 
+              className={`btn btn-sm ${filter === 'completed' ? 'btn-primary' : 'btn-ghost'}`} 
+              onClick={() => setFilter('completed')}
+              style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'completed' && { opacity: 0.6 }) }}
+            >
+              Completed
+            </button>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)} style={{ borderRadius: 30, padding: '10px 24px' }}>
+            {showAdd ? '✕ Close Input' : '+ Initialize Task'}
+          </button>
+        </div>
+
         {showAdd && (
-          <div className="card" style={{ marginBottom: 24, border: '2px solid var(--sage)' }}>
-            <form onSubmit={handleAdd} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="What needs to be done?" 
-                  value={newTodo.title}
-                  onChange={e => setNewTodo({...newTodo, title: e.target.value})}
-                  autoFocus
-                  style={{ width: '100%' }}
-                />
-                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
+          <div className="card" style={{ marginBottom: 40, border: '1px solid var(--sage)', background: 'rgba(107,140,107,0.02)' }}>
+            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="Focus on the next step..." 
+                    value={newTodo.title}
+                    onChange={e => setNewTodo({...newTodo, title: e.target.value})}
+                    autoFocus
+                    style={{ fontSize: 20, border: 'none', background: 'transparent', padding: 0, borderBottom: '1px solid rgba(13,13,13,0.1)', borderRadius: 0 }}
+                  />
+                  <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Markdown Supported ◈ Clear Intent</div>
+                </div>
+                <div style={{ width: 140 }}>
+                   <label className="form-label" style={{ fontSize: 10, letterSpacing: 1 }}>Priority</label>
+                   <select className="form-select" value={newTodo.priority} onChange={e => setNewTodo({...newTodo, priority: e.target.value})} style={{ background: 'white' }}>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
               </div>
-              <select className="form-select" style={{ width: 120, alignSelf: 'flex-start' }} value={newTodo.priority} onChange={e => setNewTodo({...newTodo, priority: e.target.value})}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-              <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>Save</button>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setShowAdd(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ padding: '10px 32px' }}>Capture Task ✦</button>
+              </div>
             </form>
           </div>
         )}
 
-        <div className="grid-2">
+        <div className="grid-2" style={{ gap: 40 }}>
           {/* Pending */}
-          <div>
-            <div className="section-title">Pending ({pending.length})</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {pending.length === 0 && <div style={{ color: 'rgba(13,13,13,0.4)', fontSize: 14 }}>No pending tasks!</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, color: 'var(--sage)', fontWeight: 700 }}>Upcoming Focus ({pending.length})</h3>
+               <div style={{ width: 40, height: 2, background: 'var(--sage)', opacity: 0.2 }} />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {pending.length === 0 && (
+                <div className="empty-state" style={{ padding: 40, borderStyle: 'dashed' }}>
+                  <div style={{ fontSize: 24, marginBottom: 12 }}>✨</div>
+                  <div style={{ fontSize: 14, color: 'rgba(13,13,13,0.4)' }}>All tasks resolved. Rest and iterate.</div>
+                </div>
+              )}
               {pending.map(t => (
                 <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} onSave={handleEdit} />
               ))}
@@ -132,12 +196,17 @@ export default function Todos() {
           </div>
 
           {/* Done */}
-          <div>
-            <div className="section-title">Completed ({done.length})</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.7 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>Integration ({done.length})</h3>
+               <div style={{ width: 40, height: 2, background: 'rgba(13,13,13,0.1)' }} />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, opacity: 0.6 }}>
               {done.map(t => (
                 <TodoCard key={t.id} todo={t} onToggle={() => toggleComplete(t.id, t.status)} onDelete={() => deleteTodo(t.id)} onSave={handleEdit} />
               ))}
+              {done.length === 0 && <div style={{ textAlign: 'center', fontSize: 12, padding: 32, color: 'rgba(13,13,13,0.2)', fontStyle: 'italic' }}>No completed tasks in current view.</div>}
             </div>
           </div>
         </div>

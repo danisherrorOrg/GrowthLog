@@ -185,6 +185,19 @@ def delete_manifestation_note(m_id: str, note_id: str, current_user=Depends(get_
     log_activity(uid, "delete", "manifestation_note", m_id, "Deleted a note from manifestation")
     return {"success": True}
 
+@router.put("/{m_id}/notes/{note_id}")
+def update_manifestation_note(m_id: str, note_id: str, data: NoteModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.manifestations.update_one(
+        {"_id": ObjectId(m_id), "user_id": uid, "manifestation_notes.id": note_id},
+        {"$set": {"manifestation_notes.$.text": data.text}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manifestation or note not found")
+    from utils.activity import log_activity
+    log_activity(uid, "update", "manifestation_note", m_id, "Updated a note in manifestation")
+    return {"success": True}
+
 @router.put("/{m_id}/complete")
 def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_user=Depends(get_current_user)):
     result = db.manifestations.update_one(

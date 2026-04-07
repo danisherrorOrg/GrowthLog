@@ -62,9 +62,25 @@ def test_goal_full_lifecycle(client, auth_headers):
     goal = client.get(f"/goals/{goal_id}", headers=auth_headers).json()
     assert len(goal["reflections"]) == 0
 
-    # 11. Micro-goal Deletion
+    # 11. Micro-goal Lifecycle
     resp = client.post(f"/goals/{goal_id}/micro-goals", headers=auth_headers, json={"text": "Short-lived mg", "time_spent": 5})
+    assert resp.status_code == 200
     mg_id = resp.json()["id"]
+
+    # Update Micro-goal
+    resp = client.put(f"/goals/{goal_id}/micro-goals/{mg_id}", headers=auth_headers, json={"text": "Updated mg", "time_spent": 10})
+    assert resp.status_code == 200
+    goal = client.get(f"/goals/{goal_id}", headers=auth_headers).json()
+    assert goal["micro_goals"][0]["text"] == "Updated mg"
+    assert goal["micro_goals"][0]["time_spent"] == 10
+
+    # Toggle Micro-goal
+    resp = client.put(f"/goals/{goal_id}/micro-goals/{mg_id}/toggle", headers=auth_headers)
+    assert resp.status_code == 200
+    goal = client.get(f"/goals/{goal_id}", headers=auth_headers).json()
+    assert goal["micro_goals"][0]["completed"] is True
+
+    # Delete Micro-goal
     resp = client.delete(f"/goals/{goal_id}/micro-goals/{mg_id}", headers=auth_headers)
     assert resp.status_code == 200
     goal = client.get(f"/goals/{goal_id}", headers=auth_headers).json()

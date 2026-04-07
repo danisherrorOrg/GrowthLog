@@ -148,179 +148,182 @@ export default function BookDetail() {
         </div>
       </div>
 
-      <div className="page-body">
-        {editMode ? (
-          <div className="card" style={{ marginBottom: 32, border: '1px solid var(--sage)' }}>
-            <h3 style={{ marginBottom: 20 }}>Edit Book Info</h3>
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Title</label>
-                <input className="form-input" value={basicForm.title} onChange={e => setBasicForm({...basicForm, title: e.target.value})} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Author</label>
-                <input className="form-input" value={basicForm.author} onChange={e => setBasicForm({...basicForm, author: e.target.value})} />
-              </div>
+      <div className="page-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {/* Main Context Card */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontSize: 18, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ opacity: 0.5 }}>◈</span> Book Summary
+              </h3>
+              {!editMode && <button className="btn btn-sm btn-outline" onClick={() => setEditMode(true)}>✎ Edit Details</button>}
             </div>
-            <div className="grid-3">
-              <div className="form-group">
-                <label className="form-label">Status</label>
-                <select className="form-select" value={basicForm.status} onChange={e => setBasicForm({...basicForm, status: e.target.value})}>
-                  <option value="reading">Reading</option>
-                  <option value="finished">Finished</option>
-                  <option value="wish-list">Wishlist</option>
-                </select>
+
+            {editMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Title</label>
+                    <input className="form-input" value={basicForm.title} onChange={e => setBasicForm({...basicForm, title: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Author</label>
+                    <input className="form-input" value={basicForm.author} onChange={e => setBasicForm({...basicForm, author: e.target.value})} />
+                  </div>
+                </div>
+                <div className="grid-3">
+                  <div className="form-group">
+                    <label className="form-label">Status</label>
+                    <select className="form-select" value={basicForm.status} onChange={e => setBasicForm({...basicForm, status: e.target.value})}>
+                      <option value="reading">Reading</option>
+                      <option value="finished">Finished</option>
+                      <option value="wish-list">Wishlist</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Rating (1-10)</label>
+                    <input type="number" className="form-input" min={0} max={10} value={basicForm.rating} onChange={e => setBasicForm({...basicForm, rating: +e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Progress ({basicForm.progress_percentage}%)</label>
+                    <input type="range" className="rating-slider" min={0} max={100} value={basicForm.progress_percentage} 
+                      onChange={e => setBasicForm({...basicForm, progress_percentage: +e.target.value})}
+                      style={{ '--val': `${basicForm.progress_percentage}%`, width: '100%' }} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Location / Link</label>
+                  <input className="form-input" placeholder="Physical shelf or URL..." value={basicForm.location} onChange={e => setBasicForm({...basicForm, location: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Description</label>
+                  <textarea className="form-textarea" value={basicForm.description} onChange={e => setBasicForm({...basicForm, description: e.target.value})} placeholder="What is this book about?" style={{ minHeight: 120 }} />
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
+                  <button className="btn btn-primary" onClick={handleSaveBasic} style={{ flex: 1 }}>Save Changes</button>
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Rating (1-10)</label>
-                <input type="number" className="form-input" min={0} max={10} value={basicForm.rating} onChange={e => setBasicForm({...basicForm, rating: +e.target.value})} />
+            ) : (
+              <div>
+                <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink)' }}>
+                  {book.description ? (
+                    <MarkdownRenderer content={book.description} />
+                  ) : (
+                    <p style={{ fontStyle: 'italic', opacity: 0.4 }}>No description provided. Refine your understanding by adding a summary.</p>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(13,13,13,0.05)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 20 }}>
+                   <div>
+                     <label className="form-label" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Current Status</label>
+                     <div className={`tag ${book.status === 'reading' ? 'tag-green' : book.status === 'finished' ? 'tag-gold' : 'tag-mist'}`} style={{ fontSize: 12, padding: '6px 12px' }}>
+                       {book.status}
+                     </div>
+                   </div>
+                   {book.progress_percentage > 0 && (
+                     <div>
+                       <label className="form-label" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Progress</label>
+                       <div style={{ fontSize: 18, fontFamily: 'Fraunces', color: 'var(--sage)' }}>{book.progress_percentage}%</div>
+                     </div>
+                   )}
+                   {book.rating > 0 && (
+                     <div>
+                       <label className="form-label" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Rating</label>
+                       <div style={{ fontSize: 18, fontFamily: 'Fraunces', color: 'var(--gold)' }}>★ {book.rating}/10</div>
+                     </div>
+                   )}
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Progress ({basicForm.progress_percentage}%)</label>
-                <input type="range" className="rating-slider" min={0} max={100} value={basicForm.progress_percentage} 
-                  onChange={e => setBasicForm({...basicForm, progress_percentage: +e.target.value})}
-                  style={{ '--val': `${basicForm.progress_percentage}%`, width: '100%' }} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Location / Link</label>
-              <input className="form-input" placeholder="Physical shelf or URL..." value={basicForm.location} onChange={e => setBasicForm({...basicForm, location: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description (Markdown Supported)</label>
-              <textarea className="form-textarea" value={basicForm.description} onChange={e => setBasicForm({...basicForm, description: e.target.value})} placeholder="What is this book about?" />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSaveBasic} style={{ flex: 1 }}>Save Changes</button>
-            </div>
+            )}
           </div>
-        ) : (
-          <div className="grid-2" style={{ gridTemplateColumns: '1fr 2fr', alignItems: 'start', marginBottom: 32 }}>
-            <div className="card" style={{ position: 'sticky', top: 20 }}>
-              <div style={{ marginBottom: 20 }}>
-                <label className="form-label" style={{ fontSize: 10 }}>Current Status</label>
-                <div className={`tag ${book.status === 'reading' ? 'tag-green' : book.status === 'finished' ? 'tag-gold' : 'tag-mist'}`} style={{ fontSize: 14, width: '100%', justifyContent: 'center', padding: '10px' }}>
-                  {book.status === 'reading' ? '📖 Currently Reading' : book.status === 'finished' ? '🌟 Finished' : '💭 Wishlist'}
-                </div>
-              </div>
-              {book.status !== 'wish-list' && (
-                <div style={{ marginBottom: 20 }}>
-                  <label className="form-label" style={{ fontSize: 10, display: 'flex', justifyContent: 'space-between' }}>
-                    Reading Progress <span>{book.progress_percentage}%</span>
-                  </label>
-                  <div className="progress-bar" style={{ height: 10 }}>
-                    <div className="progress-fill" style={{ width: `${book.progress_percentage}%`, background: 'var(--sage)' }} />
-                  </div>
-                </div>
-              )}
-              {book.location && (
-                <div style={{ marginBottom: 20 }}>
-                  <label className="form-label" style={{ fontSize: 10 }}>Location</label>
-                  <div style={{ fontSize: 13, wordBreak: 'break-all' }}>
-                    {book.location.startsWith('http') ? <a href={book.location} target="_blank" rel="noreferrer" style={{ color: 'var(--sage)' }}>{book.location}</a> : book.location}
-                  </div>
-                </div>
-              )}
-              {book.rating && (
-                <div>
-                  <label className="form-label" style={{ fontSize: 10 }}>Your Rating</label>
-                  <div style={{ fontSize: 24, fontFamily: 'Fraunces', color: 'var(--gold)' }}>{book.rating}/10</div>
-                </div>
-              )}
+
+          {/* Lessons Section */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontSize: 18, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ opacity: 0.5 }}>💡</span> Lessons & Learnings
+              </h3>
+              <button className="btn btn-sm btn-primary" onClick={() => { setWisdomForm({ chapter: '', content: '', thoughts: '' }); setEditingWisdomIdx(null); setShowWisdomModal(true); }}>+ Add Entry</button>
             </div>
 
-            <div className="card">
-              <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid rgba(13,13,13,0.05)', marginBottom: 24 }}>
-                {['overview', 'wisdom', 'bookmarks'].map(t => (
-                  <button key={t} onClick={() => setActiveTab(t)} style={{ 
-                    padding: '12px 0', border: 'none', background: 'none', cursor: 'pointer',
-                    fontSize: 14, fontWeight: activeTab === t ? 600 : 400, color: activeTab === t ? 'var(--ink)' : 'rgba(13,13,13,0.4)',
-                    borderBottom: activeTab === t ? '2px solid var(--sage)' : '2px solid transparent',
-                    textTransform: 'capitalize'
-                  }}>{t}</button>
-                ))}
-              </div>
-
-              {activeTab === 'overview' && (
-                <div className="markdown-body">
-                  {book.description ? <MarkdownRenderer content={book.description} /> : <p style={{ fontStyle: 'italic', opacity: 0.5 }}>No description provided. Click Edit to add one.</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {(book.wisdom || []).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', opacity: 0.4 }}>
+                  <p>Capture key insights as you read.</p>
                 </div>
-              )}
-
-              {activeTab === 'wisdom' && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <h3 style={{ fontSize: 18 }}>Lessons & Learnings</h3>
-                    <button className="btn btn-sm btn-outline" onClick={() => { setWisdomForm({ chapter: '', content: '', thoughts: '' }); setEditingWisdomIdx(null); setShowWisdomModal(true); }}>+ Add Entry</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {(book.wisdom || []).length === 0 && <p style={{ fontStyle: 'italic', opacity: 0.5, textAlign: 'center' }}>Capture what you learn as you read.</p>}
-                    {(book.wisdom || []).map((w, i) => (
-                      <div key={i} className="card-sm" style={{ background: 'var(--cloud)', borderRadius: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => { setWisdomForm(w); setEditingWisdomIdx(i); setShowWisdomModal(true); }}>✎</button>
-                            <button className="btn btn-ghost" style={{ padding: 4, color: 'var(--rust)' }} onClick={() => deleteWisdom(i)}>✕</button>
-                          </div>
+              ) : (
+                (book.wisdom || []).map((w, i) => (
+                  <div key={i} style={{ borderBottom: i < book.wisdom.length - 1 ? '1px solid rgba(13,13,13,0.05)' : 'none', paddingBottom: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                      <div className="tag tag-mist" style={{ fontSize: 11, letterSpacing: 1 }}>{w.chapter || `Entry #${i+1}`}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => { setWisdomForm(w); setEditingWisdomIdx(i); setShowWisdomModal(true); }}>✎</button>
+                        <button className="btn btn-ghost" style={{ padding: 4, color: 'var(--rust)' }} onClick={() => deleteWisdom(i)}>✕</button>
+                      </div>
+                    </div>
+                    <div className="markdown-body" style={{ fontSize: 15, marginBottom: 12 }}>
+                      <MarkdownRenderer content={w.content} />
+                    </div>
+                    {w.thoughts && (
+                      <div style={{ padding: '12px 16px', background: 'var(--cloud)', borderRadius: 12, borderLeft: '3px solid var(--sage)' }}>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'var(--sage)', fontWeight: 700, marginBottom: 4 }}>Your Reflection</div>
+                        <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic' }}>
+                          <MarkdownRenderer content={w.thoughts} />
                         </div>
-                        {w.chapter && (
-                          <div style={{ padding: 12, background: 'rgba(13,13,13,0.02)', borderRadius: 8, borderLeft: '3px solid rgba(13,13,13,0.05)', marginBottom: 12 }}>
-                            <label style={{ fontSize: 9, textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', fontWeight: 700, display: 'block', marginBottom: 4 }}>Chapter / Section</label>
-                            <div style={{ fontSize: 16, fontFamily: 'Fraunces', color: 'var(--ink)' }}>
-                              <MarkdownRenderer content={w.chapter} />
-                            </div>
-                          </div>
-                        )}
-                        {w.content && (
-                          <div style={{ padding: 12, background: 'rgba(107,140,107,0.02)', borderRadius: 8, borderLeft: '3px solid rgba(13,13,13,0.1)', marginBottom: 12 }}>
-                            <label style={{ fontSize: 9, textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', fontWeight: 700, display: 'block', marginBottom: 4 }}>Core Insights</label>
-                            <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink)' }}>
-                              <MarkdownRenderer content={w.content} />
-                            </div>
-                          </div>
-                        )}
-                        {w.thoughts && (
-                          <div style={{ padding: 12, background: 'rgba(107,140,107,0.05)', borderRadius: 8, borderLeft: '3px solid var(--sage)' }}>
-                            <label style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--sage)', fontWeight: 700, display: 'block', marginBottom: 4 }}>Your Thoughts</label>
-                            <div className="markdown-body" style={{ fontSize: 13, fontStyle: 'italic' }}><MarkdownRenderer content={w.thoughts} /></div>
-                          </div>
-                        )}
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              )}
-
-              {activeTab === 'bookmarks' && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <h3 style={{ fontSize: 18 }}>Bookmarks</h3>
-                    <button className="btn btn-sm btn-outline" onClick={() => { setBookmarkForm({ page: '', note: '' }); setEditingBookmarkIdx(null); setShowBookmarkModal(true); }}>+ New Bookmark</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {(book.bookmarks || []).length === 0 && <p style={{ fontStyle: 'italic', opacity: 0.5, textAlign: 'center' }}>Mark key pages and insights.</p>}
-                    {(book.bookmarks || []).map((b, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 16, padding: '12px 16px', background: 'var(--cloud)', borderRadius: 12, alignItems: 'center' }}>
-                         <div style={{ width: 40, height: 40, background: 'var(--gold)', color: 'white', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 12 }}>P.{b.page}</div>
-                         <div style={{ flex: 1 }}>
-                           <div className="markdown-body" style={{ fontSize: 14 }}>
-                             <MarkdownRenderer content={b.note} />
-                           </div>
-                         </div>
-                         <div style={{ display: 'flex', gap: 4 }}>
-                           <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => { setBookmarkForm(b); setEditingBookmarkIdx(i); setShowBookmarkModal(true); }}>✎</button>
-                           <button className="btn btn-ghost" style={{ padding: 4, color: 'var(--rust)' }} onClick={() => deleteBookmark(i)}>✕</button>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))
               )}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Sidebar: Bookmarks */}
+        <div style={{ position: 'sticky', top: 20 }}>
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', margin: 0 }}>Bookmarks</h3>
+              <button className="btn btn-sm btn-ghost" onClick={() => { setBookmarkForm({ page: '', note: '' }); setEditingBookmarkIdx(null); setShowBookmarkModal(true); }}>+</button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {(book.bookmarks || []).length === 0 && <p style={{ fontSize: 12, opacity: 0.4, fontStyle: 'italic' }}>No bookmarks yet.</p>}
+              {(book.bookmarks || []).map((b, i) => (
+                <div key={i} className="card-sm" style={{ padding: 12, display: 'flex', gap: 12, background: 'var(--mist)', border: 'none' }}>
+                  <div style={{ width: 32, height: 32, background: 'var(--sage)', color: 'white', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 10, flexShrink: 0 }}>
+                    {b.page}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="markdown-body" style={{ fontSize: 13, wordBreak: 'break-word' }}>
+                      <MarkdownRenderer content={b.note} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="btn btn-ghost btn-sm" style={{ padding: 2 }} onClick={() => { setBookmarkForm(b); setEditingBookmarkIdx(i); setShowBookmarkModal(true); }}>✎</button>
+                    <button className="btn btn-ghost btn-sm" style={{ padding: 2, color: 'var(--rust)' }} onClick={() => deleteBookmark(i)}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {book.location && (
+            <div className="card" style={{ marginTop: 24, padding: '16px 20px', background: 'var(--ink)', color: 'var(--paper)' }}>
+              <h4 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.5, margin: '0 0 12px 0' }}>Storage Archive</h4>
+              <div style={{ fontSize: 13, opacity: 0.9 }}>
+                {book.location.startsWith('http') ? (
+                  <a href={book.location} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Digital Resource ↗</a>
+                ) : (
+                  <span>Location: {book.location}</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
 
       {/* Wisdom Modal */}
       {showWisdomModal && (

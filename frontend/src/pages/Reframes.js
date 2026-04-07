@@ -18,6 +18,13 @@ export default function Reframes() {
     trigger: '', original_thought: '', distortion: 'unspecified',
     reframe: '', feeling_before: 5, feeling_after: 5
   });
+  const [editingReframe, setEditingReframe] = useState(null);
+  const [editForm, setEditForm] = useState({
+    trigger: '', original_thought: '', original_thought_bk: '', distortion: 'unspecified',
+    reframe: '', feeling_before: 5, feeling_after: 5
+  });
+
+  const [filter, setFilter] = useState('All');
 
   const fetchReframes = async () => {
     try {
@@ -49,6 +56,19 @@ export default function Reframes() {
     }
   };
 
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editForm.original_thought.trim() || !editForm.reframe.trim()) return;
+    try {
+      const res = await API.put(`/reframes/${editingReframe.id}`, editForm);
+      setReframes(reframes.map(r => r.id === editingReframe.id ? res.data : r));
+      setEditingReframe(null);
+      toast.success('Reframe updated!');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to update reframe'));
+    }
+  };
+
   const deleteReframe = async (id) => {
     if (!window.confirm('Delete this reframe?')) return;
     try {
@@ -76,6 +96,12 @@ export default function Reframes() {
 
   if (loading) return <div className="page-body">Loading...</div>;
 
+  const filteredReframes = reframes.filter(r => {
+    if (filter === 'All') return true;
+    if (filter === 'Catastrophizing') return r.distortion === 'Magnification (Catastrophizing)';
+    return r.distortion === filter;
+  });
+
   return (
     <div>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -85,111 +111,141 @@ export default function Reframes() {
         </div>
         <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>+ New Reframe</button>
       </div>
-
       <div className="page-body">
+        {/* Unified Toolbar & Trigger */}
+        <div className="card" style={{ marginBottom: 40, padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+              <button 
+                className={`btn btn-sm ${filter === 'All' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setFilter('All')}
+                style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'All' && { opacity: 0.6 }) }}
+              >
+                All Reframes
+              </button>
+              <button 
+                className={`btn btn-sm ${filter === 'Catastrophizing' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setFilter('Catastrophizing')}
+                style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'Catastrophizing' && { opacity: 0.6 }) }}
+              >
+                Catastrophizing
+              </button>
+              <button 
+                className={`btn btn-sm ${filter === 'Labeling' ? 'btn-primary' : 'btn-ghost'}`} 
+                onClick={() => setFilter('Labeling')}
+                style={{ borderRadius: 8, padding: '6px 16px', fontSize: 11, ... (filter !== 'Labeling' && { opacity: 0.6 }) }}
+              >
+                Labeling
+              </button>
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)} style={{ borderRadius: 30, padding: '10px 24px' }}>
+            {showAdd ? '✕ Close Studio' : '+ Initialize Reframe'}
+          </button>
+        </div>
+
         {showAdd && (
-          <div className="card" style={{ marginBottom: 32, border: '2px solid var(--gold)', background: 'rgba(201,168,76,0.02)' }}>
-            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 8, display: 'block' }}>Trigger (What happened?)</label>
+          <div className="card" style={{ marginBottom: 40, border: '1px solid var(--sage)', background: 'rgba(107,140,107,0.02)' }}>
+            <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', marginBottom: 24, fontWeight: 700 }}>Cognitive Reconstruction Mode</h3>
+            
+            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: 11 }}>The external trigger</label>
                 <input 
                   type="text" className="form-input" 
                   value={newReframe.trigger}
                   onChange={e => setNewReframe({...newReframe, trigger: e.target.value})}
-                  placeholder="e.g. Received a brief email from my boss."
+                  placeholder="What happened in reality? (e.g. 'Received a brief email')"
+                  style={{ border: 'none', borderBottom: '1px solid rgba(13,13,13,0.1)', background: 'transparent', borderRadius: 0, paddingLeft: 0 }}
                 />
               </div>
 
-              <div className="grid-2">
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 8, display: 'block' }}>Negative Automatic Thought</label>
+              <div className="grid-2" style={{ gap: 32 }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: 11, color: 'var(--rust)' }}>Automatic Insight (The Lie)</label>
                   <textarea 
                     className="form-textarea" 
                     value={newReframe.original_thought}
                     onChange={e => setNewReframe({...newReframe, original_thought: e.target.value})}
-                    placeholder="e.g. They think I'm doing a terrible job and I'm going to get fired."
-                    style={{ minHeight: 100 }}
+                    placeholder="What did your brain tell you?"
+                    style={{ minHeight: 120, background: 'rgba(235,160,147,0.03)', border: '1px solid rgba(235,160,147,0.1)' }}
                     required
                   />
                 </div>
                 
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 8, display: 'block' }}>Rational Reframe</label>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: 11, color: 'var(--sage)' }}>Rational Perspective (The Truth)</label>
                   <textarea 
                     className="form-textarea" 
                     value={newReframe.reframe}
                     onChange={e => setNewReframe({...newReframe, reframe: e.target.value})}
-                    placeholder="e.g. They are probably just busy. One short email doesn't mean I'm failing."
-                    style={{ minHeight: 100, borderLeft: '4px solid var(--sage)' }}
+                    placeholder="How can you view this objectively?"
+                    style={{ minHeight: 120, background: 'rgba(107,140,107,0.03)', border: '1px solid rgba(107,140,107,0.1)', fontFamily: 'Fraunces', fontStyle: 'italic' }}
                     required
                   />
                 </div>
               </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', marginBottom: 8, display: 'block' }}>Cognitive Distortion</label>
-                <select className="form-select" value={newReframe.distortion} onChange={e => setNewReframe({...newReframe, distortion: e.target.value})}>
-                  {DISTORTIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'center' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 11 }}>Identify the distortion</label>
+                  <select className="form-select" value={newReframe.distortion} onChange={e => setNewReframe({...newReframe, distortion: e.target.value})} style={{ background: 'white' }}>
+                    {DISTORTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                   <RatingSlider label="Pre-Intensity" value={newReframe.feeling_before} onChange={e => setNewReframe({...newReframe, feeling_before: Number(e.target.value)})} />
+                   <RatingSlider label="Post-Intensity" value={newReframe.feeling_after} onChange={e => setNewReframe({...newReframe, feeling_after: Number(e.target.value)})} />
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 24, padding: '16px', background: 'var(--paper)', borderRadius: 8 }}>
-                <RatingSlider 
-                  label="Intensity of Negative Emotion BEFORE" 
-                  value={newReframe.feeling_before} 
-                  onChange={e => setNewReframe({...newReframe, feeling_before: Number(e.target.value)})} 
-                />
-                <RatingSlider 
-                  label="Intensity of Negative Emotion AFTER" 
-                  value={newReframe.feeling_after} 
-                  onChange={e => setNewReframe({...newReframe, feeling_after: Number(e.target.value)})} 
-                />
-              </div>
-              
-              <div style={{ textAlign: 'right' }}>
-                 <button type="submit" className="btn btn-primary">Save Reframe</button>
+              <div style={{ paddingTop: 24, borderTop: '1px solid rgba(13,13,13,0.05)', textAlign: 'right' }}>
+                 <button type="submit" className="btn btn-primary" style={{ borderRadius: 30, padding: '12px 32px' }}>Solidify Reframe ✦</button>
               </div>
             </form>
           </div>
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {reframes.map(r => (
-            <div key={r.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-               
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                 <div>
-                   <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.4)', marginBottom: 4 }}>Trigger</div>
-                   <div style={{ fontSize: 15, fontWeight: 500 }}>{r.trigger || 'Unspecified event'}</div>
-                 </div>
-                 <button onClick={() => deleteReframe(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--rust)', opacity: 0.5 }}>✕</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {filteredReframes.map(r => (
+            <div key={r.id} className="card" style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div className="tag tag-mist" style={{ fontSize: 9, letterSpacing: 1 }}>TRIGGER EVENT</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{r.trigger || 'Spontaneous Thought'}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => { setEditingReframe(r); setEditForm({ ...r }); }} className="btn btn-ghost btn-sm" style={{ opacity: 0.3 }}>✎</button>
+                    <button onClick={() => deleteReframe(r.id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--rust)', opacity: 0.3 }}>✕</button>
+                  </div>
                </div>
 
-               <div className="grid-2" style={{ gap: 16 }}>
-                 <div style={{ padding: 16, background: 'rgba(235,160,147,0.08)', borderRadius: 12, borderLeft: '3px solid var(--rust)' }}>
-                   <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--rust)', marginBottom: 8, fontWeight: 600 }}>Automatic Thought</div>
-                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.original_thought} className="md-fixed-size" /></div>
+               <div className="grid-2" style={{ gap: 24 }}>
+                 <div style={{ padding: 24, background: 'rgba(235,160,147,0.02)', borderRadius: 16, border: '1px solid rgba(235,160,147,0.05)' }}>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--rust)', letterSpacing: 1, marginBottom: 12, fontWeight: 700 }}>Automatic Thought</div>
+                    <div style={{ fontSize: 16, color: 'rgba(13,13,13,0.7)', lineHeight: 1.6 }}><MarkdownRenderer content={r.original_thought} /></div>
                  </div>
                  
-                 <div style={{ padding: 16, background: 'rgba(107,140,107,0.08)', borderRadius: 12, borderLeft: '3px solid var(--sage)' }}>
-                   <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--sage)', marginBottom: 8, fontWeight: 600 }}>Rational Reframe</div>
-                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.reframe} className="md-fixed-size" /></div>
+                 <div style={{ padding: 24, background: 'rgba(107,140,107,0.03)', borderRadius: 16, border: '1px solid rgba(107,140,107,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <div style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--sage)', letterSpacing: 1, fontWeight: 700 }}>Rational Reframe</div>
+                      <span className="tag tag-gold" style={{ fontSize: 8 }}>{r.distortion}</span>
+                    </div>
+                    <div style={{ fontSize: 18, color: 'var(--ink)', lineHeight: 1.6, fontFamily: 'Fraunces', fontStyle: 'italic' }}>
+                      <MarkdownRenderer content={r.reframe} />
+                    </div>
                  </div>
                </div>
 
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, padding: '12px 16px', background: 'var(--mist)', borderRadius: 8 }}>
-                 <div>
-                   <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', marginRight: 8 }}>Distortion:</span>
-                   <span className="tag tag-gold" style={{ fontSize: 11 }}>{r.distortion}</span>
-                 </div>
-                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                   <div style={{ fontSize: 13 }}><span style={{ color: 'rgba(13,13,13,0.5)' }}>Before:</span> <strong style={{ color: 'var(--rust)' }}>{r.feeling_before}/10</strong></div>
-                   <div style={{ color: 'rgba(13,13,13,0.2)' }}>→</div>
-                   <div style={{ fontSize: 13 }}><span style={{ color: 'rgba(13,13,13,0.5)' }}>After:</span> <strong style={{ color: 'var(--sage)' }}>{r.feeling_after}/10</strong></div>
-                 </div>
+               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, padding: '12px 24px', background: 'var(--mist)', borderRadius: 12 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase' }}>Negative Intensity Shift</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <strong style={{ color: 'var(--rust)', fontSize: 16 }}>{r.feeling_before}</strong>
+                    <div style={{ color: 'rgba(13,13,13,0.1)', fontSize: 20 }}>→</div>
+                    <strong style={{ color: 'var(--sage)', fontSize: 20 }}>{r.feeling_after}</strong>
+                    <div style={{ fontSize: 10, opacity: 0.4, marginLeft: 4 }}>Reduction of {r.feeling_before - r.feeling_after} pts</div>
+                  </div>
                </div>
-               
             </div>
           ))}
         </div>
@@ -197,11 +253,55 @@ export default function Reframes() {
         {reframes.length === 0 && (
           <div className="empty-state">
             <div className="empty-icon">🧠</div>
-            <h3>Your studio is empty</h3>
-            <p>Start rewiring your thoughts by challenging cognitive distortions.</p>
+            <h3>Your Reframing Studio is Clear</h3>
+            <p>Challenge your automatic negative thoughts to build emotional resilience.</p>
+            <button className="btn btn-primary" onClick={() => setShowAdd(true)} style={{ borderRadius: 30 }}>Add Your First Reframe</button>
           </div>
         )}
       </div>
+
+      {editingReframe && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingReframe(null)}>
+          <div className="modal" style={{ maxWidth: 800 }}>
+            <div className="modal-header">
+              <h3>Tend to Perspective 🧠</h3>
+              <button className="modal-close" onClick={() => setEditingReframe(null)}>✕</button>
+            </div>
+            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div className="form-group">
+                <label className="form-label">The Trigger</label>
+                <input type="text" className="form-input" value={editForm.trigger} onChange={e => setEditForm({ ...editForm, trigger: e.target.value })} />
+              </div>
+              <div className="grid-2" style={{ gap: 24 }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ color: 'var(--rust)' }}>Automatic Thought</label>
+                  <textarea className="form-textarea" value={editForm.original_thought} onChange={e => setEditForm({ ...editForm, original_thought: e.target.value })} style={{ minHeight: 120 }} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ color: 'var(--sage)' }}>Rational Reframe</label>
+                  <textarea className="form-textarea" value={editForm.reframe} onChange={e => setEditForm({ ...editForm, reframe: e.target.value })} style={{ minHeight: 120, fontFamily: 'Fraunces', fontStyle: 'italic' }} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'center' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Update Distortion</label>
+                  <select className="form-select" value={editForm.distortion} onChange={e => setEditForm({ ...editForm, distortion: e.target.value })}>
+                    {DISTORTIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                   <RatingSlider label="Pre-Intensity" value={editForm.feeling_before} onChange={e => setEditForm({ ...editForm, feeling_before: Number(e.target.value) })} />
+                   <RatingSlider label="Post-Intensity" value={editForm.feeling_after} onChange={e => setEditForm({ ...editForm, feeling_after: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setEditingReframe(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Update Perspective</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

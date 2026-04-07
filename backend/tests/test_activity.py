@@ -52,6 +52,32 @@ def test_api_activity_history(client, auth_headers):
     # 6. Todo
     todo_id = client.post("/todos", headers=auth_headers, json={"title": "Act Todo", "priority": "medium"}).json()["id"]
 
+    # 7. Goal
+    goal_id = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Act Goal", "deadline": "2025-01-01"
+    }).json()["id"]
+
+    # 8. Manifestation
+    m_id = client.post("/manifestations", headers=auth_headers, json={
+        "vision": "Act Vision", "target_days": 30
+    }).json()["id"]
+
+    # 9. Snapshot
+    snap_id = client.post("/snapshots", headers=auth_headers, json={
+        "description": "Act Snap", "values": ["health", "wealth"], "mood": 5
+    }).json()["id"]
+
+    # 10. Daily Log
+    # Note: /logs does not return the inserted ID in the response
+    log_resp = client.post("/logs", headers=auth_headers, json={
+        "entries": [
+            {"category_id": cat_id, "text": "Worked on tests", "mood": 8, "energy": 7}
+        ],
+        "highlight": "Centralized logging",
+        "overall_rating": 8
+    })
+    assert log_resp.status_code == 200
+
     # Fetch activity logs
     resp = client.get("/activity", headers=auth_headers)
     assert resp.status_code == 200
@@ -65,7 +91,11 @@ def test_api_activity_history(client, auth_headers):
     assert ref_id in entity_ids
     assert thought_id in entity_ids
     assert todo_id in entity_ids
-
+    assert goal_id in entity_ids
+    assert m_id in entity_ids
+    assert snap_id in entity_ids
+    # For log, we just check if any "log" type exists since we don't have the ID
+    
     # Verify specific types
     types = [l["entity_type"] for l in logs]
     assert "category" in types
@@ -74,6 +104,10 @@ def test_api_activity_history(client, auth_headers):
     assert "reframe" in types
     assert "thought" in types
     assert "todo" in types
+    assert "goal" in types
+    assert "manifestation" in types
+    assert "snapshot" in types
+    assert "log" in types
 
 def test_activity_unauthorized(client):
     """Verify that unauthorized requests to /activity are rejected."""

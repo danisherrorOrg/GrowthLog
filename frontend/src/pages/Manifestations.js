@@ -138,31 +138,43 @@ export default function Manifestations() {
       </div>
 
       <div className="page-body">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[
-              { key: 'active', label: `Active (${active.length})` },
-              { key: 'completed', label: `Completed (${completed.length})` },
-              { key: 'archived', label: `Archived (${archived.length})` },
-              { key: 'all', label: 'All' },
-            ].map(({ key, label }) => (
-              <button key={key} className={`btn btn-sm ${viewFilter === key ? 'btn-primary' : 'btn-outline'}`} onClick={() => setViewFilter(key)}>
-                {label}
-              </button>
-            ))}
+      <div className="page-body">
+        {/* Unified Toolbar */}
+        <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+              {[
+                { key: 'active', label: 'Active' },
+                { key: 'completed', label: 'Completed' },
+                { key: 'archived', label: 'Archived' },
+                { key: 'all', label: 'All' },
+              ].map(f => (
+                <button 
+                  key={f.key} 
+                  className={`btn btn-sm ${viewFilter === f.key ? 'btn-primary' : 'btn-ghost'}`} 
+                  onClick={() => setViewFilter(f.key)}
+                  style={{ borderRadius: 8, padding: '6px 16px', fontSize: 12 }}
+                >
+                  {f.label} ({items.filter(i => f.key === 'all' ? true : i.status === f.key).length})
+                </button>
+              ))}
+            </div>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ New Vision</button>
+
+          <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
+            + Create New Vision
+          </button>
         </div>
 
         {filteredItems.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">✧</div>
-            <h3>No visions {viewFilter !== 'all' ? `(${viewFilter})` : ''}</h3>
+            <h3>No visions found in this category</h3>
             <p>Write who you want to become. On the target date, reflect on how far you've come.</p>
-            {viewFilter === 'active' && <button className="btn btn-primary" onClick={() => setShowModal(true)}>Begin Your Vision →</button>}
+            {viewFilter === 'active' && <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ borderRadius: 30 }}>Begin Your Vision →</button>}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="auto-grid">
             {filteredItems.map((item) => {
               const target = parseISO(item.target_date);
               const daysLeft = differenceInDays(target, new Date());
@@ -175,116 +187,78 @@ export default function Manifestations() {
               const showProg = expandedProgress[item.id];
 
               return (
-                <div key={item.id} className="card"
-                  style={{ background: isReady ? 'var(--ink)' : 'white', color: isReady ? 'var(--paper)' : 'var(--ink)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                <div key={item.id} className="card" style={{ 
+                  display: 'flex', flexDirection: 'column', gap: 16,
+                  background: isReady ? 'var(--ink)' : 'white', 
+                  color: isReady ? 'var(--paper)' : 'var(--ink)',
+                  border: isReady ? '1px solid var(--gold)' : 'none'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: isReady ? 'var(--gold)' : item.status === 'completed' ? 'var(--sage)' : item.status === 'archived' ? 'rgba(13,13,13,0.4)' : 'rgba(13,13,13,0.4)', marginBottom: 6 }}>
-                        {isReady ? '✧ Vision Day Reached!' : item.status === 'completed' ? '✓ Completed' : item.status === 'archived' ? '📦 Archived' : `${item.target_days}-Day Vision`}
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: isReady ? 'var(--gold)' : 'rgba(13,13,13,0.4)', marginBottom: 4 }}>
+                        {isReady ? 'Vision Day Reached' : item.status === 'completed' ? '✓ Completed' : item.status === 'archived' ? '📦 Archived' : `${item.target_days}-Day Vision`}
                       </div>
-                      <div style={{ fontSize: 12, color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.4)' }}>
-                        Started {format(parseISO(item.start_date), 'MMM d')} · Target {format(target, 'MMM d, yyyy')}
+                      <div style={{ fontSize: 11, opacity: 0.5 }}>
+                        Since {format(parseISO(item.start_date), 'MMM d')} · Target {format(target, 'MMM d')}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                      {isActive && (
-                        <>
-                          <div style={{ textAlign: 'right', marginRight: 8 }}>
-                            <div style={{ fontFamily: 'Fraunces', fontSize: 28, color: isReady ? 'var(--gold)' : 'var(--sage)' }}>
-                              {isReady ? '✓' : `${Math.max(daysLeft, 0)}d`}
-                            </div>
-                            <div style={{ fontSize: 12, color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.4)' }}>
-                              {isReady ? 'Complete' : 'remaining'}
-                            </div>
-                          </div>
-                          <button className="btn btn-ghost btn-sm" onClick={() => openEdit(item)} title="Edit" style={{ color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.4)' }}>✎</button>
-                          <button className="btn btn-ghost btn-sm" onClick={() => handleArchive(item)} title="Archive" style={{ color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.3)' }}>📦</button>
-                        </>
-                      )}
-                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/manifestations/${item.id}`)} title="View Detail"
-                        style={{ color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.4)', fontSize: 11, border: `1px solid ${isReady ? 'rgba(245,240,232,0.2)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 6, padding: '3px 8px' }}>
-                        ◈ Detail
-                      </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleDelete(item)} title="Delete" style={{ color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.3)' }}>🗑</button>
-                    </div>
+                    {isActive && (
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'Fraunces', fontSize: 24, color: isReady ? 'var(--gold)' : 'var(--sage)', lineHeight: 1 }}>
+                          {isReady ? '✦' : `${Math.max(daysLeft, 0)}d`}
+                        </div>
+                        <div style={{ fontSize: 9, opacity: 0.5 }}>{isReady ? 'Ready' : 'remaining'}</div>
+                      </div>
+                    )}
                   </div>
 
-                  <blockquote className="markdown-body" style={{ fontFamily: 'Fraunces', fontSize: 17, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.9)' : 'var(--ink)', lineHeight: 1.6, margin: '0 0 16px', padding: '0 0 0 12px', borderLeft: `3px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}` }}>
-                    <MarkdownRenderer content={`"${item.vision}"`} />
+                  <blockquote className="markdown-body" style={{ 
+                    fontFamily: 'Fraunces', fontSize: 17, fontStyle: 'italic', 
+                    color: isReady ? 'rgba(245,240,232,0.95)' : 'var(--ink)', 
+                    lineHeight: 1.6, margin: '8px 0', padding: '0 0 0 16px', 
+                    borderLeft: `2px solid ${isReady ? 'var(--gold)' : 'var(--sage)'}`
+                  }}>
+                    <MarkdownRenderer content={`"${item.vision.slice(0, 200)}${item.vision.length > 200 ? '...' : ''}"`} />
                   </blockquote>
 
-                  {item.notes && (
-                    <div className="markdown-body" style={{ fontSize: 13, color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', marginBottom: 12, fontStyle: 'italic' }}>
-                      <MarkdownRenderer content={`**Notes:** ${item.notes}`} />
-                    </div>
-                  )}
-
                   {isActive && (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: isReady ? 'rgba(245,240,232,0.5)' : 'rgba(13,13,13,0.4)', marginBottom: 6 }}>
-                        <span>Progress</span><span>{progress}%</span>
-                      </div>
-                      <div className="progress-bar">
+                    <div style={{ marginTop: 'auto' }}>
+                      <div className="progress-bar" style={{ height: 4, background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)' }}>
                         <div className="progress-fill" style={{ width: `${progress}%`, background: isReady ? 'var(--gold)' : 'var(--sage)' }} />
                       </div>
                     </div>
                   )}
 
-                  {/* Progress entries preview */}
-                  {progressEntries.length > 0 && (
-                    <div style={{ marginBottom: 12 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setExpandedProgress(p => ({ ...p, [item.id]: !p[item.id] }))}
-                        style={{ color: isReady ? 'rgba(245,240,232,0.6)' : 'rgba(13,13,13,0.5)', fontSize: 12 }}>
-                        {showProg ? '▼' : '▶'} {progressEntries.length} progress entr{progressEntries.length > 1 ? 'ies' : 'y'}
-                      </button>
-                      {showProg && (
-                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {progressEntries.slice(-3).map((e) => {
-                            const pt = getProgressTypeInfo(e.type);
-                            return (
-                              <div key={e.id || e.date} style={{ padding: '8px 12px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, borderLeft: `2px solid ${pt?.color || 'var(--sage)'}` }}>
-                                <div style={{ fontSize: 10, color: isReady ? 'rgba(245,240,232,0.4)' : 'rgba(13,13,13,0.35)', marginBottom: 3 }}>
-                                  {pt?.label} · {format(new Date(e.date), 'MMM d, yyyy')}
-                                </div>
-                                <span className="markdown-body" style={{ color: isReady ? 'rgba(245,240,232,0.8)' : 'rgba(13,13,13,0.7)' }}><MarkdownRenderer content={e.text} /></span>
-                              </div>
-                            );
-                          })}
-                          {progressEntries.length > 3 && (
-                            <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/manifestations/${item.id}`)}
-                              style={{ fontSize: 12, color: isReady ? 'rgba(245,240,232,0.5)' : 'var(--sage)' }}>
-                              View all {progressEntries.length} entries →
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <div className="divider" style={{ opacity: isReady ? 0.1 : 0.05, margin: '4px 0' }} />
 
-                  {item.reflection && (
-                    <div className="markdown-body" style={{ padding: '10px 14px', background: isReady ? 'rgba(255,255,255,0.08)' : 'var(--mist)', borderRadius: 8, fontSize: 13, fontStyle: 'italic', color: isReady ? 'rgba(245,240,232,0.7)' : 'rgba(13,13,13,0.6)', marginBottom: 12 }}>
-                      <MarkdownRenderer content={`**Reflection:** ${item.reflection}`} />
-                    </div>
-                  )}
-
-                  {isActive && (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button className="btn btn-sm" style={{ background: isReady ? 'rgba(255,255,255,0.1)' : 'var(--mist)', color: isReady ? 'var(--paper)' : 'var(--ink)', border: 'none' }}
-                        onClick={() => { setProgressItem(item); setProgressForm({ text: '', type: 'improvement', customType: '' }); }}>
-                        + Add Progress
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-sm btn-ghost" style={{ color: 'inherit', opacity: 0.5, padding: 4 }} onClick={() => navigate(`/manifestations/${item.id}`)} title="Explore Vision">
+                        ◈ Explore Detail
                       </button>
-                      {isReady && (
-                        <button className="btn btn-gold" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setCompleteItem(item); setReflection(''); }}>
-                          Reflect & Complete This Cycle ✧
-                        </button>
-                      )}
                     </div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {isActive && (
+                        <>
+                          <button className="btn btn-sm btn-ghost" onClick={() => openEdit(item)} title="Edit" style={{ color: 'inherit', opacity: 0.4 }}>✎</button>
+                          <button className="btn btn-sm btn-ghost" onClick={() => handleArchive(item)} title="Archive" style={{ color: 'inherit', opacity: 0.4 }}>📦</button>
+                        </>
+                      )}
+                      <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(item)} title="Delete" style={{ color: 'inherit', opacity: 0.3 }}>🗑</button>
+                    </div>
+                  </div>
+
+                  {isReady && isActive && (
+                    <button className="btn btn-gold btn-sm" style={{ width: '100%', borderRadius: 8, fontWeight: 700 }} onClick={() => { setCompleteItem(item); setReflection(''); }}>
+                       Reflect & Complete Cycle ✧
+                    </button>
                   )}
                 </div>
               );
             })}
           </div>
         )}
+      </div>
       </div>
 
       {/* Create Modal */}

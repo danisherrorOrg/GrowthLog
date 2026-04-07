@@ -52,9 +52,15 @@ def test_manifestation_full_lifecycle(client, auth_headers):
     resp = client.post(f"/manifestations/{m_id}/notes", headers=auth_headers, json={"text": "A manifestation note"})
     assert resp.status_code == 200
     
-    # 9. Delete Note
+    # 9. Update Note
     m = client.get(f"/manifestations/{m_id}", headers=auth_headers).json()
     note_id = m["manifestation_notes"][0]["id"]
+    resp = client.put(f"/manifestations/{m_id}/notes/{note_id}", headers=auth_headers, json={"text": "Updated manifestation note"})
+    assert resp.status_code == 200
+    m = client.get(f"/manifestations/{m_id}", headers=auth_headers).json()
+    assert m["manifestation_notes"][0]["text"] == "Updated manifestation note"
+    
+    # 10. Delete Note
     resp = client.delete(f"/manifestations/{m_id}/notes/{note_id}", headers=auth_headers)
     assert resp.status_code == 200
     m = client.get(f"/manifestations/{m_id}", headers=auth_headers).json()

@@ -24,9 +24,14 @@ def add_thought(data: ThoughtModel, current_user=Depends(get_current_user)):
     t_dict["created_at"] = utcnow()
     t_dict["is_bookmarked"] = False
     
-    sentiment = analyze_sentiment(t_dict["content"])
-    t_dict["sentiment"] = sentiment["label"]
-    t_dict["sentiment_score"] = sentiment["score"]
+    # Prioritize manual sentiment if provided
+    if not t_dict.get("sentiment"):
+        sentiment = analyze_sentiment(t_dict["content"])
+        t_dict["sentiment"] = sentiment["label"]
+        t_dict["sentiment_score"] = sentiment["score"]
+    else:
+        # If sentiment is provided, score it as 1.0 (manual)
+        t_dict["sentiment_score"] = 1.0
 
     result = db.thoughts.insert_one(t_dict)
     thought = db.thoughts.find_one({"_id": result.inserted_id})
@@ -42,11 +47,14 @@ def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depen
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields provided for update")
 
-    # If content changed, re-analyze sentiment
-    if "content" in update_dict:
+    # If content changed and no manual sentiment provided, re-analyze sentiment
+    if "content" in update_dict and not update_dict.get("sentiment"):
         sentiment = analyze_sentiment(update_dict["content"])
         update_dict["sentiment"] = sentiment["label"]
         update_dict["sentiment_score"] = sentiment["score"]
+    elif "sentiment" in update_dict:
+        # If sentiment is manually provided, score it as 1.0
+        update_dict["sentiment_score"] = 1.0
 
     result = db.thoughts.update_one(
         {"_id": ObjectId(thought_id), "user_id": uid},

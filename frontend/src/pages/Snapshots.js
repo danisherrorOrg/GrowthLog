@@ -125,155 +125,152 @@ export default function Snapshots() {
 
       <div className="page-body">
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 24 }}>
-          {snapshots.length >= 2 && (
-            <button className={`btn ${compareMode ? 'btn-primary' : 'btn-outline'}`}
+          {snapshots.length > 0 && (
+            <button className={`btn btn-sm ${compareMode ? 'btn-primary' : 'btn-outline'}`} 
               onClick={() => { setCompareMode(!compareMode); if (compareMode) clearCompare(); }}>
               {compareMode ? '✕ Exit Compare' : '⇄ Compare Snapshots'}
             </button>
           )}
-          <button className="btn btn-primary" onClick={openCreate}>+ Take Snapshot</button>
+          <button className="btn btn-primary" onClick={openCreate} style={{ borderRadius: 30, padding: '10px 24px' }}>+ Take Snapshot</button>
         </div>
 
-        {/* Compare Mode UI */}
-        {compareMode && (
-          <div className="card" style={{ background: 'var(--mist)', border: '1px dashed rgba(13,13,13,0.2)', marginBottom: 24 }}>
-            <h3 style={{ fontSize: 15, marginBottom: 12 }}>
-              {!compareA ? '① Click a snapshot below to select "Then"'
-                : !compareB ? '② Click another snapshot to select "Now"'
-                : '✓ Ready — run the comparison below'}
-            </h3>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ padding: '6px 12px', background: compareA ? 'rgba(107,140,107,0.15)' : 'rgba(13,13,13,0.05)', border: `1px solid ${compareA ? 'var(--sage)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 8, fontSize: 13 }}>
-                <span style={{ color: 'rgba(13,13,13,0.4)', marginRight: 6 }}>Then:</span>
-                <strong>{compareA ? format(parseISO(compareA.date), 'MMM d, yyyy') : '—'}</strong>
-              </div>
-              <span style={{ color: 'rgba(13,13,13,0.3)', fontSize: 16 }}>⇄</span>
-              <div style={{ padding: '6px 12px', background: compareB ? 'rgba(201,168,76,0.12)' : 'rgba(13,13,13,0.05)', border: `1px solid ${compareB ? 'var(--gold)' : 'rgba(13,13,13,0.1)'}`, borderRadius: 8, fontSize: 13 }}>
-                <span style={{ color: 'rgba(13,13,13,0.4)', marginRight: 6 }}>Now:</span>
-                <strong>{compareB ? format(parseISO(compareB.date), 'MMM d, yyyy') : '—'}</strong>
-              </div>
-              {compareA && compareB && !compareResult && (
-                <button className="btn btn-primary btn-sm" onClick={runCompare} disabled={comparing}>
-                  {comparing ? 'Comparing...' : 'Run Comparison ⇄'}
-                </button>
-              )}
-              {compareResult && (
-                <button className="btn btn-outline btn-sm" onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>
-                  ↺ Compare Different
-                </button>
-              )}
-              {(compareA || compareB) && (
-                <button className="btn btn-ghost btn-sm" style={{ color: 'rgba(13,13,13,0.4)' }} onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Compare result */}
-        {compareResult && (
-          <div className="card" style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, marginBottom: 16 }}>⇄ Snapshot Comparison</h3>
-            <div className="grid-2" style={{ gap: 16 }}>
-              {[
-                { label: 'Then', s: compareResult.snapshot1, accent: 'rgba(13,13,13,0.4)' },
-                { label: 'Now', s: compareResult.snapshot2, accent: 'var(--sage)' }
-              ].map(({ label, s, accent }) => (
-                <div key={label} style={{ padding: 16, background: 'var(--mist)', borderRadius: 12, borderTop: `3px solid ${accent}` }}>
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: accent, marginBottom: 6 }}>
-                    {label} · {format(parseISO(s.date), 'MMMM d, yyyy')}
+        <div className="page-body">
+          {/* Unified Comparison UI */}
+          {compareMode && (
+            <div className="card" style={{ marginBottom: 32, border: '1px solid var(--sage)', background: 'rgba(107,140,107,0.02)' }}>
+              <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', marginBottom: 20 }}>
+                {!compareA ? '① Select "Then" Snapshot' : !compareB ? '② Select "Now" Snapshot' : '✓ Analysis Ready'}
+              </h3>
+              
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ padding: '10px 20px', background: compareA ? 'white' : 'var(--mist)', border: `1px solid ${compareA ? 'var(--sage)' : 'transparent'}`, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, minWidth: 180 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: compareA ? 'var(--sage)' : 'rgba(13,13,13,0.1)' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', opacity: 0.5 }}>Then</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{compareA ? format(parseISO(compareA.date), 'MMM d, yyyy') : '—'}</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <span style={{ fontFamily: 'Fraunces', fontSize: 24, color: 'var(--sage)' }}>{s.mood}/10</span>
-                    <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>mood</span>
-                  </div>
-                  <div className="markdown-body" style={{ fontSize: 14, fontStyle: 'italic', lineHeight: 1.6, color: 'var(--ink)', marginBottom: 10 }}>
-                    <MarkdownRenderer content={`"${s.description.slice(0, 240)}${s.description.length > 240 ? '...' : ''}"`} />
-                  </div>
-                  {s.values?.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {s.values.map(v => <span key={v} className="tag tag-mist" style={{ fontSize: 11 }}>{v}</span>)}
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--mist)', borderRadius: 8, fontSize: 13 }}>
-              <span style={{ color: 'rgba(13,13,13,0.45)' }}>Mood change: </span>
-              <span style={{ color: compareResult.snapshot2.mood > compareResult.snapshot1.mood ? 'var(--sage)' : compareResult.snapshot2.mood < compareResult.snapshot1.mood ? 'var(--rust)' : 'rgba(13,13,13,0.5)', fontWeight: 600 }}>
-                {compareResult.snapshot2.mood > compareResult.snapshot1.mood ? '▲' : compareResult.snapshot2.mood < compareResult.snapshot1.mood ? '▼' : '—'}
-                {' '}{Math.abs(compareResult.snapshot2.mood - compareResult.snapshot1.mood)} points
-                {compareResult.snapshot2.mood === compareResult.snapshot1.mood ? ' (no change)' : ''}
-              </span>
-            </div>
-          </div>
-        )}
 
-        {snapshots.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">○</div>
-            <h3>No snapshots yet</h3>
-            <p>A snapshot captures who you are right now — your mindset, values, and emotional state. Take one today and compare it in 30 days.</p>
-            <button className="btn btn-primary" onClick={openCreate}>Take First Snapshot</button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {snapshots.map((snap, idx) => {
-              const isSelectedA = compareA?.id === snap.id;
-              const isSelectedB = compareB?.id === snap.id;
+                <div style={{ fontSize: 20, opacity: 0.2 }}>⇄</div>
 
-              return (
-                <div key={snap.id} className="card"
-                  style={{
-                    outline: isSelectedA ? '2px solid var(--sage)' : isSelectedB ? '2px solid var(--gold)' : 'none',
-                    cursor: compareMode ? 'pointer' : 'default'
-                  }}
-                  onClick={() => compareMode && toggleCompareSelect(snap)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)', marginBottom: 4 }}>
-                        {idx === 0 ? '● Latest · ' : '○ '}{format(parseISO(snap.date), 'EEEE, MMMM d, yyyy')}
-                        {isSelectedA && <span style={{ marginLeft: 8, color: 'var(--sage)', fontWeight: 700 }}>Then</span>}
-                        {isSelectedB && <span style={{ marginLeft: 8, color: 'var(--gold)', fontWeight: 700 }}>Now</span>}
-                      </div>
+                <div style={{ padding: '10px 20px', background: compareB ? 'white' : 'var(--mist)', border: `1px solid ${compareB ? 'var(--gold)' : 'transparent'}`, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, minWidth: 180 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: compareB ? 'var(--gold)' : 'rgba(13,13,13,0.1)' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', opacity: 0.5 }}>Now</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{compareB ? format(parseISO(compareB.date), 'MMM d, yyyy') : '—'}</div>
+                  </div>
+                </div>
+
+                {compareA && compareB && !compareResult && (
+                  <button className="btn btn-primary" onClick={runCompare} disabled={comparing} style={{ borderRadius: 30, padding: '10px 24px' }}>
+                    {comparing ? 'Analyzing...' : 'Run Comparison Analysis ⇄'}
+                  </button>
+                )}
+                
+                {(compareA || compareB) && (
+                  <button className="btn btn-ghost" style={{ color: 'rgba(13,13,13,0.4)', fontSize: 13 }} onClick={() => { setCompareA(null); setCompareB(null); setCompareResult(null); }}>Clear Selection</button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Analysis View */}
+          {compareResult && (
+            <div className="card" style={{ marginBottom: 32, padding: 32, border: '1px solid var(--gold)', background: 'rgba(201,168,76,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <h3 style={{ fontSize: 20, margin: 0, fontFamily: 'Fraunces' }}>⇄ Contrast Analysis</h3>
+                <div style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 600 }}>
+                  Mood Change: 
+                  <span style={{ color: compareResult.snapshot2.mood > compareResult.snapshot1.mood ? 'var(--sage)' : compareResult.snapshot2.mood < compareResult.snapshot1.mood ? 'var(--rust)' : 'inherit', marginLeft: 8 }}>
+                    {compareResult.snapshot2.mood > compareResult.snapshot1.mood ? '▲' : compareResult.snapshot2.mood < compareResult.snapshot1.mood ? '▼' : '—'} {Math.abs(compareResult.snapshot2.mood - compareResult.snapshot1.mood)} points
+                  </span>
+                </div>
+              </div>
+              
+              <div className="grid-2" style={{ gap: 24 }}>
+                {[
+                  { label: 'Past State', s: compareResult.snapshot1, accent: 'rgba(13,13,13,0.3)' },
+                  { label: 'Present State', s: compareResult.snapshot2, accent: 'var(--sage)' }
+                ].map(({ label, s, accent }) => (
+                  <div key={label} style={{ padding: 24, background: 'white', borderRadius: 16, border: '1px solid rgba(13,13,13,0.05)' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: accent, marginBottom: 12, fontWeight: 700 }}>{label}</div>
+                    <div className="markdown-body" style={{ fontFamily: 'Fraunces', fontSize: 16, fontStyle: 'italic', color: 'var(--ink)', lineHeight: 1.6, marginBottom: 16 }}>
+                      <MarkdownRenderer content={`"${s.description.slice(0, 180)}..."`} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontFamily: 'Fraunces', fontSize: 20, color: 'var(--sage)' }}>{snap.mood}/10</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ fontSize: 24, fontFamily: 'Fraunces', color: accent }}>{s.mood}/10</div>
+                      <div style={{ fontSize: 10, opacity: 0.4 }}>mood score</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {snapshots.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">○</div>
+              <h3>Your Growth Journal is Empty</h3>
+              <p>A snapshot captures who you are right now — your mindset, values, and emotional state. Take one today and compare it in 30 days.</p>
+              <button className="btn btn-primary" onClick={openCreate} style={{ borderRadius: 30 }}>Take First Snapshot ○</button>
+            </div>
+          ) : (
+            <div className="auto-grid">
+              {snapshots.map((snap, idx) => {
+                const isSelectedA = compareA?.id === snap.id;
+                const isSelectedB = compareB?.id === snap.id;
+
+                return (
+                  <div key={snap.id} className="card" style={{ 
+                    display: 'flex', flexDirection: 'column', gap: 16,
+                    cursor: compareMode ? 'pointer' : 'default',
+                    border: isSelectedA ? '2px solid var(--sage)' : isSelectedB ? '2px solid var(--gold)' : 'none',
+                    transform: (isSelectedA || isSelectedB) ? 'translateY(-4px)' : 'none',
+                    background: (isSelectedA || isSelectedB) ? 'rgba(107,140,107,0.02)' : 'white'
+                  }} onClick={() => compareMode && toggleCompareSelect(snap)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: idx === 0 ? 'var(--sage)' : 'rgba(13,13,13,0.4)', marginBottom: 4, fontWeight: 700 }}>
+                          {idx === 0 ? 'Latest Snapshot' : `Snapshot Archive`}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{format(parseISO(snap.date), 'MMMM d, yyyy')}</div>
+                      </div>
+                      <div style={{ fontFamily: 'Fraunces', fontSize: 24, color: 'var(--sage)' }}>{snap.mood}<span style={{ fontSize: 12, opacity: 0.3 }}>/10</span></div>
+                    </div>
+
+                    <blockquote className="markdown-body" style={{ 
+                      fontSize: 14, fontStyle: 'italic', color: 'rgba(13,13,13,0.7)', 
+                      lineHeight: 1.6, margin: '8px 0', borderLeft: '2px solid rgba(13,13,13,0.05)', paddingLeft: 12
+                    }}>
+                      <MarkdownRenderer content={`"${snap.description.slice(0, 160)}${snap.description.length > 160 ? '...' : ''}"`} />
+                    </blockquote>
+
+                    {snap.values?.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {snap.values.slice(0, 3).map(v => <span key={v} className="tag tag-mist" style={{ fontSize: 10 }}>{v}</span>)}
+                        {snap.values.length > 3 && <span style={{ fontSize: 10, opacity: 0.4 }}>+{snap.values.length - 3} more</span>}
+                      </div>
+                    )}
+
+                    <div className="divider" style={{ margin: '4px 0' }} />
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <button className="btn btn-sm btn-outline" onClick={(e) => { e.stopPropagation(); navigate(`/snapshots/${snap.id}`); }} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20 }}>
+                        Enter Detail ◈
+                      </button>
                       {!compareMode && (
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/snapshots/${snap.id}`); }}
-                            title="View Detail" style={{ color: 'rgba(13,13,13,0.4)', fontSize: 11, border: '1px solid rgba(13,13,13,0.1)', borderRadius: 6, padding: '3px 8px' }}>
-                            ◈ Detail
-                          </button>
-                          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(snap); }} title="Edit" style={{ color: 'rgba(13,13,13,0.4)' }}>✎</button>
-                          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleDelete(snap); }} title="Delete" style={{ color: 'rgba(13,13,13,0.3)' }}>🗑</button>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(snap); }} style={{ padding: 4, color: 'rgba(13,13,13,0.4)' }}>✎</button>
+                          <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); handleDelete(snap); }} style={{ padding: 4, color: 'rgba(13,13,13,0.2)' }}>🗑</button>
                         </div>
                       )}
                     </div>
                   </div>
-
-                  <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink)', marginBottom: 16, fontStyle: 'italic' }}>
-                    <MarkdownRenderer content={`"${snap.description.slice(0, 300)}${snap.description.length > 300 ? '...' : ''}"`} />
-                  </div>
-
-                  {snap.values?.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 8 }}>
-                        Values / Beliefs at this time
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {snap.values.map(v => (
-                          <span key={v} className="tag tag-mist">{v}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && (
