@@ -21,6 +21,7 @@ import Growth from './pages/Growth';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import VerifyEmail from './pages/VerifyEmail';
+import CalendarTimeline from './pages/CalendarTimeline';
 
 
 function PrivateRoute({ children }) {
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="manifestations/:manifestationId" element={<ManifestationDetail />} />
             <Route path="snapshots" element={<Snapshots />} />
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
+            <Route path="timeline" element={<CalendarTimeline />} />
             <Route path="growth" element={<Growth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />

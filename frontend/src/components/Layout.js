@@ -11,6 +11,7 @@ const NAV = [
   { to: '/manifestations', icon: '✧', label: 'Manifestations' },
   { to: '/snapshots', icon: '○', label: 'Snapshots' },
   { to: '/categories', icon: '▦', label: 'Categories' },
+  { to: '/timeline', icon: '🗓️', label: 'Timeline' },
 ];
 
 export default function Layout() {
