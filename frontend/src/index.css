@@ -690,8 +690,25 @@ h1, h2, h3, h4 {
 .toaster { font-family: 'DM Sans', sans-serif !important; }
 
 /* Markdown Container */
-.markdown-body {
-  max-height: 400px;
+.md-body {
+  line-height: 1.6;
+}
+
+.md-body p { margin-bottom: 12px; }
+.md-body p:last-child { margin-bottom: 0; }
+.md-body ul, .md-body ol { padding-left: 20px; margin-bottom: 12px; }
+
+.md-fixed-size {
+  max-height: 250px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 8px;
+}
+
+.md-fixed-size::-webkit-scrollbar {
+  width: 4px;
+}
+
+.md-fixed-size::-webkit-scrollbar-thumb {
+  background: rgba(13,13,13,0.1);
+  border-radius: 10px;
 }

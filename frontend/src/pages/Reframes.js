@@ -169,12 +169,12 @@ export default function Reframes() {
                <div className="grid-2" style={{ gap: 16 }}>
                  <div style={{ padding: 16, background: 'rgba(235,160,147,0.08)', borderRadius: 12, borderLeft: '3px solid var(--rust)' }}>
                    <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--rust)', marginBottom: 8, fontWeight: 600 }}>Automatic Thought</div>
-                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.original_thought} /></div>
+                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.original_thought} className="md-fixed-size" /></div>
                  </div>
                  
                  <div style={{ padding: 16, background: 'rgba(107,140,107,0.08)', borderRadius: 12, borderLeft: '3px solid var(--sage)' }}>
                    <div style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--sage)', marginBottom: 8, fontWeight: 600 }}>Rational Reframe</div>
-                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.reframe} /></div>
+                   <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}><MarkdownRenderer content={r.reframe} className="md-fixed-size" /></div>
                  </div>
                </div>
 

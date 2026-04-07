@@ -159,7 +159,7 @@ export default function Quotes() {
             <div key={q.id} className="card" style={{ position: 'relative' }}>
               <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 8, lineHeight: 1 }}>“</div>
               <div style={{ fontFamily: 'Fraunces', fontSize: 18, color: 'var(--ink)', marginBottom: 12, fontStyle: 'italic', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'hidden' }}>
-                <MarkdownRenderer content={q.content} />
+                <MarkdownRenderer content={q.content} className="md-fixed-size" />
               </div>
               <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}>
                 — {q.author || 'Unknown'} {q.source && `(${q.source})`}

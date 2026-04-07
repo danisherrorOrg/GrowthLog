@@ -99,7 +99,7 @@ export default function Thoughts() {
                  </div>
 
                  <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.6 }}>
-                   <MarkdownRenderer content={t.content} />
+                   <MarkdownRenderer content={t.content} className="md-fixed-size" />
                  </div>
 
                </div>
