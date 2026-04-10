@@ -47,19 +47,19 @@ Now I have a full picture of every page. Here's the complete enhancement audit:
 - **No search** to find a thought by keyword across the garden. -->
 
 ---
-
+<!-- 
 #### 3. **`Quotes.js` → Motivation Vault**
 - **Tag filter only shows first 3 tags** hardcoded (`allTags.slice(0, 3)`) — all other tags are invisible and unfiltered.
 - **No search by quote content or author** — hard to find a specific quote in a large vault.
 - **No "shuffle" or random quote** button — could be a fun discovery feature.
-- **Quote cards are masonry-like** but have no consistent height — some are huge and some tiny.
+- **Quote cards are masonry-like** but have no consistent height — some are huge and some tiny. -->
 
 ---
 
-#### 4. **`Reframes.js` → Cognitive Reframing Studio**
+<!-- #### 4. **`Reframes.js` → Cognitive Reframing Studio**
 - **Filter is hardcoded to only 3 distortions** (All, Catastrophizing, Labeling) — there are 10+ distortion types in `DISTORTIONS` but only 3 are filterable.
 - **No search** to find a reframe by trigger or thought text.
-- **Intensity shift bar** (before → after) has no visual progress bar — just raw numbers. A mini bar chart would make the "improvement" very visible.
+- **Intensity shift bar** (before → after) has no visual progress bar — just raw numbers. A mini bar chart would make the "improvement" very visible. -->
 
 ---
 
