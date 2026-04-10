@@ -123,23 +123,29 @@ export default function Dashboard() {
       <div className="page-body">
         {/* Insights Section */}
         {data?.insights?.length > 0 && (
-          <div style={{ display: 'flex', gap: 12, marginBottom: 28, overflowX: 'auto', paddingBottom: 8 }}>
-            {data.insights.map((insight, i) => (
-              <div key={i} className="card" style={{ 
-                minWidth: 300, flex: 1, padding: '16px 20px', 
-                background: `linear-gradient(135deg, white 0%, ${insight.color}05 100%)`,
-                borderLeft: `4px solid ${insight.color}`,
-                display: 'flex', alignItems: 'center', gap: 14,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-              }}>
-                <div style={{ fontSize: 24 }}>
-                  {insight.type === 'top_performer' ? '📈' : insight.type === 'mood_booster' ? '✨' : '⚖️'}
+          <div style={{ marginBottom: 28 }}>
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              <span>Behavioral Insights ✦</span>
+              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>AI-generated patterns from your logs</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+              {data.insights.map((insight, i) => (
+                <div key={i} className="card" style={{ 
+                  minWidth: 300, flex: 1, padding: '16px 20px', 
+                  background: `linear-gradient(135deg, white 0%, ${insight.color}05 100%)`,
+                  borderLeft: `4px solid ${insight.color}`,
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                }}>
+                  <div style={{ fontSize: 24 }}>
+                    {insight.type === 'top_performer' ? '📈' : insight.type === 'mood_booster' ? '✨' : '⚖️'}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, fontWeight: 500 }}>
+                    {insight.text}
+                  </div>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, fontWeight: 500 }}>
-                  {insight.text}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -206,7 +212,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="grid-4" style={{ marginBottom: 28 }}>
+        <div className="grid-4" style={{ marginBottom: 20 }}>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--gold)' }}>{data?.streak || 0}</div>
             <div className="stat-label">🔥 Current Streak</div>
@@ -224,6 +230,19 @@ export default function Dashboard() {
             <div className="stat-label">⏱ Total Min Spent</div>
           </div>
         </div>
+
+        {/* Quick log CTA — shown prominently before charts */}
+        {!data?.heatmap?.[format(today, 'yyyy-MM-dd')] && (
+          <div className="card" style={{ marginBottom: 28, background: 'linear-gradient(135deg, var(--sage) 0%, #4a6b4a 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px' }}>
+            <div>
+              <h3 style={{ color: 'white', marginBottom: 4 }}>Today's log is waiting ✦</h3>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, margin: 0 }}>You haven't logged today yet. Keep your streak alive.</p>
+            </div>
+            <button className="btn" style={{ background: 'white', color: 'var(--sage)', fontWeight: 600, flexShrink: 0 }} onClick={() => navigate('/log')}>
+              Log Now →
+            </button>
+          </div>
+        )}
 
 
         <div className="grid-2" style={{ marginBottom: 28 }}>
@@ -250,7 +269,9 @@ export default function Dashboard() {
                         key={key}
                         onMouseEnter={() => setHoveredData({ date: day.date, ...entry })}
                         onMouseLeave={() => setHoveredData(null)}
+                        onClick={() => navigate(`/log?date=${key}`)}
                         className={`heatmap-cell ${rating ? `logged-${Math.min(level, 5)}` : ''}`}
+                        title={`${format(day.date, 'MMM d')}${rating ? ` · Rating ${rating}/10` : ' · No entry — click to log'}`}
                         style={{ cursor: 'pointer', transition: 'all 0.2s ease', transform: hoveredData?.date === day.date ? 'scale(1.2)' : 'scale(1)' }}
                       />
                     );
@@ -439,20 +460,61 @@ export default function Dashboard() {
               <span>Goals Overview</span>
               <button className="btn btn-ghost btn-sm" onClick={() => navigate('/goals')}>View all →</button>
             </div>
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontFamily: 'Fraunces', fontSize: 32, color: 'var(--sage)' }}>{data?.goals?.active || 0}</div>
-                <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>Active</div>
+            {/* Donut chart + legend */}
+            {(data?.goals?.total || 0) > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 140, height: 140, flexShrink: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Active', value: data?.goals?.active || 0 },
+                          { name: 'Completed', value: data?.goals?.completed || 0 },
+                          { name: 'Remaining', value: Math.max(0, (data?.goals?.total || 0) - (data?.goals?.active || 0) - (data?.goals?.completed || 0)) }
+                        ].filter(d => d.value > 0)}
+                        cx="50%" cy="50%"
+                        innerRadius={42} outerRadius={60}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        <Cell fill="var(--sage)" />
+                        <Cell fill="#c9a84c" />
+                        <Cell fill="rgba(13,13,13,0.08)" />
+                      </Pie>
+                      <RechartsTooltip contentStyle={{ borderRadius: 10, border: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--sage)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, flex: 1, color: 'rgba(13,13,13,0.7)' }}>Active</span>
+                    <span style={{ fontFamily: 'Fraunces', fontSize: 22, color: 'var(--sage)' }}>{data?.goals?.active || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#c9a84c', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, flex: 1, color: 'rgba(13,13,13,0.7)' }}>Completed</span>
+                    <span style={{ fontFamily: 'Fraunces', fontSize: 22, color: '#c9a84c' }}>{data?.goals?.completed || 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(13,13,13,0.15)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, flex: 1, color: 'rgba(13,13,13,0.7)' }}>Total</span>
+                    <span style={{ fontFamily: 'Fraunces', fontSize: 22 }}>{data?.goals?.total || 0}</span>
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 }}>Completion rate</div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${completionRate}%`, background: 'var(--sage)' }} />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontFamily: 'Fraunces', fontSize: 32, color: 'var(--rust)' }}>{data?.goals?.completed || 0}</div>
-                <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>Completed</div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(13,13,13,0.4)', fontSize: 14 }}>
+                No goals yet. <button className="btn btn-ghost btn-sm" onClick={() => navigate('/goals')}>Add one →</button>
               </div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ fontFamily: 'Fraunces', fontSize: 32 }}>{data?.goals?.total || 0}</div>
-                <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>Total</div>
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)' }}>
@@ -488,18 +550,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick log CTA */}
-        {!data?.heatmap?.[format(today, 'yyyy-MM-dd')] && (
-          <div className="card" style={{ marginTop: 24, background: 'linear-gradient(135deg, var(--sage) 0%, #4a6b4a 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <h3 style={{ color: 'white', marginBottom: 4 }}>Today's log is waiting ✦</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>You haven't logged today yet. Keep your streak alive.</p>
-            </div>
-            <button className="btn" style={{ background: 'white', color: 'var(--sage)', fontWeight: 600 }} onClick={() => navigate('/log')}>
-              Log Now →
-            </button>
-          </div>
-        )}
+
       </div>
     </div>
   );

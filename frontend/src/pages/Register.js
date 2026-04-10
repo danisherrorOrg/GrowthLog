@@ -18,13 +18,33 @@ const DIMENSIONS = [
   { icon: '✨', title: 'Soul', desc: 'Spirituality and internal alignment.', color: '#c4623a' },
 ];
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getPasswordStrength(pw) {
+  if (!pw) return null;
+  if (pw.length < 6) return { level: 'weak', label: 'Too short (min 6 chars)', color: 'var(--rust)', pct: 25 };
+  if (pw.length < 10) return { level: 'fair', label: 'Fair — add numbers or symbols', color: 'var(--gold)', pct: 55 };
+  if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) return { level: 'strong', label: 'Strong password ✓', color: 'var(--sage)', pct: 100 };
+  return { level: 'good', label: 'Good — capitalize or add numbers for stronger', color: '#6ba87b', pct: 78 };
+}
+
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [touched, setTouched] = useState({ name: false, email: false, password: false });
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  const nameError = touched.name && !name.trim() ? 'Name is required' : null;
+  const emailError = touched.email && email && !isValidEmail(email) ? 'Enter a valid email address' : null;
+  const passwordStrength = getPasswordStrength(password);
+  const passwordError = touched.password && password && password.length < 6 ? 'Password must be at least 6 characters' : null;
+  const canSubmit = name.trim() && email && isValidEmail(email) && password.length >= 6;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,7 +71,7 @@ export default function Register() {
             <div className="auth-tagline">The compound effect of daily reflection.</div>
           </div>
 
-          {/* Step by step */}
+          {/* Steps */}
           <div style={{ marginTop: 32, marginBottom: 28 }}>
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.35)', marginBottom: 18 }}>
               Your first 4 steps
@@ -77,10 +97,10 @@ export default function Register() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
               {DIMENSIONS.map(({ icon, title, desc, color }) => (
                 <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ 
-                    width: 32, height: 32, borderRadius: 8, background: 'rgba(245,240,232,0.05)', 
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8, background: 'rgba(245,240,232,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                    border: `1px solid ${color + '33'}`, flexShrink: 0 
+                    border: `1px solid ${color + '33'}`, flexShrink: 0
                   }}>
                     {icon}
                   </div>
@@ -112,6 +132,7 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {/* Name */}
             <div className="form-group">
               <label className="form-label">Your Name</label>
               <input
@@ -119,34 +140,101 @@ export default function Register() {
                 className="form-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, name: true }))}
                 placeholder="What should we call you?"
+                style={{ borderColor: nameError ? 'var(--rust)' : undefined }}
                 required
               />
+              {nameError && (
+                <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⚠</span> {nameError}
+                </div>
+              )}
             </div>
+
+            {/* Email */}
             <div className="form-group">
               <label className="form-label">Email</label>
               <input
-                type="email"
+                type="text"
                 className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, email: true }))}
                 placeholder="you@example.com"
+                style={{ borderColor: emailError ? 'var(--rust)' : undefined }}
                 required
               />
+              {emailError && (
+                <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⚠</span> {emailError}
+                </div>
+              )}
+              {touched.email && email && !emailError && (
+                <div style={{ fontSize: 12, color: 'var(--sage)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>✓</span> Looks good
+                </div>
+              )}
             </div>
+
+            {/* Password with show/hide + strength meter */}
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input
-                type="password"
-                className="form-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                minLength={6}
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  className="form-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setTouched(t => ({ ...t, password: true }))}
+                  placeholder="At least 6 characters"
+                  style={{ paddingRight: 44, borderColor: passwordError ? 'var(--rust)' : undefined }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 16, color: 'rgba(13,13,13,0.35)', transition: 'color 0.2s',
+                    padding: 4,
+                  }}
+                  title={showPw ? 'Hide password' : 'Show password'}
+                >
+                  {showPw ? '🙈' : '👁'}
+                </button>
+              </div>
+
+              {/* Strength meter */}
+              {password && passwordStrength && (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ background: 'var(--mist)', borderRadius: 3, height: 4, overflow: 'hidden', marginBottom: 5 }}>
+                    <div style={{
+                      width: `${passwordStrength.pct}%`, height: '100%',
+                      background: passwordStrength.color,
+                      borderRadius: 3,
+                      transition: 'width 0.4s ease, background 0.3s ease',
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: passwordStrength.color, fontWeight: 500 }}>
+                    {passwordStrength.label}
+                  </div>
+                </div>
+              )}
+              {passwordError && (
+                <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⚠</span> {passwordError}
+                </div>
+              )}
             </div>
-            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', justifyContent: 'center', opacity: !canSubmit ? 0.6 : 1, transition: 'opacity 0.2s' }}
+              disabled={loading}
+            >
               {loading ? 'Creating account...' : 'Start Growing →'}
             </button>
           </form>

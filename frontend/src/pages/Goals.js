@@ -198,13 +198,13 @@ export default function Goals() {
         {/* Unified Toolbar */}
         <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
-              {['active', 'completed', 'all'].map(f => (
+            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10, flexWrap: 'wrap', gap: 2 }}>
+              {['active', 'extended', 'completed', 'abandoned', 'all'].map(f => (
                 <button 
                   key={f} 
                   className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-ghost'}`} 
                   onClick={() => setFilter(f)}
-                  style={{ borderRadius: 8, padding: '6px 16px', fontSize: 12 }}
+                  style={{ borderRadius: 8, padding: '6px 14px', fontSize: 12 }}
                 >
                   {f.charAt(0).toUpperCase() + f.slice(1)}
                 </button>
@@ -258,8 +258,21 @@ export default function Goals() {
               const isOverdue = goal.status === 'active' && isPast(deadline);
               const extended = goal.extension_history?.length > 0;
 
+              const statusTagClass =
+                goal.status === 'completed' ? 'tag-green' :
+                goal.status === 'abandoned' ? 'tag-rust' :
+                goal.status === 'extended' ? 'tag-gold' :
+                isOverdue ? 'tag-rust' : 'tag-mist';
+
               return (
-                <div key={goal.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div
+                  key={goal.id}
+                  className="card"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 16, cursor: 'pointer', transition: 'box-shadow 0.18s, transform 0.18s' }}
+                  onClick={() => navigate(`/goals/${goal.id}`)}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 8px 28px rgba(13,13,13,0.10)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 20 }}>{cat?.icon || '🎯'}</span>
@@ -268,8 +281,8 @@ export default function Goals() {
                         <h3 style={{ fontSize: 16, marginTop: 1 }}>{goal.title}</h3>
                       </div>
                     </div>
-                    <span className={`tag ${goal.status === 'completed' ? 'tag-green' : isOverdue ? 'tag-rust' : 'tag-mist'}`} style={{ fontSize: 10 }}>
-                      {isOverdue ? 'Overdue' : goal.status}
+                    <span className={`tag ${statusTagClass}`} style={{ fontSize: 10 }}>
+                      {isOverdue && goal.status === 'active' ? 'Overdue' : goal.status}
                     </span>
                   </div>
 
@@ -309,8 +322,8 @@ export default function Goals() {
                       {(goal.notes || []).length > 0 && <span title="Notes" style={{ fontSize: 12, color: 'rgba(13,13,13,0.3)' }}>📝 {goal.notes.length}</span>}
                       {extended && <span title="Extensions" style={{ fontSize: 12, color: 'var(--gold)' }}>🔄 {goal.extension_history.length}</span>}
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-sm btn-outline" onClick={() => navigate(`/goals/${goal.id}`)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20 }}>Explore</button>
+                    <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                      <button className="btn btn-sm btn-outline" onClick={() => navigate(`/goals/${goal.id}`)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20 }}>Explore →</button>
                       <button className="btn btn-sm btn-ghost" onClick={() => openEdit(goal)} style={{ padding: 4 }}>✎</button>
                       <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(goal)} style={{ padding: 4, color: 'rgba(13,13,13,0.2)' }}>🗑</button>
                     </div>

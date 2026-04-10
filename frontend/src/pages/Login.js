@@ -17,15 +17,26 @@ const STATS = [
   { value: '100%', label: 'private — only you see it' },
 ];
 
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [touched, setTouched] = useState({ email: false, password: false });
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const emailError = touched.email && email && !isValidEmail(email) ? 'Enter a valid email address' : null;
+  const passwordError = touched.password && password && password.length < 6 ? 'Password must be at least 6 characters' : null;
+  const canSubmit = email && password && !emailError && !passwordError;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!canSubmit) return;
     setLoading(true);
     try {
       await login(email, password);
@@ -65,10 +76,10 @@ export default function Login() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {DIMENSIONS.map(({ icon, title, desc, color }) => (
                 <div key={title} style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ 
-                    width: 44, height: 44, borderRadius: 12, background: 'rgba(245,240,232,0.05)', 
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12, background: 'rgba(245,240,232,0.05)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                    border: `1px solid ${color + '33'}` 
+                    border: `1px solid ${color + '33'}`
                   }}>
                     {icon}
                   </div>
@@ -96,29 +107,72 @@ export default function Login() {
           <p style={{ marginBottom: 28 }}>Your growth journal is waiting for you.</p>
 
           <form onSubmit={handleSubmit}>
+            {/* Email */}
             <div className="form-group">
               <label className="form-label">Email</label>
               <input
-                type="email"
+                type="text"
                 className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched(t => ({ ...t, email: true }))}
                 placeholder="you@example.com"
+                style={{ borderColor: emailError ? 'var(--rust)' : undefined }}
                 required
               />
+              {emailError && (
+                <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⚠</span> {emailError}
+                </div>
+              )}
+              {touched.email && email && !emailError && (
+                <div style={{ fontSize: 12, color: 'var(--sage)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>✓</span> Looks good
+                </div>
+              )}
             </div>
+
+            {/* Password with show/hide */}
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input
-                type="password"
-                className="form-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  className="form-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setTouched(t => ({ ...t, password: true }))}
+                  placeholder="••••••••"
+                  style={{ paddingRight: 44, borderColor: passwordError ? 'var(--rust)' : undefined }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 16, color: 'rgba(13,13,13,0.35)', transition: 'color 0.2s',
+                    padding: 4,
+                  }}
+                  title={showPw ? 'Hide password' : 'Show password'}
+                >
+                  {showPw ? '🙈' : '👁'}
+                </button>
+              </div>
+              {passwordError && (
+                <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>⚠</span> {passwordError}
+                </div>
+              )}
             </div>
-            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }} disabled={loading}>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', justifyContent: 'center', opacity: !canSubmit ? 0.6 : 1, transition: 'opacity 0.2s' }}
+              disabled={loading}
+            >
               {loading ? 'Signing in...' : 'Sign In →'}
             </button>
           </form>
