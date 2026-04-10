@@ -12,6 +12,75 @@ const PRIORITY = {
   low:    { color: 'var(--sage)',  label: '🟢 Low',    bg: 'rgba(107,140,107,0.06)'},
 };
 
+// ── Time helpers ────────────────────────────────────────────────────────────
+function fmtMinutes(min) {
+  if (!min && min !== 0) return null;
+  if (min < 60) return `${min}m`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
+function TimeAccuracy({ estimated, actual }) {
+  if (!estimated || !actual) return null;
+  const ratio = actual / estimated;
+  let label, color, bg;
+  if (ratio <= 0.9)       { label = '🚀 Faster than expected'; color = '#2a7a2a'; bg = 'rgba(42,122,42,0.08)'; }
+  else if (ratio <= 1.1)  { label = '🎯 Right on time';       color = 'var(--sage)'; bg = 'rgba(107,140,107,0.1)'; }
+  else if (ratio <= 1.5)  { label = '⏱ Slightly over';       color = '#a07a10'; bg = 'rgba(201,168,76,0.1)'; }
+  else                    { label = '⚠️ Significantly over';  color = 'var(--rust)'; bg = 'rgba(196,98,58,0.08)'; }
+
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+      background: bg, color,
+    }}>
+      {label} ({Math.round(ratio * 100)}%)
+    </div>
+  );
+}
+
+// ── Time estimate input ─────────────────────────────────────────────────────
+function TimeEstimateInput({ value, onChange, label = 'Estimated Time', compact = false }) {
+  const PRESETS = [15, 30, 60, 90, 120];
+  const [custom, setCustom] = useState((value && !PRESETS.includes(value)) ? String(value) : '');
+  const [useCustom, setUseCustom] = useState(value && !PRESETS.includes(value));
+
+  return (
+    <div>
+      <label className="form-label" style={{ fontSize: 10 }}>{label}</label>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {PRESETS.map(p => (
+          <button key={p} type="button"
+            onClick={() => { setUseCustom(false); onChange(p); }}
+            className={`btn btn-sm ${!useCustom && value === p ? 'btn-primary' : 'btn-outline'}`}
+            style={{ fontSize: 11, padding: '4px 10px' }}>
+            {fmtMinutes(p)}
+          </button>
+        ))}
+        <button type="button"
+          onClick={() => { setUseCustom(true); onChange(custom ? parseInt(custom) : null); }}
+          className={`btn btn-sm ${useCustom ? 'btn-primary' : 'btn-outline'}`}
+          style={{ fontSize: 11, padding: '4px 10px' }}>
+          Custom
+        </button>
+        {useCustom && (
+          <input type="number" className="form-input" value={custom}
+            onChange={e => { setCustom(e.target.value); onChange(e.target.value ? parseInt(e.target.value) : null); }}
+            placeholder="mins" min={1} max={9999}
+            style={{ width: 72, fontSize: 12, padding: '4px 8px' }} />
+        )}
+        {value && (
+          <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', fontStyle: 'italic' }}>
+            = {fmtMinutes(value)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Due-date badge helper ───────────────────────────────────────────────────
 function DueBadge({ dateStr, isDone }) {
   if (!dateStr) return null;
@@ -24,8 +93,8 @@ function DueBadge({ dateStr, isDone }) {
   const daysLeft = differenceInDays(date, new Date());
 
   let label, bg, color;
-  if (overdue)  { label = `${Math.abs(daysLeft)}d overdue`; bg = 'rgba(196,98,58,0.12)'; color = 'var(--rust)'; }
-  else if (dueToday) { label = 'Due today';   bg = 'rgba(201,168,76,0.15)'; color = '#a07a10'; }
+  if (overdue)       { label = `${Math.abs(daysLeft)}d overdue`; bg = 'rgba(196,98,58,0.12)'; color = 'var(--rust)'; }
+  else if (dueToday) { label = 'Due today';    bg = 'rgba(201,168,76,0.15)'; color = '#a07a10'; }
   else if (dueTmrw)  { label = 'Due tomorrow'; bg = 'rgba(201,168,76,0.08)'; color = '#a07a10'; }
   else if (isDone)   { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.3)'; }
   else               { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.4)'; }
@@ -41,7 +110,7 @@ function DueBadge({ dateStr, isDone }) {
   );
 }
 
-// ── Skeleton loader ────────────────────────────────────────────────────────
+// ── Skeleton loader ─────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className="card card-sm" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -51,109 +120,7 @@ function SkeletonCard() {
   );
 }
 
-// ── Preview modal ──────────────────────────────────────────────────────────
-function TodoPreviewModal({ todo, onClose, onToggle, onDelete, onEdit }) {
-  const isDone = todo.status === 'done';
-  const p = PRIORITY[todo.priority] || PRIORITY.medium;
-
-  const handleDelete = () => {
-    onClose();
-    onDelete();
-  };
-
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}
-      style={{ zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 560, padding: 0, overflow: 'hidden' }}>
-
-        {/* Coloured header bar */}
-        <div style={{
-          background: isDone ? 'var(--mist)' : p.bg,
-          borderBottom: `3px solid ${p.color}`,
-          padding: '20px 24px 16px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flex: 1 }}>
-              <input
-                type="checkbox"
-                checked={isDone}
-                onChange={() => { onToggle(); onClose(); }}
-                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: p.color, marginTop: 3, flexShrink: 0 }}
-              />
-              <h3 style={{
-                fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, lineHeight: 1.4,
-                color: isDone ? 'rgba(13,13,13,0.4)' : 'var(--ink)',
-                textDecoration: isDone ? 'line-through' : 'none',
-                margin: 0,
-              }}>{todo.title}</h3>
-            </div>
-            <button className="modal-close" onClick={onClose} style={{ flexShrink: 0 }}>✕</button>
-          </div>
-
-          {/* Meta row */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', paddingLeft: 28 }}>
-            <span style={{
-              fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-              background: isDone ? 'rgba(13,13,13,0.06)' : p.color, color: isDone ? 'rgba(13,13,13,0.4)' : 'white',
-              textTransform: 'uppercase', letterSpacing: 0.6,
-            }}>
-              {todo.priority} priority
-            </span>
-            <DueBadge dateStr={todo.due_date} isDone={isDone} />
-            {isDone && todo.completed_at && (
-              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', letterSpacing: 0.3,
-                padding: '3px 10px', borderRadius: 20, background: 'rgba(13,13,13,0.05)' }}>
-                ✓ Completed {format(parseISO(todo.completed_at), 'MMM d, yyyy')}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: '24px' }}>
-          {todo.description?.trim() ? (
-            <>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
-                color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 10 }}>Description</div>
-              <div className="markdown-body" style={{
-                fontSize: 15, lineHeight: 1.75, color: 'rgba(13,13,13,0.75)',
-                padding: '16px 20px', background: 'var(--mist)', borderRadius: 12,
-              }}>
-                <MarkdownRenderer content={todo.description} />
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: 14, color: 'rgba(13,13,13,0.3)', fontStyle: 'italic', textAlign: 'center', padding: '12px 0' }}>
-              No description added.
-            </div>
-          )}
-        </div>
-
-        {/* Footer actions */}
-        <div style={{
-          display: 'flex', gap: 10, padding: '0 24px 20px',
-          borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 16,
-        }}>
-          <button className="btn btn-outline" onClick={onEdit} style={{ flex: 1 }}>
-            ✎ Edit Task
-          </button>
-          <button className="btn" onClick={handleDelete}
-            style={{ flex: 1, background: 'rgba(196,98,58,0.08)', color: 'var(--rust)', border: '1px solid rgba(196,98,58,0.2)' }}>
-            ✕ Delete
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => { onToggle(); onClose(); }}
-            style={{ flex: 1 }}>
-            {isDone ? '↩ Reopen' : '✓ Mark Done'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Confirm modal ──────────────────────────────────────────────────────────
+// ── Confirm modal ───────────────────────────────────────────────────────────
 function ConfirmModal({ title, body, onConfirm, onCancel }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
@@ -175,15 +142,208 @@ function ConfirmModal({ title, body, onConfirm, onCancel }) {
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
+// ── Complete-with-time modal ────────────────────────────────────────────────
+function CompleteModal({ todo, onConfirm, onCancel }) {
+  const [actualMinutes, setActualMinutes] = useState(todo.estimated_minutes || null);
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal" style={{ maxWidth: 440 }}>
+        <div className="modal-header">
+          <h3>✓ Complete Task</h3>
+          <button className="modal-close" onClick={onCancel}>✕</button>
+        </div>
+
+        <div style={{ padding: '4px 0 20px' }}>
+          <div style={{
+            fontSize: 14, fontFamily: 'Fraunces', color: 'var(--ink)',
+            padding: '12px 16px', background: 'var(--mist)', borderRadius: 10, marginBottom: 20,
+            fontStyle: 'italic',
+          }}>
+            "{todo.title}"
+          </div>
+
+          {todo.estimated_minutes && (
+            <div style={{
+              display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16,
+              padding: '8px 14px', background: 'rgba(107,140,107,0.06)', borderRadius: 8,
+              fontSize: 13, color: 'rgba(13,13,13,0.6)',
+            }}>
+              <span>⏱</span>
+              <span>Estimated: <strong>{fmtMinutes(todo.estimated_minutes)}</strong></span>
+            </div>
+          )}
+
+          <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+            color: 'rgba(13,13,13,0.4)', fontWeight: 700, display: 'block', marginBottom: 10 }}>
+            How long did it actually take?
+          </label>
+
+          <TimeEstimateInput
+            value={actualMinutes}
+            onChange={v => setActualMinutes(v)}
+            label=""
+          />
+
+          {todo.estimated_minutes && actualMinutes && (
+            <div style={{ marginTop: 14 }}>
+              <TimeAccuracy estimated={todo.estimated_minutes} actual={actualMinutes} />
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn btn-outline" onClick={onCancel} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(actualMinutes)} style={{ flex: 1 }}>
+            Mark as Done ✓
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Preview modal ───────────────────────────────────────────────────────────
+function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdit }) {
+  const isDone = todo.status === 'done';
+  const p = PRIORITY[todo.priority] || PRIORITY.medium;
+
+  const handleDelete = () => { onClose(); onDelete(); };
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}
+      style={{ zIndex: 1100 }}>
+      <div className="modal" style={{ maxWidth: 560, padding: 0, overflow: 'hidden' }}>
+
+        {/* Coloured header */}
+        <div style={{
+          background: p.bg,
+          borderBottom: `3px solid ${p.color}`,
+          padding: '20px 24px 16px',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <h3 style={{
+              fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, lineHeight: 1.4,
+              color: isDone ? 'rgba(13,13,13,0.55)' : 'var(--ink)',
+              textDecoration: isDone ? 'line-through' : 'none',
+              margin: 0, flex: 1, paddingRight: 12,
+            }}>{todo.title}</h3>
+            <button className="modal-close" onClick={onClose} style={{ flexShrink: 0 }}>✕</button>
+          </div>
+
+          {/* Meta badges */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+              background: p.color,
+              color: 'white',
+              textTransform: 'uppercase', letterSpacing: 0.6,
+            }}>
+              {todo.priority} priority
+            </span>
+            <DueBadge dateStr={todo.due_date} isDone={isDone} />
+            {isDone && todo.completed_at && (
+              <span style={{
+                fontSize: 10, color: 'rgba(13,13,13,0.35)', letterSpacing: 0.3,
+                padding: '3px 10px', borderRadius: 20, background: 'rgba(13,13,13,0.05)',
+              }}>
+                ✓ {format(parseISO(todo.completed_at), 'MMM d, yyyy')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '20px 24px' }}>
+
+          {/* Description */}
+          {todo.description?.trim() ? (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+                color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 8 }}>Description</div>
+              <div className="markdown-body" style={{
+                fontSize: 15, lineHeight: 1.75, color: 'rgba(13,13,13,0.75)',
+                padding: '14px 18px', background: 'var(--mist)', borderRadius: 10,
+              }}>
+                <MarkdownRenderer content={todo.description} />
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.25)', fontStyle: 'italic',
+              textAlign: 'center', padding: '8px 0 16px' }}>
+              No description added.
+            </div>
+          )}
+
+          {/* Time tracking block */}
+          <div style={{
+            background: 'white', border: '1px solid rgba(13,13,13,0.07)',
+            borderRadius: 12, padding: '16px 18px',
+          }}>
+            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+              color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 12 }}>
+              ⏱ Time Tracking
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Estimated</div>
+                <div style={{ fontSize: 22, fontFamily: 'Fraunces', color: 'var(--sage)' }}>
+                  {fmtMinutes(todo.estimated_minutes) || <span style={{ fontSize: 14, opacity: 0.3 }}>—</span>}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Actual</div>
+                <div style={{ fontSize: 22, fontFamily: 'Fraunces', color: todo.actual_minutes ? 'var(--ink)' : 'rgba(13,13,13,0.2)' }}>
+                  {fmtMinutes(todo.actual_minutes) || <span style={{ fontSize: 14, opacity: 0.3 }}>—</span>}
+                </div>
+              </div>
+            </div>
+            {todo.estimated_minutes && todo.actual_minutes && (
+              <TimeAccuracy estimated={todo.estimated_minutes} actual={todo.actual_minutes} />
+            )}
+            {!todo.estimated_minutes && !todo.actual_minutes && (
+              <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.25)', fontStyle: 'italic' }}>
+                No time tracked. Set an estimate when creating tasks.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          display: 'flex', gap: 10, padding: '0 24px 20px',
+          borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 16,
+        }}>
+          <button className="btn btn-outline" onClick={onEdit} style={{ flex: 1 }}>✎ Edit</button>
+          <button className="btn" onClick={handleDelete}
+            style={{ flex: 1, background: 'rgba(196,98,58,0.08)', color: 'var(--rust)', border: '1px solid rgba(196,98,58,0.2)' }}>
+            ✕ Delete
+          </button>
+          {isDone ? (
+            <button className="btn btn-primary" onClick={() => { onReopen(); onClose(); }} style={{ flex: 1 }}>
+              ↩ Reopen
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => { onComplete(); onClose(); }} style={{ flex: 1 }}>
+              ✓ Mark Done
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
 export default function Todos() {
-  const [todos, setTodos]       = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [showAdd, setShowAdd]   = useState(false);
-  const [newTodo, setNewTodo]   = useState({ title: '', description: '', priority: 'medium', due_date: '' });
-  const [filter, setFilter]     = useState('all');
-  const [search, setSearch]     = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null); // styled confirm modal
+  const [todos, setTodos]             = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [showAdd, setShowAdd]         = useState(false);
+  const [newTodo, setNewTodo]         = useState({ title: '', description: '', priority: 'medium', due_date: '', estimated_minutes: null });
+  const [filter, setFilter]           = useState('all');
+  const [search, setSearch]           = useState('');
+  const [deleteTarget, setDeleteTarget]   = useState(null);
+  const [completeTarget, setCompleteTarget] = useState(null); // for complete-with-time modal
   const addTitleRef = useRef(null);
 
   const fetchTodos = async () => {
@@ -198,11 +358,7 @@ export default function Todos() {
   };
 
   useEffect(() => { fetchTodos(); }, []);
-
-  // Focus add-input when form opens
-  useEffect(() => {
-    if (showAdd && addTitleRef.current) addTitleRef.current.focus();
-  }, [showAdd]);
+  useEffect(() => { if (showAdd && addTitleRef.current) addTitleRef.current.focus(); }, [showAdd]);
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
   const handleAdd = async (e) => {
@@ -211,7 +367,7 @@ export default function Todos() {
     try {
       const res = await API.post('/todos', newTodo);
       setTodos([res.data, ...todos]);
-      setNewTodo({ title: '', description: '', priority: 'medium', due_date: '' });
+      setNewTodo({ title: '', description: '', priority: 'medium', due_date: '', estimated_minutes: null });
       setShowAdd(false);
       toast.success('✦ Task added');
     } catch (err) {
@@ -219,16 +375,23 @@ export default function Todos() {
     }
   };
 
-  const toggleComplete = async (id, currentStatus) => {
-    const isDone   = currentStatus === 'done';
-    const newStatus = isDone ? 'pending' : 'done';
+  // Called from the CompleteModal with actual_minutes value
+  const handleComplete = async (id, actualMinutes) => {
     try {
-      const res = isDone
-        ? await API.put(`/todos/${id}`, { status: 'pending' })
-        : await API.patch(`/todos/${id}/complete`);
+      const res = await API.patch(`/todos/${id}/complete`, { actual_minutes: actualMinutes || null });
+      setTodos(todos.map(t => t.id === id ? res.data : t));
+      setCompleteTarget(null);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to complete task'));
+    }
+  };
+
+  const handleReopen = async (id) => {
+    try {
+      const res = await API.put(`/todos/${id}`, { status: 'pending' });
       setTodos(todos.map(t => t.id === id ? res.data : t));
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to update status'));
+      toast.error(getErrorMessage(err, 'Failed to reopen task'));
     }
   };
 
@@ -257,20 +420,17 @@ export default function Todos() {
 
   // ── Filter + search ───────────────────────────────────────────────────────
   const applyFilter = (t) => {
-    if (filter === 'active')   return t.status === 'pending';
+    if (filter === 'active')    return t.status === 'pending';
     if (filter === 'completed') return t.status === 'done';
-    if (filter === 'high')     return t.status === 'pending' && t.priority === 'high';
-    if (filter === 'overdue')  return t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
-    return true; // 'all'
+    if (filter === 'high')      return t.status === 'pending' && t.priority === 'high';
+    if (filter === 'overdue')   return t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
+    return true;
   };
 
   const applySearch = (t) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return (
-      t.title?.toLowerCase().includes(q) ||
-      t.description?.toLowerCase().includes(q)
-    );
+    return t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
   };
 
   const visible  = todos.filter(t => applyFilter(t) && applySearch(t));
@@ -282,15 +442,13 @@ export default function Todos() {
 
   return (
     <div>
-      {/* ── Page header ── */}
       <div className="page-header">
         <h2>Action Board 🎯</h2>
-        <p>Capture intentions. Ship them. Rest.</p>
+        <p>Capture intentions. Ship them. Reflect on the effort.</p>
       </div>
 
       <div className="page-body">
-
-        {/* ── Overdue alert ── */}
+        {/* Overdue alert */}
         {overdueCount > 0 && (
           <div className="card" style={{
             marginBottom: 24, padding: '14px 20px',
@@ -301,25 +459,23 @@ export default function Todos() {
               <h3 style={{ fontSize: 14, color: 'var(--rust)', marginBottom: 2 }}>
                 ⚠️ {overdueCount} overdue task{overdueCount > 1 ? 's' : ''}
               </h3>
-              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>
-                These tasks have passed their due date.
-              </p>
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>These tasks have passed their due date.</p>
             </div>
-            <button className="btn btn-sm btn-outline" style={{ color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.3)' }}
+            <button className="btn btn-sm btn-outline"
+              style={{ color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.3)' }}
               onClick={() => setFilter('overdue')}>
               View Overdue →
             </button>
           </div>
         )}
 
-        {/* ── Unified toolbar ── */}
+        {/* Toolbar */}
         <div className="card" style={{
           marginBottom: 32, padding: '12px 20px',
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', flexWrap: 'wrap', gap: 16
+          alignItems: 'center', flexWrap: 'wrap', gap: 16,
         }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Filter tabs */}
             <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
               {[
                 { key: 'all',       label: 'All' },
@@ -335,11 +491,11 @@ export default function Todos() {
                   {f.label}
                   {f.key === 'all' && ` (${todos.length})`}
                   {f.key === 'overdue' && overdueCount > 0 && (
-                    <span style={{ marginLeft: 4, background: 'var(--rust)', color: 'white',
+                    <span style={{
+                      marginLeft: 4, background: 'var(--rust)', color: 'white',
                       borderRadius: '50%', width: 16, height: 16, fontSize: 9,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {overdueCount}
-                    </span>
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{overdueCount}</span>
                   )}
                 </button>
               ))}
@@ -347,32 +503,26 @@ export default function Todos() {
 
             {/* Search */}
             <div style={{ position: 'relative' }}>
-              <input
-                className="form-input"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+              <input className="form-input" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search tasks..."
-                style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', minWidth: 180 }}
-              />
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 13, opacity: 0.35 }}>🔍</span>
+                style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', minWidth: 180 }} />
+              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, opacity: 0.35 }}>🔍</span>
               {search && (
                 <button onClick={() => setSearch('')} style={{
                   position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: 0.4
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: 0.4,
                 }}>✕</button>
               )}
             </div>
           </div>
 
-          <button className="btn btn-primary"
-            onClick={() => setShowAdd(s => !s)}
+          <button className="btn btn-primary" onClick={() => setShowAdd(s => !s)}
             style={{ borderRadius: 30, padding: '10px 24px' }}>
             {showAdd ? '✕ Close' : '+ New Task'}
           </button>
         </div>
 
-        {/* ── Add task form ── */}
+        {/* Add form */}
         {showAdd && (
           <div className="card" style={{ marginBottom: 32, border: '2px solid var(--sage)', background: 'rgba(107,140,107,0.02)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
@@ -401,26 +551,32 @@ export default function Todos() {
                 <div>
                   <label className="form-label" style={{ fontSize: 10 }}>Priority</label>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {Object.entries(PRIORITY).map(([key, p]) => (
+                    {Object.entries(PRIORITY).map(([key, pr]) => (
                       <button key={key} type="button"
                         onClick={() => setNewTodo({ ...newTodo, priority: key })}
                         className={`btn btn-sm ${newTodo.priority === key ? 'btn-primary' : 'btn-outline'}`}
-                        style={{ fontSize: 11, borderColor: newTodo.priority === key ? undefined : p.color,
-                          color: newTodo.priority === key ? undefined : p.color }}>
-                        {p.label}
+                        style={{ fontSize: 11 }}>
+                        {pr.label}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div>
                   <label className="form-label" style={{ fontSize: 10 }}>Due Date (optional)</label>
-                  <input type="date" className="form-input"
-                    value={newTodo.due_date}
+                  <input type="date" className="form-input" value={newTodo.due_date}
                     onChange={e => setNewTodo({ ...newTodo, due_date: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     style={{ fontSize: 13 }} />
                 </div>
               </div>
+
+              {/* Time estimate */}
+              <TimeEstimateInput
+                value={newTodo.estimated_minutes}
+                onChange={v => setNewTodo({ ...newTodo, estimated_minutes: v })}
+                label="Estimated Time (optional)"
+              />
+
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button type="button" className="btn btn-outline" onClick={() => setShowAdd(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" style={{ padding: '10px 28px' }}>
@@ -431,7 +587,7 @@ export default function Todos() {
           </div>
         )}
 
-        {/* ── Two-column Kanban ── */}
+        {/* Kanban columns */}
         {loading ? (
           <div className="grid-2" style={{ gap: 40 }}>
             {[0, 1].map(col => (
@@ -443,18 +599,15 @@ export default function Todos() {
           </div>
         ) : (
           <div className="grid-2" style={{ gap: 40 }}>
-            {/* ── Pending column ── */}
+            {/* Pending column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
-                  color: 'var(--sage)', fontWeight: 700, margin: 0 }}>
-                  Upcoming Focus
-                </h3>
-                <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)', fontWeight: 500 }}>
+                  color: 'var(--sage)', fontWeight: 700, margin: 0 }}>Upcoming Focus</h3>
+                <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)' }}>
                   {pending.length} task{pending.length !== 1 ? 's' : ''}
                 </span>
               </div>
-
               {pending.length === 0 ? (
                 <div className="empty-state" style={{ padding: '32px 24px', borderStyle: 'dashed' }}>
                   <div style={{ fontSize: 24, marginBottom: 10 }}>✨</div>
@@ -465,35 +618,34 @@ export default function Todos() {
               ) : (
                 pending.map(t => (
                   <TodoCard key={t.id} todo={t}
-                    onToggle={() => toggleComplete(t.id, t.status)}
+                    onComplete={() => setCompleteTarget(t)}
+                    onReopen={() => handleReopen(t.id)}
                     onDelete={() => confirmDelete(t.id)}
                     onSave={handleEdit} />
                 ))
               )}
             </div>
 
-            {/* ── Done column ── */}
+            {/* Done column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
-                  color: 'rgba(13,13,13,0.35)', fontWeight: 700, margin: 0 }}>
-                  Completed
-                </h3>
-                <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.25)', fontWeight: 500 }}>
+                  color: 'rgba(13,13,13,0.35)', fontWeight: 700, margin: 0 }}>Completed</h3>
+                <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.25)' }}>
                   {done.length} task{done.length !== 1 ? 's' : ''}
                 </span>
               </div>
-
               {done.length === 0 ? (
                 <div style={{ padding: '32px 0', textAlign: 'center', fontSize: 12,
                   color: 'rgba(13,13,13,0.2)', fontStyle: 'italic' }}>
                   No completed tasks in current view.
                 </div>
               ) : (
-                <div style={{ opacity: 0.7 }}>
+                <div style={{ opacity: 0.75 }}>
                   {done.map(t => (
                     <TodoCard key={t.id} todo={t}
-                      onToggle={() => toggleComplete(t.id, t.status)}
+                      onComplete={() => setCompleteTarget(t)}
+                      onReopen={() => handleReopen(t.id)}
                       onDelete={() => confirmDelete(t.id)}
                       onSave={handleEdit} />
                   ))}
@@ -504,7 +656,7 @@ export default function Todos() {
         )}
       </div>
 
-      {/* ── Styled confirm modal ── */}
+      {/* Modals */}
       {deleteTarget && (
         <ConfirmModal
           title="Delete Task?"
@@ -513,21 +665,28 @@ export default function Todos() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+      {completeTarget && (
+        <CompleteModal
+          todo={completeTarget}
+          onConfirm={(actualMinutes) => handleComplete(completeTarget.id, actualMinutes)}
+          onCancel={() => setCompleteTarget(null)}
+        />
+      )}
     </div>
   );
 }
 
-// ── TodoCard ──────────────────────────────────────────────────────────────
-function TodoCard({ todo, onToggle, onDelete, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
+// ── TodoCard ────────────────────────────────────────────────────────────────
+function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
+  const [isEditing, setIsEditing]     = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [editForm, setEditForm]   = useState({
+  const [editForm, setEditForm]       = useState({
     title: todo.title,
     description: todo.description || '',
     priority: todo.priority,
     due_date: todo.due_date || '',
+    estimated_minutes: todo.estimated_minutes || null,
   });
-  const [expanded, setExpanded]   = useState(false);
 
   const isDone = todo.status === 'done';
   const p = PRIORITY[todo.priority] || PRIORITY.medium;
@@ -542,23 +701,17 @@ function TodoCard({ todo, onToggle, onDelete, onSave }) {
   // ── Edit mode ──
   if (isEditing) {
     return (
-      <div className="card card-sm" style={{ border: `2px solid var(--sage)` }}>
+      <div className="card card-sm" style={{ border: `2px solid var(--sage)`, marginBottom: 8 }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <input
-            type="text"
-            className="form-input"
+          <input type="text" className="form-input"
             value={editForm.title}
             onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-            autoFocus
-            style={{ fontSize: 15, fontWeight: 500 }}
-          />
-          <textarea
-            className="form-textarea"
+            autoFocus style={{ fontSize: 15, fontWeight: 500 }} />
+          <textarea className="form-textarea"
             value={editForm.description}
             onChange={e => setEditForm({ ...editForm, description: e.target.value })}
             placeholder="Description (optional)..."
-            style={{ minHeight: 52, fontSize: 13 }}
-          />
+            style={{ minHeight: 52, fontSize: 13 }} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label" style={{ fontSize: 10 }}>Priority</label>
@@ -577,9 +730,22 @@ function TodoCard({ todo, onToggle, onDelete, onSave }) {
                 style={{ fontSize: 12 }} />
             </div>
           </div>
+          <TimeEstimateInput
+            value={editForm.estimated_minutes}
+            onChange={v => setEditForm({ ...editForm, estimated_minutes: v })}
+            label="Estimated Time"
+          />
+          {/* Actual time for done tasks inline edit */}
+          {isDone && (
+            <TimeEstimateInput
+              value={todo.actual_minutes}
+              onChange={v => onSave(todo.id, { actual_minutes: v })}
+              label="Actual Time Taken"
+            />
+          )}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-ghost btn-sm"
-              onClick={() => { setIsEditing(false); setEditForm({ title: todo.title, description: todo.description || '', priority: todo.priority, due_date: todo.due_date || '' }); }}>
+              onClick={() => { setIsEditing(false); setEditForm({ title: todo.title, description: todo.description || '', priority: todo.priority, due_date: todo.due_date || '', estimated_minutes: todo.estimated_minutes || null }); }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary btn-sm">Save</button>
@@ -590,112 +756,98 @@ function TodoCard({ todo, onToggle, onDelete, onSave }) {
   }
 
   // ── View mode ──
-  const hasDescription = !!todo.description?.trim();
-  const descPreviewLength = 100;
-  const descLong = hasDescription && todo.description.length > descPreviewLength;
-
   return (
     <>
-    {showPreview && (
-      <TodoPreviewModal
-        todo={todo}
-        onClose={() => setShowPreview(false)}
-        onToggle={onToggle}
-        onDelete={onDelete}
-        onEdit={() => { setShowPreview(false); setIsEditing(true); }}
-      />
-    )}
-    <div className="card card-sm" style={{
-      borderLeft: `4px solid ${p.color}`,
-      background: isDone ? 'var(--mist)' : 'white',
-      transition: 'box-shadow 0.2s',
-      cursor: 'pointer',
-    }}
-      onClick={() => setShowPreview(true)}
-      onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)'; }}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)'}
-    >
-      {/* Row 1: checkbox + title + actions */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <input
-          type="checkbox"
-          checked={isDone}
-          onChange={e => { e.stopPropagation(); onToggle(); }}
-          onClick={e => e.stopPropagation()}
-          style={{ width: 18, height: 18, cursor: 'pointer', accentColor: p.color, marginTop: 2, flexShrink: 0 }}
+      {showPreview && (
+        <TodoPreviewModal
+          todo={todo}
+          onClose={() => setShowPreview(false)}
+          onComplete={onComplete}
+          onReopen={onReopen}
+          onDelete={onDelete}
+          onEdit={() => { setShowPreview(false); setIsEditing(true); }}
         />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 15, fontWeight: 500,
-            textDecoration: isDone ? 'line-through' : 'none',
-            color: isDone ? 'rgba(13,13,13,0.4)' : 'var(--ink)',
-            lineHeight: 1.4, wordBreak: 'break-word',
-          }}>
-            <MarkdownRenderer content={todo.title} />
-          </div>
+      )}
+      <div className="card card-sm" style={{
+        borderLeft: `4px solid ${p.color}`,
+        background: isDone ? 'var(--mist)' : 'white',
+        transition: 'box-shadow 0.2s',
+        cursor: 'pointer',
+        marginBottom: 0,
+      }}
+        onClick={() => setShowPreview(true)}
+        onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)'; }}
+        onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)'}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          {/* Checkbox */}
+          <input type="checkbox" checked={isDone}
+            onChange={e => { e.stopPropagation(); isDone ? onReopen() : onComplete(); }}
+            onClick={e => e.stopPropagation()}
+            style={{ width: 18, height: 18, cursor: 'pointer', accentColor: p.color, marginTop: 2, flexShrink: 0 }} />
 
-          {/* Description preview */}
-          {hasDescription && (
-            <div style={{ marginTop: 6 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Title */}
+            <div style={{
+              fontSize: 15, fontWeight: 500,
+              textDecoration: isDone ? 'line-through' : 'none',
+              color: isDone ? 'rgba(13,13,13,0.4)' : 'var(--ink)',
+              lineHeight: 1.4, wordBreak: 'break-word',
+            }}>
+              <MarkdownRenderer content={todo.title} />
+            </div>
+
+            {/* Description preview */}
+            {todo.description?.trim() && (
               <div style={{
-                fontSize: 13, color: 'rgba(13,13,13,0.55)', lineHeight: 1.6,
-                display: expanded ? 'block' : '-webkit-box',
-                WebkitLineClamp: expanded ? 'unset' : 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: expanded ? 'visible' : 'hidden',
+                fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.5, marginTop: 4,
+                display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               }}>
-                <MarkdownRenderer content={todo.description} />
+                {todo.description}
               </div>
-              {descLong && (
-                <button className="btn btn-ghost btn-sm"
-                  onClick={() => setExpanded(s => !s)}
-                  style={{ fontSize: 11, padding: '2px 0', color: p.color, marginTop: 2 }}>
-                  {expanded ? 'Show less ↑' : 'Read more →'}
-                </button>
+            )}
+
+            {/* Meta row */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                background: p.bg, color: p.color, textTransform: 'uppercase', letterSpacing: 0.5,
+              }}>
+                {todo.priority}
+              </span>
+              <DueBadge dateStr={todo.due_date} isDone={isDone} />
+
+              {/* Time estimate badge on card */}
+              {todo.estimated_minutes && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                  background: 'rgba(13,13,13,0.04)', color: 'rgba(13,13,13,0.5)',
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                }}>
+                  ⏱ {fmtMinutes(todo.estimated_minutes)}
+                  {todo.actual_minutes && ` → ${fmtMinutes(todo.actual_minutes)}`}
+                </span>
+              )}
+
+              {isDone && todo.completed_at && (
+                <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.3)' }}>
+                  ✓ {format(parseISO(todo.completed_at), 'MMM d')}
+                </span>
               )}
             </div>
-          )}
+          </div>
 
-          {/* Row 2: meta badges */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Priority badge */}
-            <span style={{
-              fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-              background: p.bg, color: p.color,
-              textTransform: 'uppercase', letterSpacing: 0.5,
-            }}>
-              {todo.priority}
-            </span>
-
-            {/* Due date badge */}
-            <DueBadge dateStr={todo.due_date} isDone={isDone} />
-
-            {/* Completed at */}
-            {isDone && todo.completed_at && (
-              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.3)', letterSpacing: 0.3 }}>
-                ✓ {format(parseISO(todo.completed_at), 'MMM d')}
-              </span>
-            )}
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            <button className="btn btn-ghost"
+              onClick={e => { e.stopPropagation(); setIsEditing(true); }}
+              style={{ color: 'rgba(13,13,13,0.3)', padding: 6, fontSize: 13 }}>✎</button>
+            <button className="btn btn-ghost"
+              onClick={e => { e.stopPropagation(); onDelete(); }}
+              style={{ color: 'rgba(196,98,58,0.5)', padding: 6, fontSize: 13 }}>✕</button>
           </div>
         </div>
-
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
-          <button className="btn btn-ghost"
-            onClick={e => { e.stopPropagation(); setIsEditing(true); }}
-            title="Edit"
-            style={{ color: 'rgba(13,13,13,0.3)', padding: 6, fontSize: 13, lineHeight: 1 }}>
-            ✎
-          </button>
-          <button className="btn btn-ghost"
-            onClick={e => { e.stopPropagation(); onDelete(); }}
-            title="Delete"
-            style={{ color: 'rgba(196,98,58,0.5)', padding: 6, fontSize: 13, lineHeight: 1 }}>
-            ✕
-          </button>
-        </div>
       </div>
-    </div>
     </>
   );
 }

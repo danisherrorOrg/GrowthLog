@@ -7,6 +7,7 @@ class TodoModel(BaseModel):
     priority: Optional[str] = "medium"
     category_id: Optional[str] = None
     due_date: Optional[str] = None
+    estimated_minutes: Optional[int] = None
 
 class TodoUpdateModel(BaseModel):
     title: Optional[str] = None
@@ -15,3 +16,5 @@ class TodoUpdateModel(BaseModel):
     priority: Optional[str] = None
     category_id: Optional[str] = None
     due_date: Optional[str] = None
+    estimated_minutes: Optional[int] = None
+    actual_minutes: Optional[int] = None

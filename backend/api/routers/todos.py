@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
+from pydantic import BaseModel
+from typing import Optional
 
 from core.database import db
 from utils.cache import utcnow
@@ -8,6 +10,7 @@ from api.deps import get_current_user
 from models.todos import TodoModel, TodoUpdateModel
 
 router = APIRouter(prefix="/todos", tags=["Todos"])
+
 
 @router.get("")
 def get_todos(status: str = None, priority: str = None, current_user=Depends(get_current_user)):
@@ -20,6 +23,7 @@ def get_todos(status: str = None, priority: str = None, current_user=Depends(get
 
     cursor = db.todos.find(query).sort("created_at", -1)
     return serialize_list(cursor)
+
 
 @router.post("")
 def create_todo(data: TodoModel, current_user=Depends(get_current_user)):
@@ -36,11 +40,12 @@ def create_todo(data: TodoModel, current_user=Depends(get_current_user)):
     log_activity(uid, "create", "todo", result.inserted_id, f"Added to-do: {data.title}")
     return serialize(todo)
 
+
 @router.put("/{todo_id}")
 def update_todo(todo_id: str, data: TodoUpdateModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     update_dict = clean_update(data.model_dump(exclude_unset=True))
-    
+
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields provided for update")
 
@@ -56,6 +61,7 @@ def update_todo(todo_id: str, data: TodoUpdateModel, current_user=Depends(get_cu
     log_activity(uid, "update", "todo", todo_id, "Updated to-do details")
     return serialize(updated_todo)
 
+
 @router.delete("/{todo_id}")
 def delete_todo(todo_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
@@ -66,12 +72,25 @@ def delete_todo(todo_id: str, current_user=Depends(get_current_user)):
     log_activity(uid, "delete", "todo", todo_id, "Deleted a to-do")
     return {"success": True}
 
+
+class CompletePayload(BaseModel):
+    actual_minutes: Optional[int] = None
+
+
 @router.patch("/{todo_id}/complete")
-def complete_todo(todo_id: str, current_user=Depends(get_current_user)):
+def complete_todo(
+    todo_id: str,
+    current_user=Depends(get_current_user),
+    data: CompletePayload = CompletePayload(),
+):
     uid = str(current_user["_id"])
+    update_set = {"status": "done", "completed_at": utcnow()}
+    if data.actual_minutes is not None:
+        update_set["actual_minutes"] = data.actual_minutes
+
     result = db.todos.update_one(
         {"_id": ObjectId(todo_id), "user_id": uid},
-        {"$set": {"status": "done", "completed_at": utcnow()}}
+        {"$set": update_set},
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Todo not found")
