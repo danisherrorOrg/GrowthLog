@@ -31,20 +31,20 @@ Now I have a full picture of every page. Here's the complete enhancement audit:
 ### 🔴 High Impact (Noticeable UX Gaps)
 
 ---
-
+<!-- 
 #### 1. **`Todos.js` → Action Board**
 - **Loading state** just says `"Loading..."` — raw text, no skeleton cards like other pages.
 - **Due date field** exists in the form model but is never rendered in the UI — users set it but never see it on the card.
 - **No drag-to-reorder** — for a task board this feels like a big miss.
-- **Priority indicators** are just a tiny 8px colored dot — easy to miss. Could be a left-border color (like manifestion progress entries) for better visibility.
+- **Priority indicators** are just a tiny 8px colored dot — easy to miss. Could be a left-border color (like manifestion progress entries) for better visibility. -->
 
 ---
 
-#### 2. **`Thoughts.js` → Mind Garden**
+<!-- #### 2. **`Thoughts.js` → Mind Garden**
 - **No character count or word limit** on the capture textarea — thoughts get arbitrarily long.
 - **Thought cards are full-width unrestricted** — long thoughts make cards huge with no truncation/expand pattern (unlike BookDetail/GoalDetail where the card-expand pattern was applied).
 - **No pin/favorite** feature — you can't surface important thoughts.
-- **No search** to find a thought by keyword across the garden.
+- **No search** to find a thought by keyword across the garden. -->
 
 ---
 
