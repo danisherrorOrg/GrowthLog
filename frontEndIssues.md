@@ -78,6 +78,7 @@
 ### 🟢 Low Impact (Polish & Convenience)
 
 ---
+----> check the below code if working or not
 
 #### 10. **`Login.js` / `Register.js`**
 - No "show/hide password" toggle on password fields.
