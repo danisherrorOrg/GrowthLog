@@ -23,14 +23,13 @@ def add_thought(data: ThoughtModel, current_user=Depends(get_current_user)):
     t_dict["user_id"] = uid
     t_dict["created_at"] = utcnow()
     t_dict["is_bookmarked"] = False
-    
+
     # Prioritize manual sentiment if provided
     if not t_dict.get("sentiment"):
         sentiment = analyze_sentiment(t_dict["content"])
         t_dict["sentiment"] = sentiment["label"]
         t_dict["sentiment_score"] = sentiment["score"]
     else:
-        # If sentiment is provided, score it as 1.0 (manual)
         t_dict["sentiment_score"] = 1.0
 
     result = db.thoughts.insert_one(t_dict)
@@ -43,7 +42,7 @@ def add_thought(data: ThoughtModel, current_user=Depends(get_current_user)):
 def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     update_dict = clean_update(data.model_dump(exclude_unset=True))
-    
+
     if not update_dict:
         raise HTTPException(status_code=400, detail="No fields provided for update")
 
@@ -53,7 +52,6 @@ def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depen
         update_dict["sentiment"] = sentiment["label"]
         update_dict["sentiment_score"] = sentiment["score"]
     elif "sentiment" in update_dict:
-        # If sentiment is manually provided, score it as 1.0
         update_dict["sentiment_score"] = 1.0
 
     result = db.thoughts.update_one(
@@ -67,6 +65,21 @@ def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depen
     from utils.activity import log_activity
     log_activity(uid, "update", "thought", thought_id, "Updated a thought")
     return serialize(updated_thought)
+
+@router.patch("/{thought_id}/pin")
+def toggle_pin(thought_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    thought = db.thoughts.find_one({"_id": ObjectId(thought_id), "user_id": uid})
+    if not thought:
+        raise HTTPException(status_code=404, detail="Thought not found")
+
+    new_val = not thought.get("is_bookmarked", False)
+    db.thoughts.update_one(
+        {"_id": ObjectId(thought_id)},
+        {"$set": {"is_bookmarked": new_val}}
+    )
+    updated = db.thoughts.find_one({"_id": ObjectId(thought_id)})
+    return serialize(updated)
 
 @router.delete("/{thought_id}")
 def delete_thought(thought_id: str, current_user=Depends(get_current_user)):
