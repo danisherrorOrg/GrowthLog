@@ -6,6 +6,19 @@ import { parseISO, format } from 'date-fns';
 
 const LIMIT = 50;
 
+const MODULE_OPTIONS = [
+  { value: '', label: 'All Modules' },
+  { value: 'goal', label: 'Goals ◇' },
+  { value: 'todo', label: 'To-Dos ☑' },
+  { value: 'reframe', label: 'Reframes 🧠' },
+  { value: 'book', label: 'Library 📚' },
+  { value: 'quote', label: 'Quotes 🗝️' },
+  { value: 'daily_log', label: 'Daily Logs ✦' },
+  { value: 'snapshot', label: 'Snapshots ○' },
+  { value: 'category', label: 'Categories ▦' },
+  { value: 'manifestation', label: 'Manifestations ✧' },
+];
+
 export default function ActivityLog() {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +27,7 @@ export default function ActivityLog() {
   const [expandedMonth, setExpandedMonth] = useState(null);
   const [expandedDate, setExpandedDate] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [moduleFilter, setModuleFilter] = useState('');
 
   const fetchActivities = async (skip = 0) => {
     if (skip === 0) setLoading(true);
@@ -44,18 +58,29 @@ export default function ActivityLog() {
   };
 
   const filteredActivities = useMemo(() => {
-    if (!searchQuery.trim()) return activities;
-    const query = searchQuery.toLowerCase();
-    return activities.filter(act => 
-      act.description.toLowerCase().includes(query) || 
-      act.entity_type.toLowerCase().includes(query) ||
-      act.action.toLowerCase().includes(query)
-    );
-  }, [activities, searchQuery]);
+    let result = activities;
+    
+    // Module filter
+    if (moduleFilter) {
+      result = result.filter(act => act.entity_type === moduleFilter);
+    }
+
+    // Search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(act =>
+        act.description.toLowerCase().includes(query) ||
+        act.entity_type.toLowerCase().includes(query) ||
+        act.action.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [activities, searchQuery, moduleFilter]);
 
   const groupedData = useMemo(() => {
     const groups = {};
-    
+
     filteredActivities.forEach(act => {
       const dateObj = act.created_at ? parseISO(act.created_at) : null;
       if (!dateObj) return;
@@ -65,7 +90,7 @@ export default function ActivityLog() {
 
       if (!groups[monthKey]) groups[monthKey] = { dates: {} };
       if (!groups[monthKey].dates[dateKey]) groups[monthKey].dates[dateKey] = [];
-      
+
       groups[monthKey].dates[dateKey].push(act);
     });
 
@@ -89,6 +114,8 @@ export default function ActivityLog() {
       case 'quote': return '🗝️';
       case 'daily_log': return '✦';
       case 'snapshot': return '○';
+      case 'manifestation': return '✧';
+      case 'category': return '▦';
       default: return '◈';
     }
   };
@@ -103,143 +130,170 @@ export default function ActivityLog() {
     }
   };
 
-  if (loading) return <div className="page-body">Loading audit trail...</div>;
+  if (loading) return (
+    <div className="page-body">
+      <div className="skeleton" style={{ height: 60, width: '40%', marginBottom: 32 }} />
+      {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 100, marginBottom: 16, borderRadius: 16 }} />)}
+    </div>
+  );
 
   return (
     <div>
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
           <div>
-            <h2>Growth Timeline ⏳</h2>
-            <p>Chronological history of your evolution.</p>
+            <h2 style={{ fontFamily: 'Fraunces', fontSize: 32 }}>Growth Timeline ⏳</h2>
+            <p>Chronological history of your evolution across all modules.</p>
           </div>
-          <div style={{ position: 'relative', minWidth: 250 }}>
-             <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
-             <input 
-               type="text" 
-               className="form-input" 
-               placeholder="Search activities..." 
-               value={searchQuery}
-               onChange={e => setSearchQuery(e.target.value)}
-               style={{ paddingLeft: 36, borderRadius: 20, height: 40 }}
-             />
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', minWidth: 200 }}>
+              <select
+                className="form-select"
+                value={moduleFilter}
+                onChange={e => setModuleFilter(e.target.value)}
+                style={{ height: 44, borderRadius: 22, padding: '0 16px 0 36px', fontSize: 13, background: 'var(--paper)' }}
+              >
+                {MODULE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: 14 }}>📍</span>
+            </div>
+
+            <div style={{ position: 'relative', minWidth: 240 }}>
+               <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>🔍</span>
+               <input
+                 type="text"
+                 className="form-input"
+                 placeholder="Search descriptions..."
+                 value={searchQuery}
+                 onChange={e => setSearchQuery(e.target.value)}
+                 style={{ paddingLeft: 40, borderRadius: 22, height: 44, border: 'none', background: 'var(--paper)' }}
+               />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="page-body" style={{ maxWidth: 800 }}>
+      <div className="page-body" style={{ maxWidth: 840 }}>
         {activities.length === 0 ? (
           <div className="empty-state">No activity recorded yet! Your story begins here.</div>
         ) : filteredActivities.length === 0 ? (
-          <div className="empty-state">No activities match your search.</div>
+          <div className="empty-state">No activities match your filters.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {sortedMonths.map(month => {
-              const isMonthExpanded = expandedMonth === month;
+              const isMonthExpanded = expandedMonth === month || sortedMonths.length === 1; // expand first/only month by default
               const monthData = groupedData[month];
               const monthDates = Object.keys(monthData.dates).sort((a, b) => b.localeCompare(a));
               const totalMonthActions = Object.values(monthData.dates).flat().length;
 
               return (
-                <div key={month} style={{ 
-                  background: 'white', 
-                  borderRadius: 20, 
-                  border: '1px solid rgba(13,13,13,0.06)', 
+                <div key={month} style={{
+                  background: 'white',
+                  borderRadius: 24,
+                  border: '1px solid rgba(13,13,13,0.06)',
                   overflow: 'hidden',
-                  boxShadow: isMonthExpanded ? '0 4px 20px rgba(0,0,0,0.03)' : 'none'
+                  boxShadow: isMonthExpanded ? '0 12px 32px rgba(0,0,0,0.04)' : 'none',
+                  transition: 'all 0.3s ease'
                 }}>
                   {/* Month Header */}
-                  <div 
-                    onClick={() => setExpandedMonth(isMonthExpanded ? null : month)}
-                    style={{ 
-                      padding: '16px 24px', 
-                      background: isMonthExpanded ? 'var(--ink)' : 'white', 
+                  <div
+                    onClick={() => setExpandedMonth(isMonthExpanded && expandedMonth === month ? null : month)}
+                    style={{
+                      padding: '24px 32px',
+                      background: isMonthExpanded ? 'var(--ink)' : 'white',
                       color: isMonthExpanded ? 'white' : 'var(--ink)',
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ fontFamily: 'Fraunces', fontSize: 18 }}>{month}</span>
-                      <span className="tag" style={{ 
-                        background: isMonthExpanded ? 'rgba(255,255,255,0.1)' : 'var(--mist)', 
-                        color: isMonthExpanded ? 'white' : 'rgba(13,13,13,0.5)', 
-                        fontSize: 10 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <span style={{ fontFamily: 'Fraunces', fontSize: 22 }}>{month}</span>
+                      <span className="tag" style={{
+                        background: isMonthExpanded ? 'rgba(255,255,255,0.15)' : 'rgba(13,13,13,0.04)',
+                        color: isMonthExpanded ? 'white' : 'rgba(13,13,13,0.4)',
+                        fontSize: 11,
+                        fontWeight: 600
                       }}>
-                        {totalMonthActions} actions
+                        {totalMonthActions} entries
                       </span>
                     </div>
-                    <span>{isMonthExpanded ? '▴' : '▾'}</span>
+                    <span style={{ fontSize: 20 }}>{isMonthExpanded ? '▴' : '▾'}</span>
                   </div>
 
                   {/* Month Content (Dates) */}
                   {isMonthExpanded && (
                     <div style={{ padding: '8px 0' }}>
-                      {monthDates.map(date => {
-                        const isDateExpanded = expandedDate === date;
+                      {monthDates.map((date, idx) => {
+                        const isDateExpanded = expandedDate === date || (idx === 0 && !expandedDate);
                         const items = monthData.dates[date];
                         const d = parseISO(date);
 
                         return (
-                          <div key={date} style={{ borderBottom: '1px solid rgba(0,0,0,0.02)' }}>
-                            <div 
-                              onClick={() => setExpandedDate(isDateExpanded ? null : date)}
-                              style={{ 
-                                padding: '12px 24px', 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
+                          <div key={date} style={{ borderBottom: idx === monthDates.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.03)' }}>
+                            <div
+                              onClick={() => setExpandedDate(isDateExpanded ? 'NONE' : date)}
+                              style={{
+                                padding: '16px 32px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
                                 cursor: 'pointer',
-                                background: isDateExpanded ? 'rgba(107,140,107,0.05)' : 'transparent',
+                                background: isDateExpanded ? 'rgba(107,140,107,0.04)' : 'transparent',
                                 transition: 'all 0.2s ease'
                               }}
                             >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                   <div style={{ width: 4, height: 4, background: 'var(--sage)', borderRadius: '50%' }} />
-                                   <span style={{ fontSize: 14, fontWeight: isDateExpanded ? 600 : 400, color: 'var(--ink)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                   <div style={{ width: 6, height: 6, background: 'var(--sage)', borderRadius: '50%' }} />
+                                   <span style={{ fontSize: 15, fontWeight: isDateExpanded ? 700 : 500, color: 'var(--ink)' }}>
                                      {format(d, 'EEEE, MMM do')}
                                    </span>
                                 </div>
-                                <span style={{ fontSize: 12, opacity: 0.4 }}>{items.length} items</span>
+                                <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', fontWeight: 500 }}>{items.length} items ▾</span>
                             </div>
 
                             {/* Date Items */}
                             {isDateExpanded && (
-                              <div style={{ padding: '0 24px 16px 40px' }}>
+                              <div style={{ padding: '8px 32px 24px 44px' }}>
                                  {items.map(act => (
-                                   <div key={act.id} style={{ 
-                                     display: 'flex', 
-                                     gap: 12, 
-                                     padding: '12px 0', 
-                                     borderBottom: '1px solid rgba(13,13,13,0.02)'
+                                   <div key={act.id} style={{
+                                     display: 'flex',
+                                     gap: 16,
+                                     padding: '16px 0',
+                                     borderBottom: '1px solid rgba(13,13,13,0.03)',
+                                     animation: 'fadeIn 0.3s ease'
                                    }}>
-                                      <div style={{ 
-                                        width: 32, height: 32, borderRadius: '50%', background: 'var(--mist)', 
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0
+                                      <div style={{
+                                        width: 36, height: 36, borderRadius: '12px', background: 'var(--mist)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0
                                       }}>
                                         {getActivityIcon(act.entity_type)}
                                       </div>
                                       <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: 13 }}>
-                                          <span className="tag" style={{ 
-                                            background: getActionColor(act.action), 
-                                            color: act.action === 'delete' ? 'white' : 'var(--ink)', 
-                                            padding: '1px 6px', 
-                                            fontSize: 9, 
-                                            marginRight: 8,
-                                            textTransform: 'uppercase'
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                                          <span className="tag" style={{
+                                            background: getActionColor(act.action),
+                                            color: 'white',
+                                            padding: '2px 8px',
+                                            fontSize: 10,
+                                            fontWeight: 800,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: 0.5
                                           }}>
                                             {act.action}
                                           </span>
-                                          <strong>{act.entity_type.replace('_', ' ')}</strong>
+                                          <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                                            {act.entity_type.replace('_', ' ')}
+                                          </span>
+                                          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(13,13,13,0.3)', fontWeight: 500 }}>
+                                            {format(parseISO(act.created_at), 'h:mm a')}
+                                          </span>
                                         </div>
-                                        <div style={{ fontSize: 14, marginTop: 4, color: 'var(--ink)' }}>{act.description}</div>
-                                        <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 2 }}>
-                                          {format(parseISO(act.created_at), 'h:mm a')}
-                                        </div>
+                                        <div style={{ fontSize: 15, color: 'var(--ink)', lineHeight: 1.5 }}>{act.description}</div>
                                       </div>
                                    </div>
                                  ))}
@@ -255,13 +309,13 @@ export default function ActivityLog() {
             })}
 
             {hasMore && (
-              <button 
-                className="btn btn-outline" 
-                onClick={handleLoadMore} 
+              <button
+                className="btn btn-outline"
+                onClick={handleLoadMore}
                 disabled={loadingMore}
-                style={{ alignSelf: 'center', marginTop: 16, padding: '12px 40px', borderRadius: 30 }}
+                style={{ alignSelf: 'center', marginTop: 32, padding: '14px 48px', borderRadius: 30, fontSize: 14, fontWeight: 600 }}
               >
-                {loadingMore ? 'Loading more history...' : 'Load Older History ↓'}
+                {loadingMore ? 'Retrieving history...' : 'Show Older Activity ↓'}
               </button>
             )}
           </div>

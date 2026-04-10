@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const PROGRESS_TYPES = [
   { value: 'improvement', label: '📈 Improvement', color: 'var(--sage)' },
@@ -21,6 +22,7 @@ export default function ManifestationDetail() {
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   // Progress
   const [showProgressForm, setShowProgressForm] = useState(false);
@@ -92,11 +94,20 @@ export default function ManifestationDetail() {
     finally { setSaving(false); }
   };
 
-  const handleDeleteProgress = async (entryId) => {
-    if (!window.confirm('Delete this progress entry?')) return;
-    await API.delete(`/manifestations/${manifestationId}/progress/${entryId}`);
-    toast.success('Deleted');
-    load();
+  const handleDeleteProgress = (entryId) => {
+    setConfirm({
+      title: 'Delete Progress?',
+      message: 'Are you sure you want to remove this manifestation progress entry?',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/manifestations/${manifestationId}/progress/${entryId}`);
+          toast.success('Deleted');
+          load();
+        } catch { toast.error('Failed to delete'); }
+      }
+    });
   };
 
   const handleAddNote = async () => {
@@ -114,11 +125,20 @@ export default function ManifestationDetail() {
     finally { setSaving(false); }
   };
 
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Delete this note?')) return;
-    await API.delete(`/manifestations/${manifestationId}/notes/${noteId}`);
-    toast.success('Note deleted');
-    load();
+  const handleDeleteNote = (noteId) => {
+    setConfirm({
+      title: 'Delete Note?',
+      message: 'Are you sure you want to remove this sync note?',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/manifestations/${manifestationId}/notes/${noteId}`);
+          toast.success('Note deleted');
+          load();
+        } catch { toast.error('Failed to delete note'); }
+      }
+    });
   };
 
   const handleUpdateNote = async (noteId) => {
@@ -158,11 +178,20 @@ export default function ManifestationDetail() {
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this vision permanently?')) return;
-    await API.delete(`/manifestations/${manifestationId}`);
-    toast.success('Vision deleted');
-    navigate('/manifestations');
+  const handleDelete = () => {
+    setConfirm({
+      title: 'Delete Vision?',
+      message: `Are you sure you want to permanently delete this manifestation vision and all its associated progress and notes?`,
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/manifestations/${manifestationId}`);
+          toast.success('Vision deleted');
+          navigate('/manifestations');
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
+      }
+    });
   };
 
   const getProgressTypeInfo = (typeVal) => {
@@ -615,6 +644,8 @@ export default function ManifestationDetail() {
           </div>
         </div>
       )}
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

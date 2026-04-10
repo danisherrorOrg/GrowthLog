@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 
 const SORT_OPTIONS = [
@@ -21,6 +22,7 @@ export default function GoalDetail() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   // Micro-goals
   const [mgText, setMgText] = useState('');
@@ -89,11 +91,20 @@ export default function GoalDetail() {
 
   };
 
-  const handleDeleteNote = async (noteId) => {
-    if (!window.confirm('Delete this note?')) return;
-    await API.delete(`/goals/${goalId}/notes/${noteId}`);
-    toast.success('Note deleted');
-    load();
+  const handleDeleteNote = (noteId) => {
+    setConfirm({
+      title: 'Delete Note?',
+      message: 'Are you sure you want to remove this note from your goal records?',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goalId}/notes/${noteId}`);
+          toast.success('Note deleted');
+          load();
+        } catch { toast.error('Failed to delete note'); }
+      }
+    });
   };
 
   const handleUpdateNote = async (noteId) => {
@@ -147,10 +158,19 @@ export default function GoalDetail() {
 
   };
 
-  const handleDeleteMg = async (mgId) => {
-    if (!window.confirm('Delete this?')) return;
-    await API.delete(`/goals/${goalId}/micro-goals/${mgId}`);
-    load();
+  const handleDeleteMg = (mgId) => {
+    setConfirm({
+      title: 'Remove Step?',
+      message: 'Are you sure you want to delete this implementation step?',
+      confirmLabel: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goalId}/micro-goals/${mgId}`);
+          load();
+        } catch { toast.error('Failed to delete step'); }
+      }
+    });
   };
 
   const handleAddReflection = async () => {
@@ -167,11 +187,20 @@ export default function GoalDetail() {
     finally { setSaving(false); }
   };
 
-  const handleDeleteReflection = async (reflectionId) => {
-    if (!window.confirm('Delete this reflection?')) return;
-    await API.delete(`/goals/${goalId}/reflections/${reflectionId}`);
-    toast.success('Reflection deleted');
-    load();
+  const handleDeleteReflection = (reflectionId) => {
+    setConfirm({
+      title: 'Delete Reflection?',
+      message: 'Are you sure you want to remove this insight from your evolution track?',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goalId}/reflections/${reflectionId}`);
+          toast.success('Reflection deleted');
+          load();
+        } catch { toast.error('Failed to delete reflection'); }
+      }
+    });
   };
 
   const handleUpdateReflection = async (reflectionId) => {
@@ -213,11 +242,20 @@ export default function GoalDetail() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(`Delete "${goal.title}"? This cannot be undone.`)) return;
-    await API.delete(`/goals/${goalId}`);
-    toast.success('Goal deleted');
-    navigate('/goals');
+  const handleDelete = () => {
+    setConfirm({
+      title: 'Delete Goal Forever?',
+      message: `Are you sure you want to delete "${goal.title}"? This will permanently remove all associated notes, steps, and history.`,
+      confirmLabel: 'Delete Permanently',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goalId}`);
+          toast.success('Goal deleted');
+          navigate('/goals');
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete goal')); }
+      }
+    });
   };
 
   if (loading) return (
@@ -728,6 +766,8 @@ export default function GoalDetail() {
           </div>
         ) : null;
       })()}
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

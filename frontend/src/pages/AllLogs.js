@@ -5,24 +5,30 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
+
+const LIMIT = 15;
 
 export default function AllLogs() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [expandedLog, setExpandedLog] = useState(null); // date string
+  const [confirm, setConfirm] = useState(null);
 
-  const loadData = async () => {
+  const loadInitialData = async () => {
+    setLoading(true);
     try {
       const [logsRes, catsRes] = await Promise.all([
-        API.get('/logs?days=365'),
+        API.get(`/logs?days=0&limit=${LIMIT}&skip=0`),
         API.get('/categories')
       ]);
-      
-      const sortedLogs = logsRes.data.sort((a, b) => b.date.localeCompare(a.date));
-      setLogs(sortedLogs);
+      setLogs(logsRes.data);
       setCategories(catsRes.data);
+      setHasMore(logsRes.data.length === LIMIT);
     } catch (e) {
       toast.error(getErrorMessage(e, 'Failed to load history'));
     } finally {
@@ -30,21 +36,42 @@ export default function AllLogs() {
     }
   };
 
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await API.get(`/logs?days=0&limit=${LIMIT}&skip=${logs.length}`);
+      setLogs(prev => [...prev, ...res.data]);
+      setHasMore(res.data.length === LIMIT);
+    } catch (e) {
+      toast.error('Failed to load more logs');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   useEffect(() => {
-    loadData();
+    loadInitialData();
   }, []);
 
   const getCategory = (id) => categories.find(c => c.id === id);
 
-  const handleDelete = async (date) => {
-    if (!window.confirm(`Delete the entire daily log for ${format(parseISO(date), 'MMMM d, yyyy')}? This cannot be undone.`)) return;
-    try {
-      await API.delete(`/logs/${date}`);
-      toast.success('Log deleted');
-      setLogs((prev) => prev.filter(l => l.date !== date));
-    } catch (e) {
-      toast.error(getErrorMessage(e, 'Failed to delete log'));
-    }
+  const handleDelete = (date) => {
+    setConfirm({
+      title: 'Delete Daily Log?',
+      message: `Are you sure you want to delete the entire log for ${format(parseISO(date), 'MMMM d, yyyy')}? This includes all dimension entries and the day's peak highlight.`,
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/logs/${date}`);
+          toast.success('Log deleted');
+          setLogs((prev) => prev.filter(l => l.date !== date));
+        } catch (e) {
+          toast.error(getErrorMessage(e, 'Failed to delete log'));
+        }
+      }
+    });
   };
 
   const toggleExpand = (date) => {
@@ -80,22 +107,22 @@ export default function AllLogs() {
             {logs.map(log => {
               const isExpanded = expandedLog === log.date;
               return (
-                <div key={log.id} className="card" style={{ 
-                  padding: 0, 
+                <div key={log.id} className="card" style={{
+                  padding: 0,
                   overflow: 'hidden',
                   border: isExpanded ? '1px solid var(--sage)' : '1px solid transparent',
                   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isExpanded ? '0 12px 24px rgba(0,0,0,0.1)' : 'none'
+                  boxShadow: isExpanded ? '0 12px 32px rgba(0,0,0,0.06)' : 'none'
                 }}>
                   {/* Summary Header */}
-                  <div 
+                  <div
                     onClick={() => toggleExpand(log.date)}
                     className="log-header-row"
-                    style={{ 
-                      padding: '24px 30px', 
+                    style={{
+                      padding: '24px 30px',
                       cursor: 'pointer',
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       background: isExpanded ? 'rgba(107,140,107,0.08)' : 'white'
                     }}
@@ -117,7 +144,7 @@ export default function AllLogs() {
                         <span style={{ color: 'var(--sage)' }}>{log.entries?.length || 0} Dimensions Recorded</span>
                       </div>
                     </div>
-                    
+
                     <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         {log.entries?.slice(0, 5).map(e => {
@@ -132,7 +159,7 @@ export default function AllLogs() {
 
                   {/* Expanded Detail */}
                   {isExpanded && (
-                    <div style={{ padding: '0 30px 30px', borderTop: '1px solid rgba(13,13,13,0.05)' }}>
+                    <div style={{ padding: '0 30px 30px', borderTop: '1px solid rgba(13,13,13,0.05)', animation: 'slideUp 0.3s ease' }}>
                       <div style={{ marginTop: 24 }}>
                         {log.highlight && (
                           <div style={{ marginBottom: 24, padding: '20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '5px solid var(--sage)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -179,9 +206,22 @@ export default function AllLogs() {
                 </div>
               );
             })}
+
+            {hasMore && (
+              <button
+                className="btn btn-outline"
+                onClick={loadMore}
+                disabled={loadingMore}
+                style={{ alignSelf: 'center', marginTop: 16, padding: '12px 48px', borderRadius: 30, fontSize: 14, fontWeight: 600 }}
+              >
+                {loadingMore ? 'Retrieving records...' : 'Load Older History ↓'}
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

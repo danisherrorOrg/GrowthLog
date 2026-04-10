@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function BookDetail() {
   const { bookId } = useParams();
@@ -13,6 +14,7 @@ export default function BookDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // overview, wisdom, bookmarks
   const [editMode, setEditMode] = useState(false);
+  const [confirm, setConfirm] = useState(null);
   
   // Forms
   const [basicForm, setBasicForm] = useState({ 
@@ -90,16 +92,23 @@ export default function BookDetail() {
     }
   };
 
-  const deleteWisdom = async (idx) => {
-    if (!window.confirm("Remove this entry?")) return;
-    const newWisdom = book.wisdom.filter((_, i) => i !== idx);
-    try {
-      const res = await API.put(`/books/${bookId}`, { wisdom: newWisdom });
-      setBook(res.data);
-      toast.success("Wisdom removed");
-    } catch (e) {
-      toast.error(getErrorMessage(e, "Failed to remove wisdom"));
-    }
+  const deleteWisdom = (idx) => {
+    setConfirm({
+      title: 'Remove Wisdom Entry?',
+      message: 'Are you sure you want to delete this specific lesson and its internal reflection?',
+      confirmLabel: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        const newWisdom = book.wisdom.filter((_, i) => i !== idx);
+        try {
+          const res = await API.put(`/books/${bookId}`, { wisdom: newWisdom });
+          setBook(res.data);
+          toast.success("Wisdom removed");
+        } catch (e) {
+          toast.error(getErrorMessage(e, "Failed to remove wisdom"));
+        }
+      }
+    });
   };
 
   const handleUpdateBookmark = async (idx, data) => {
@@ -119,16 +128,23 @@ export default function BookDetail() {
     }
   };
 
-  const deleteBookmark = async (idx) => {
-    if (!window.confirm("Remove this bookmark?")) return;
-    const newBookmarks = book.bookmarks.filter((_, i) => i !== idx);
-    try {
-      const res = await API.put(`/books/${bookId}`, { bookmarks: newBookmarks });
-      setBook(res.data);
-      toast.success("Bookmark removed");
-    } catch (e) {
-      toast.error(getErrorMessage(e, "Failed to remove bookmark"));
-    }
+  const deleteBookmark = (idx) => {
+    setConfirm({
+      title: 'Remove Bookmark?',
+      message: 'Are you sure you want to delete this bookmark?',
+      confirmLabel: 'Remove',
+      danger: true,
+      onConfirm: async () => {
+        const newBookmarks = book.bookmarks.filter((_, i) => i !== idx);
+        try {
+          const res = await API.put(`/books/${bookId}`, { bookmarks: newBookmarks });
+          setBook(res.data);
+          toast.success("Bookmark removed");
+        } catch (e) {
+          toast.error(getErrorMessage(e, "Failed to remove bookmark"));
+        }
+      }
+    });
   };
 
   if (loading) return <div className="page-body">Loading...</div>;
@@ -496,6 +512,7 @@ export default function BookDetail() {
           </div>
         </div>
       )}
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

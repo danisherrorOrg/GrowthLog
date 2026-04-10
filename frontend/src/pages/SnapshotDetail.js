@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
-
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function SnapshotDetail() {
   const { snapshotId } = useParams();
@@ -13,12 +13,13 @@ export default function SnapshotDetail() {
   const [snap, setSnap] = useState(null);
   const [snapshots, setSnapshots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('reflections'); // reflections, contrast, settings
   const [compareId, setCompareId] = useState('');
   const [compareSnap, setCompareSnap] = useState(null);
   const [comparing, setComparing] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ description: '', values: '', mood: 5 });
   const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   const load = async () => {
     try {
@@ -27,9 +28,7 @@ export default function SnapshotDetail() {
       setSnapshots(all.data);
       setForm({ description: s.data.description, values: s.data.values?.join(', ') || '', mood: s.data.mood });
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to load snapshot')); navigate('/snapshots'); }
-
     finally { setLoading(false); }
-
   };
 
   useEffect(() => { load(); }, [snapshotId]);
@@ -41,9 +40,7 @@ export default function SnapshotDetail() {
       const r = await API.get(`/snapshots/compare?snap1_id=${snapshotId}&snap2_id=${compareId}`);
       setCompareSnap(r.data.snapshot2);
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to compare')); }
-
     finally { setComparing(false); }
-
   };
 
   const handleSave = async () => {
@@ -56,24 +53,32 @@ export default function SnapshotDetail() {
         mood: form.mood,
       });
       toast.success('Snapshot updated!');
-      setEditMode(false);
       load();
+      setActiveTab('reflections');
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to save')); }
-
     finally { setSaving(false); }
-
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('Delete this snapshot permanently?')) return;
-    await API.delete(`/snapshots/${snapshotId}`);
-    toast.success('Snapshot deleted');
-    navigate('/snapshots');
+  const handleDelete = () => {
+    setConfirm({
+      title: 'Delete Snapshot?',
+      message: 'This will permanently remove this historical record. This action cannot be undone.',
+      confirmLabel: 'Delete Permanently',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/snapshots/${snapshotId}`);
+          toast.success('Snapshot deleted');
+          navigate('/snapshots');
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
+      }
+    });
   };
 
   if (loading) return (
     <div className="page-body">
-      {[1, 2].map(i => <div key={i} className="skeleton" style={{ height: 200, marginBottom: 16 }} />)}
+      <div className="skeleton" style={{ height: 60, width: '30%', marginBottom: 32 }} />
+      <div className="skeleton" style={{ height: 400, borderRadius: 16 }} />
     </div>
   );
 
@@ -84,138 +89,187 @@ export default function SnapshotDetail() {
   return (
     <div>
       <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <button className="btn btn-ghost btn-sm" onClick={() => navigate('/snapshots')} style={{ color: 'rgba(13,13,13,0.4)', padding: '4px 8px' }}>
             ← Snapshots
           </button>
         </div>
-        <h2>Snapshot Detail ○</h2>
-        <p style={{ color: 'rgba(13,13,13,0.45)' }}>{format(parseISO(snap.date), 'EEEE, MMMM d, yyyy')}</p>
-      </div>
-
-      <div className="page-body" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 32, alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          {/* Main Record Card */}
-          <div className="card" style={{ padding: 40 }}>
-            {editMode ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ fontSize: 20, margin: 0 }}>Edit Record</h3>
-                  <button className="btn btn-ghost" onClick={() => setEditMode(false)}>✕</button>
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Journal Entry</label>
-                  <textarea className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                    style={{ minHeight: 240, fontSize: 16, lineHeight: 1.6 }} />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                   <div className="form-group">
-                     <label className="form-label">Values (comma separated)</label>
-                     <input className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} />
-                   </div>
-                   <div className="form-group">
-                     <label className="form-label">Mood Score ({form.mood}/10)</label>
-                     <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
-                       onChange={e => setForm({ ...form, mood: +e.target.value })}
-                       style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
-                   </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button className="btn btn-empty" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
-                  <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
-                    {saving ? 'Saving...' : 'Update Snapshot'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ fontSize: 36, fontFamily: 'Fraunces', color: 'var(--sage)' }}>{snap.mood}<span style={{ fontSize: 16, opacity: 0.3 }}>/10</span></div>
-                    <div>
-                       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>Mood Score</div>
-                       <div style={{ fontSize: 13, fontWeight: 500 }}>Captured {format(parseISO(snap.date), 'MMMM d')}</div>
-                    </div>
-                  </div>
-                  <div className="tag tag-mist" style={{ fontSize: 10, letterSpacing: 1 }}>HISTORICAL RECORD</div>
-                </div>
-
-                <blockquote className="markdown-body" style={{ 
-                  fontSize: 20, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', 
-                  fontFamily: 'Fraunces', marginBottom: 40, borderLeft: '4px solid var(--sage)', paddingLeft: 32
-                }}>
-                  <MarkdownRenderer content={snap.description} />
-                </blockquote>
-
-                {snap.values?.length > 0 && (
-                  <div style={{ paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.05)' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 16, fontWeight: 700 }}>
-                      Anchored Values & Beliefs
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {snap.values.map(v => <span key={v} className="tag tag-mist" style={{ padding: '6px 16px', fontSize: 12 }}>{v}</span>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ fontFamily: 'Fraunces', fontSize: 32 }}>Snapshot Detail ○</h2>
+            <p style={{ color: 'rgba(13,13,13,0.45)', marginTop: 4 }}>Recorded on {format(parseISO(snap.date), 'EEEE, MMMM d, yyyy')}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 36, fontFamily: 'Fraunces', color: 'var(--sage)', lineHeight: 1 }}>{snap.mood}<span style={{ fontSize: 16, opacity: 0.3 }}>/10</span></div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', fontWeight: 700, marginTop: 4 }}>Mood Score</div>
           </div>
         </div>
+      </div>
 
-        {/* Sidebar: Utils & Comparison */}
-        <div style={{ position: 'sticky', top: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div className="card">
-            <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 20 }}>Actions</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-               <button className="btn btn-outline" onClick={() => setEditMode(!editMode)} style={{ justifyContent: 'center' }}>
-                 {editMode ? 'Cancel Edit' : '✎ Edit Snapshot'}
-               </button>
-               <button className="btn btn-ghost" onClick={handleDelete} style={{ color: 'var(--rust)', justifyContent: 'center' }}>
-                 🗑 Delete Permanently
-               </button>
+      <div className="page-body">
+        {/* Tab Navigation */}
+        <div className="tabs" style={{ marginBottom: 24, borderBottom: '1px solid rgba(13,13,13,0.06)', display: 'flex', gap: 32 }}>
+          {[
+            { id: 'reflections', label: 'Reflections', icon: '📝' },
+            { id: 'contrast', label: 'Contrast Analysis', icon: '⇄' },
+            { id: 'settings', label: 'Settings', icon: '⚙️' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '12px 4px', fontSize: 15, fontWeight: activeTab === tab.id ? 700 : 500,
+                color: activeTab === tab.id ? 'var(--ink)' : 'rgba(13,13,13,0.4)',
+                position: 'relative', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 8
+              }}
+            >
+              <span>{tab.icon}</span> {tab.label}
+              {activeTab === tab.id && (
+                <div style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 2, background: 'var(--sage)', borderRadius: 2 }} />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div style={{ minHeight: 400 }}>
+          {activeTab === 'reflections' && (
+            <div className="card" style={{ padding: 40, animation: 'fadeIn 0.4s ease' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.3)', fontWeight: 700 }}>Historical Narrative</div>
+                <div className="tag tag-mist" style={{ fontSize: 10 }}>ID: {snap.id.slice(0, 8)}</div>
+              </div>
+
+              <blockquote className="markdown-body" style={{
+                fontSize: 20, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic',
+                fontFamily: 'Fraunces', marginBottom: 40, borderLeft: '4px solid var(--sage)', paddingLeft: 32
+              }}>
+                <MarkdownRenderer content={snap.description} />
+              </blockquote>
+
+              {snap.values?.length > 0 && (
+                <div style={{ paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.05)' }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 16, fontWeight: 700 }}>
+                    Anchored Values & Beliefs
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {snap.values.map(v => <span key={v} className="tag tag-mist" style={{ padding: '8px 20px', fontSize: 13, borderRadius: 30 }}>{v}</span>)}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
-          {others.length > 0 && (
-            <div className="card">
-              <h3 style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)', marginBottom: 20 }}>Contrast Analysis</h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {activeTab === 'contrast' && (
+            <div className="card" style={{ padding: 40, animation: 'fadeIn 0.4s ease' }}>
+              <div style={{ maxWidth: 600, marginBottom: 32 }}>
+                <h3 style={{ fontSize: 22, fontFamily: 'Fraunces', marginBottom: 8 }}>Analyze Evolution</h3>
+                <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.5)', lineHeight: 1.6 }}>
+                  Select another snapshot to run a contrast analysis. We'll show you how your mood and narrative have shifted between these two points in time.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 16, maxWidth: 500, marginBottom: 40 }}>
                 <select className="form-select" value={compareId} onChange={e => { setCompareId(e.target.value); setCompareSnap(null); }}
-                  style={{ width: '100%', padding: '10px 14px', fontSize: 13 }}>
-                  <option value="">Compare with...</option>
+                  style={{ flex: 1, padding: '12px 16px' }}>
+                  <option value="">Select a snapshot to compare...</option>
                   {others.map(s => (
                     <option key={s.id} value={s.id}>
-                      {format(parseISO(s.date), 'MMM d, yyyy')} (Mood {s.mood})
+                      {format(parseISO(s.date), 'MMMM d, yyyy')} (Mood {s.mood})
                     </option>
                   ))}
                 </select>
-                
-                <button className="btn btn-primary" onClick={handleCompare} disabled={!compareId || comparing} style={{ width: '100%' }}>
-                  {comparing ? 'Analyzing...' : 'Run Comparison Analysis ⇄'}
+                <button className="btn btn-primary" onClick={handleCompare} disabled={!compareId || comparing} style={{ padding: '0 24px' }}>
+                  {comparing ? 'Analyzing...' : 'Run Analysis ⇄'}
                 </button>
+              </div>
 
-                {compareSnap && (
-                  <div style={{ marginTop: 8, padding: 16, background: 'var(--mist)', borderRadius: 12, borderTop: '2px solid var(--sage)' }}>
-                    <div style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--sage)', fontWeight: 700, marginBottom: 8 }}>Contrast Target</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                       <span style={{ fontSize: 20, fontFamily: 'Fraunces', color: 'var(--ink)' }}>{compareSnap.mood}/10</span>
-                       <span style={{ fontSize: 10, opacity: 0.4 }}>{format(parseISO(compareSnap.date), 'MMM d, yyyy')}</span>
-                    </div>
-                    <div className="markdown-body" style={{ fontSize: 12, fontStyle: 'italic', color: 'rgba(13,13,13,0.6)', maxHeight: 120, overflow: 'hidden' }}>
-                       <MarkdownRenderer content={compareSnap.description} />
-                    </div>
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setCompareSnap(null); setCompareId(''); }} style={{ marginTop: 12, fontSize: 10, padding: 0 }}>✕ Clear analysis</button>
+              {compareSnap && (
+                <div style={{ padding: 32, background: 'rgba(107,140,107,0.03)', borderRadius: 20, border: '1px solid var(--sage)', animation: 'slideUp 0.3s ease' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                    <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', fontWeight: 700 }}>Contrast Target</div>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setCompareSnap(null)} style={{ color: 'rgba(13,13,13,0.3)' }}>✕ Clear Result</button>
                   </div>
-                )}
+
+                  <div className="grid-2" style={{ gap: 32 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{format(parseISO(snap.date), 'MMM d, yyyy')} (This One)</div>
+                      <div className="markdown-body" style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', marginBottom: 12 }}>
+                        "{snap.description.slice(0, 150)}..."
+                      </div>
+                      <div style={{ fontSize: 18, fontFamily: 'Fraunces', color: 'var(--ink)' }}>Mood: {snap.mood}/10</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{format(parseISO(compareSnap.date), 'MMM d, yyyy')}</div>
+                      <div className="markdown-body" style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', marginBottom: 12 }}>
+                        "{compareSnap.description.slice(0, 150)}..."
+                      </div>
+                      <div style={{ fontSize: 18, fontFamily: 'Fraunces', color: 'var(--ink)' }}>Mood: {compareSnap.mood}/10</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>Mood Delta:</span>
+                    <span style={{
+                      padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                      background: compareSnap.mood > snap.mood ? 'rgba(107,140,107,0.1)' : 'rgba(196,98,58,0.1)',
+                      color: compareSnap.mood > snap.mood ? 'var(--sage)' : 'var(--rust)'
+                    }}>
+                      {compareSnap.mood > snap.mood ? '+' : ''}{compareSnap.mood - snap.mood} points
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="card" style={{ padding: 40, animation: 'fadeIn 0.4s ease' }}>
+              <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: 22, fontFamily: 'Fraunces', marginBottom: 8 }}>Edit Snapshot Records</h3>
+                <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.5)' }}>Update your historical narrative or values for this date.</p>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Narrative Detail</label>
+                <textarea className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                  style={{ minHeight: 240, fontSize: 16, lineHeight: 1.6 }} />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported. Use this to expand on your thoughts from this day.</div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
+                 <div className="form-group">
+                   <label className="form-label">Values (comma separated)</label>
+                   <input className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} placeholder="honesty, growth, grit..." />
+                 </div>
+                 <div className="form-group">
+                   <label className="form-label">Mood Score ({form.mood}/10)</label>
+                   <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
+                     onChange={e => setForm({ ...form, mood: +e.target.value })}
+                     style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
+                 </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 16, marginTop: 40, paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.06)' }}>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ padding: '0 32px' }}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button className="btn btn-outline" onClick={() => setForm({ description: snap.description, values: snap.values?.join(', ') || '', mood: snap.mood })}>
+                  Reset Changes
+                </button>
+                <div style={{ flex: 1 }} />
+                <button className="btn btn-ghost" onClick={handleDelete} style={{ color: 'var(--rust)' }}>
+                  🗑 Delete Record Permanently
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

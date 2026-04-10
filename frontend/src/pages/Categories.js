@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
-import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
-
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
 const COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
@@ -27,7 +26,7 @@ export default function Categories() {
   const [form, setForm] = useState({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { id, name }
+  const [confirm, setConfirm] = useState(null);
 
   const load = async () => {
     const [active, arch, temps] = await Promise.all([
@@ -70,40 +69,44 @@ export default function Categories() {
       setEditCat(null);
       load();
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to save category')); }
-
-
     finally { setLoading(false); }
   };
 
-  // Archive (soft delete)
-  const handleArchive = async (id, name) => {
-    if (!window.confirm(`Archive "${name}"? You can restore it later.`)) return;
-    await API.delete(`/categories/${id}`);
-    toast.success('Category archived');
-    load();
+  const handleArchive = (id, name) => {
+    setConfirm({
+      title: 'Archive Category?',
+      message: `Are you sure you want to archive "${name}"? You can restore it anytime from the archived section.`,
+      confirmLabel: 'Archive',
+      onConfirm: async () => {
+        try {
+          await API.delete(`/categories/${id}`);
+          toast.success('Category archived');
+          load();
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to archive')); }
+      }
+    });
   };
 
-  // Permanent delete with confirmation modal
-  const handlePermanentDelete = async () => {
-    if (!confirmDelete) return;
-    try {
-      await API.delete(`/categories/${confirmDelete.id}?permanent=true`);
-      toast.success(`"${confirmDelete.name}" permanently deleted with all its data`);
-      setConfirmDelete(null);
-      load();
-    } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
-
-
+  const handlePermanentDelete = (id, name) => {
+    setConfirm({
+      title: 'Delete Permanently?',
+      message: `WARNING: This will permanently delete "${name}" and ALL its associated daily logs and goals. This cannot be undone.`,
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/categories/${id}?permanent=true`);
+          toast.success(`"${name}" and all its records deleted.`);
+          load();
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
+      }
+    });
   };
 
   const handleRestore = async (id, name) => {
     await API.put(`/categories/${id}/restore`);
     toast.success(`${name} restored!`);
     load();
-  };
-
-  const handleViewLogs = (cat) => {
-    navigate(`/categories/${cat.id}`);
   };
 
   const addDefault = async (def) => {
@@ -122,15 +125,20 @@ export default function Categories() {
     } catch { toast.error('Failed to save template'); }
   };
 
-  const handleDeleteTemplate = async (id) => {
-    if (!window.confirm('Delete this template?')) return;
-    try {
-      await API.delete(`/categories/templates/${id}`);
-      toast.success('Template deleted');
-      load();
-    } catch { toast.error('Failed to delete template'); }
+  const handleDeleteTemplate = (id) => {
+    setConfirm({
+      title: 'Delete Template?',
+      message: 'Are you sure you want to remove this category template?',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          await API.delete(`/categories/templates/${id}`);
+          toast.success('Template deleted');
+          load();
+        } catch { toast.error('Failed to delete template'); }
+      }
+    });
   };
-
 
   return (
     <div>
@@ -178,20 +186,41 @@ export default function Categories() {
         ) : (
           <div className="grid-3">
             {categories.map((cat) => (
-              <div key={cat.id} className="card" style={{ borderTop: `3px solid ${cat.color}` }}>
+              <div
+                key={cat.id}
+                className="card"
+                onClick={() => navigate(`/categories/${cat.id}`)}
+                style={{
+                  borderTop: `4px solid ${cat.color}`,
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <span style={{ fontSize: 32 }}>{cat.icon}</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleSaveAsTemplate(cat)} title="Save as Template" style={{ color: 'var(--sage)' }}>⭐</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => openEdit(cat)} title="Edit" style={{ color: 'rgba(13,13,13,0.4)' }}>✎</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleArchive(cat.id, cat.name)} title="Archive" style={{ color: 'rgba(13,13,13,0.3)' }}>📦</button>
                   </div>
                 </div>
                 <h3 style={{ fontSize: 18, marginBottom: 4 }}>{cat.name}</h3>
-                {cat.description && <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12 }}><MarkdownRenderer content={cat.description} /></div>}
-                <button className="btn btn-outline btn-sm" onClick={() => handleViewLogs(cat)} style={{ marginTop: 'auto', width: '100%' }}>
-                  View Detail & Logs →
-                </button>
+                {cat.description && (
+                  <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 12, pointerEvents: 'none' }}>
+                    <MarkdownRenderer content={cat.description} />
+                  </div>
+                )}
+                <div style={{ marginTop: 'auto', fontSize: 12, color: 'var(--sage)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  View Detail & Logs <span>→</span>
+                </div>
               </div>
             ))}
           </div>
@@ -216,7 +245,7 @@ export default function Categories() {
                         style={{ fontSize: 11, color: 'var(--sage)', border: '1px solid var(--sage)', borderRadius: 6, padding: '3px 8px' }}>
                         Restore
                       </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete({ id: cat.id, name: cat.name })}
+                      <button className="btn btn-ghost btn-sm" onClick={() => handlePermanentDelete(cat.id, cat.name)}
                         style={{ fontSize: 11, color: 'var(--rust)', border: '1px solid var(--rust)', borderRadius: 6, padding: '3px 8px' }}>
                         Delete Forever
                       </button>
@@ -240,7 +269,7 @@ export default function Categories() {
               <h3>{editCat ? 'Edit Category' : 'New Category'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
-            
+
             {!editCat && (
               <div style={{ marginBottom: 20 }}>
                 <label className="form-label" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.4)' }}>Quick Templates</label>
@@ -262,7 +291,7 @@ export default function Categories() {
                           className="template-chip" style={{ border: '1px solid var(--sage)' }}>
                           <span>{t.icon}</span> {t.name}
                         </button>
-                        <button onClick={() => handleDeleteTemplate(t.id)} 
+                        <button onClick={() => handleDeleteTemplate(t.id)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.2)', fontSize: 10 }}>✕</button>
                       </div>
                     ))}
@@ -271,7 +300,6 @@ export default function Categories() {
               </div>
             )}
 
-            
             <div className="form-group">
               <label className="form-label">Name</label>
               <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Spiritual Growth" />
@@ -294,11 +322,27 @@ export default function Categories() {
             </div>
             <div className="form-group">
               <label className="form-label">Color</label>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 {COLORS.map((c) => (
                   <button key={c} onClick={() => setForm({ ...form, color: c })}
                     style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: `3px solid ${form.color === c ? 'var(--ink)' : 'transparent'}`, cursor: 'pointer' }} />
                 ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 8, paddingLeft: 16, borderLeft: '1px solid rgba(13,13,13,0.1)' }}>
+                  <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase' }}>Custom:</span>
+                  <input
+                    type="color"
+                    value={form.color}
+                    onChange={(e) => setForm({ ...form, color: e.target.value })}
+                    style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={form.color}
+                    onChange={(e) => setForm({ ...form, color: e.target.value })}
+                    style={{ width: 80, height: 32, fontSize: 12, padding: '0 8px', fontFamily: 'monospace' }}
+                  />
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -311,31 +355,7 @@ export default function Categories() {
         </div>
       )}
 
-      {/* Permanent Delete Confirmation Modal */}
-      {confirmDelete && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setConfirmDelete(null)}>
-          <div className="modal">
-            <div className="modal-header">
-              <h3 style={{ color: 'var(--rust)' }}>⚠️ Permanent Deletion</h3>
-              <button className="modal-close" onClick={() => setConfirmDelete(null)}>✕</button>
-            </div>
-            <div style={{ padding: '16px', background: 'rgba(196,98,58,0.08)', borderRadius: 10, marginBottom: 20 }}>
-              <p style={{ fontSize: 14, color: 'var(--rust)', margin: 0, lineHeight: 1.6 }}>
-                You are about to permanently delete <strong>"{confirmDelete.name}"</strong> and all its associated data including daily log entries and goals.
-                <br /><br />
-                <strong>This action cannot be undone.</strong>
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn btn-outline" onClick={() => setConfirmDelete(null)} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn" onClick={handlePermanentDelete}
-                style={{ flex: 1, background: 'var(--rust)', color: 'white', border: 'none' }}>
-                Yes, Delete Permanently
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

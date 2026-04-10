@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 
 export default function CategoryDetail() {
@@ -45,17 +46,24 @@ export default function CategoryDetail() {
     loadData();
   }, [categoryId, navigate]);
 
-  const handleDeleteLog = async (date) => {
-    if (!window.confirm(`Delete the entire daily log for ${format(parseISO(date), 'MMMM d')}? This removes entries from all categories for this day.`)) return;
-    try {
-      await API.delete(`/logs/${date}`);
-      toast.success('Daily log deleted');
-      setLogs(logs.filter(l => l.date !== date));
-    } catch (e) {
-      toast.error(getErrorMessage(e, 'Failed to delete log'));
-    }
+  const [confirm, setConfirm] = useState(null);
 
-
+  const handleDeleteLog = (date) => {
+    setConfirm({
+      title: 'Delete Full Log?',
+      message: `Are you sure you want to delete the entire daily log for ${format(parseISO(date), 'MMMM d')}? This removes all entries across ALL categories for this day.`,
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/logs/${date}`);
+          toast.success('Daily log deleted');
+          setLogs(logs.filter(l => l.date !== date));
+        } catch (e) {
+          toast.error(getErrorMessage(e, 'Failed to delete log'));
+        }
+      }
+    });
   };
 
   if (loading) return (
@@ -183,6 +191,7 @@ export default function CategoryDetail() {
           </div>
         </div>
       </div>
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

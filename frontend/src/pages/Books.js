@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -10,6 +11,7 @@ export default function Books() {
   const [showAdd, setShowAdd] = useState(false);
   const [newBook, setNewBook] = useState({ title: '', author: '', status: 'reading', rating: 0, notes: '', cover_emoji: '📖' });
   const [activeStatus, setActiveStatus] = useState('all');
+  const [confirm, setConfirm] = useState(null);
 
   const fetchBooks = async () => {
     try {
@@ -41,15 +43,22 @@ export default function Books() {
     }
   };
 
-  const deleteBook = async (id) => {
-    if (!window.confirm('Delete this book?')) return;
-    try {
-      await API.delete(`/books/${id}`);
-      setBooks(books.filter(b => b.id !== id));
-      toast.success('Book deleted');
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to delete'));
-    }
+  const deleteBook = (id) => {
+    setConfirm({
+      title: 'Delete Book?',
+      message: 'Are you sure you want to remove this book and all its bookmarks and lessons from your library?',
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/books/${id}`);
+          setBooks(books.filter(b => b.id !== id));
+          toast.success('Book deleted');
+        } catch (err) {
+          toast.error(getErrorMessage(err, 'Failed to delete'));
+        }
+      }
+    });
   };
 
   const updateBookStatus = async (id, status) => {
@@ -198,6 +207,7 @@ export default function Books() {
           </div>
         )}
       </div>
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

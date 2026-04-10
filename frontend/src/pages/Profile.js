@@ -9,6 +9,7 @@ import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import {
   BarChart, Bar, ResponsiveContainer, Tooltip as RechartsTooltip, Cell
 } from 'recharts';
+import PromptModal from '../components/ui/PromptModal';
 
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 
@@ -86,6 +87,7 @@ export default function Profile() {
   const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [prompt, setPrompt] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -205,19 +207,26 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmation = window.prompt('WARNING: This will permanently delete your account, all daily logs, categories, goals, and snapshots. This CANNOT be undone.\n\nType "DELETE" to confirm:');
-    if (confirmation !== 'DELETE') return;
-    setLoading(true);
-    try {
-      await API.delete('/auth/me');
-      toast.success('Account and all data successfully deleted.');
-      logout();
-      navigate('/login');
-    } catch (e) {
-      toast.error(getErrorMessage(e, 'Failed to delete account.'));
-      setLoading(false);
-    }
+  const handleDeleteAccount = () => {
+    setPrompt({
+      title: 'Delete Account?',
+      message: 'This will permanently delete your account and all associated daily logs, categories, goals, and snapshots. THIS CANNOT BE UNDONE.',
+      expectedValue: 'DELETE',
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await API.delete('/auth/me');
+          toast.success('Account and all data successfully deleted.');
+          logout();
+          navigate('/login');
+        } catch (e) {
+          toast.error(getErrorMessage(e, 'Failed to delete account.'));
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';
@@ -660,6 +669,7 @@ export default function Profile() {
           </div>
         </div>
       )}
+      <PromptModal config={prompt} onClose={() => setPrompt(null)} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 
 const SORT_OPTIONS = [
@@ -32,6 +33,7 @@ export default function Goals() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [filterCategory, setFilterCategory] = useState('');
   const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState(null);
 
   const load = async () => {
     try {
@@ -101,17 +103,22 @@ export default function Goals() {
 
   };
 
-  const handleDelete = async (goal) => {
-    if (!window.confirm(`Delete "${goal.title}"? This cannot be undone.`)) return;
-    try {
-      await API.delete(`/goals/${goal.id}`);
-      toast.success('Goal deleted');
-      load();
-    } catch (e) {
-      toast.error(getErrorMessage(e, 'Failed to delete goal'));
-    }
-
-
+  const handleDelete = (goal) => {
+    setConfirm({
+      title: 'Delete Goal?',
+      message: `Are you sure you want to delete "${goal.title}"? This will permanently remove the goal and all its associated notes.`,
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goal.id}`);
+          toast.success('Goal deleted');
+          load();
+        } catch (e) {
+          toast.error(getErrorMessage(e, 'Failed to delete goal'));
+        }
+      }
+    });
   };
 
   const handleReflect = async () => {
@@ -144,15 +151,22 @@ export default function Goals() {
 
   };
 
-  const handleDeleteNote = async (goal, noteId) => {
-    if (!window.confirm('Delete this note?')) return;
-    try {
-      await API.delete(`/goals/${goal.id}/notes/${noteId}`);
-      toast.success('Note deleted');
-      load();
-    } catch {
-      toast.error('Failed to delete note');
-    }
+  const handleDeleteNote = (goal, noteId) => {
+    setConfirm({
+      title: 'Delete Note?',
+      message: 'Are you sure you want to remove this note from your goal?',
+      confirmLabel: 'Delete',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/goals/${goal.id}/notes/${noteId}`);
+          toast.success('Note deleted');
+          load();
+        } catch {
+          toast.error('Failed to delete note');
+        }
+      }
+    });
   };
 
   const filtered = goals.filter(g => {
@@ -471,6 +485,8 @@ export default function Goals() {
           </div>
         </div>
       )}
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }

@@ -60,10 +60,15 @@ def recalculate_user_streak(uid: str):
     return current_streak
 
 @router.get("")
-def get_logs(days: int = 30, current_user=Depends(get_current_user)):
-    days = min(max(days, 1), 365)
-    since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
-    return serialize_list(db.daily_logs.find({"user_id": str(current_user["_id"]), "date": {"$gte": since}}).sort("date", DESCENDING))
+def get_logs(days: int = 30, limit: int = 20, skip: int = 0, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    query = {"user_id": uid}
+    if days > 0:
+        since = (utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["date"] = {"$gte": since}
+    
+    cursor = db.daily_logs.find(query).sort("date", DESCENDING).skip(skip).limit(limit)
+    return serialize_list(cursor)
 
 @router.get("/today")
 def get_today_log(current_user=Depends(get_current_user)):

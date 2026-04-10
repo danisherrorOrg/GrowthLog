@@ -99,19 +99,3 @@
 - **`AllLogs.js`** likely has no pagination or infinite scroll — large log histories would render everything at once.
 
 ---
-
-### Summary Table
-
-| Page | Priority | Top Enhancement |
-|---|---|---|
-| Action Board (Todos) | 🔴 High | Due date visible on card + loading skeleton |
-| Mind Garden (Thoughts) | 🔴 High | Truncate + expand cards + pin/favorite |
-| Motivation Vault (Quotes) | 🔴 High | Fix tag filter (showing all tags, not 3) |
-| Reframes | 🔴 High | Filter all 10 distortion types |
-| Daily Log | 🔴 High | Expand all + auto-save draft |
-| Goals list | 🟡 Medium | Whole-card click-to-navigate + extended/abandoned filters |
-| Manifestations list | 🟡 Medium | Fix duplicate page-body + progress count badge |
-| Dashboard | 🟡 Medium | Heatmap cells clickable + Goals donut chart |
-| Profile | 🟡 Medium | Badge progress hints + smoother edit mode |
-| Login/Register | 🟢 Low | Show/hide password + inline validation |
-| Global | 🟢 Low | Replace `window.confirm` with styled modals |

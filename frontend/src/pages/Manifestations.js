@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 
 const PROGRESS_TYPES = [
@@ -27,6 +28,8 @@ export default function Manifestations() {
   const [editForm, setEditForm] = useState({ vision: '', target_date: '', notes: '' });
   const [reflection, setReflection] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(null);
   const [expandedProgress, setExpandedProgress] = useState({});
 
   const load = () => API.get('/manifestations?status_filter=all').then(r => setItems(r.data));
@@ -66,18 +69,35 @@ export default function Manifestations() {
 
   };
 
-  const handleDelete = async (item) => {
-    if (!window.confirm('Delete this vision permanently?')) return;
-    await API.delete(`/manifestations/${item.id}`);
-    toast.success('Vision deleted');
-    load();
+  const handleDelete = (item) => {
+    setConfirm({
+      title: 'Delete Vision?',
+      message: 'Are you sure you want to permanently delete this manifestation vision and all its progress history? This cannot be undone.',
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await API.delete(`/manifestations/${item.id}`);
+          toast.success('Vision deleted');
+          load();
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
+      }
+    });
   };
 
-  const handleArchive = async (item) => {
-    if (!window.confirm('Archive this vision?')) return;
-    await API.put(`/manifestations/${item.id}/archive`);
-    toast.success('Vision archived');
-    load();
+  const handleArchive = (item) => {
+    setConfirm({
+      title: 'Archive Vision?',
+      message: 'Archive this vision? It will move to the archived tab and stop its progression tracking.',
+      confirmLabel: 'Archive',
+      onConfirm: async () => {
+        try {
+          await API.put(`/manifestations/${item.id}/archive`);
+          toast.success('Vision archived');
+          load();
+        } catch (e) { toast.error(getErrorMessage(e, 'Failed to archive')); }
+      }
+    });
   };
 
   const handleComplete = async () => {
@@ -427,6 +447,8 @@ export default function Manifestations() {
           </div>
         </div>
       )}
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }
