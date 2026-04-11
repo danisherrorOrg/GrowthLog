@@ -30,6 +30,12 @@ const NAV_GROUPS = [
     ]
   },
   {
+    group: 'Health & Body',
+    items: [
+      { to: '/health', icon: '🧬', label: 'Health & Body', shortcut: 'U' },
+    ]
+  },
+  {
     group: 'Learning & Career',
     items: [
       { to: '/knowledge', icon: '📚', label: 'Knowledge Vault', shortcut: 'K' },

@@ -450,3 +450,68 @@ class FeedbackModel(BaseModel):
             raise ValueError("Feedback content cannot be empty")
         return v
 
+
+
+# --- Health & Body ---
+class SleepLogModel(BaseModel):
+    date: str
+    bedtime: str
+    wake_time: str
+    quality: int # 1-10
+    notes: Optional[str] = ""
+
+    @field_validator("quality")
+    @classmethod
+    def clamp_quality(cls, v):
+        if not (1 <= v <= 10):
+            raise ValueError("Quality must be between 1 and 10")
+        return v
+
+class ExerciseSetModel(BaseModel):
+    reps: int
+    weight: float
+
+class ExerciseLogEntryModel(BaseModel):
+    exercise_name: str
+    muscle_group: str # Chest, Back, Legs, Arms, Shoulders, Core, Cardio
+    sets: List[ExerciseSetModel]
+    notes: Optional[str] = ""
+
+class WorkoutSessionModel(BaseModel):
+    date: str
+    type: str # gym, run, yoga
+    duration_minutes: int
+    intensity: int # 1-10
+    exercises: List[ExerciseLogEntryModel]
+    notes: Optional[str] = ""
+
+    @field_validator("intensity")
+    @classmethod
+    def clamp_intensity(cls, v):
+        if not (1 <= v <= 10):
+            raise ValueError("Intensity must be between 1 and 10")
+        return v
+
+class ExerciseGoalModel(BaseModel):
+    exercise_name: str
+    muscle_group: str
+    target_sets: int
+    target_reps: int
+    target_weight: float
+    deadline: str
+    status: Optional[str] = "pending" # pending, achieved, failed
+
+class HealthMetricsModel(BaseModel):
+    date: str
+    water_ml: int
+    nutrition_quality: int # 1-10
+    notes: Optional[str] = ""
+
+class MealLogModel(BaseModel):
+    date: str
+    meal_type: str # Breakfast, Lunch, Dinner, Snack
+    calories: int
+    protein_g: Optional[int] = 0
+    carbs_g: Optional[int] = 0
+    fat_g: Optional[int] = 0
+    notes: Optional[str] = ""

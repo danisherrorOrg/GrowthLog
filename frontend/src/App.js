@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import HistoryHub from './pages/HistoryHub';
 import TemporalHub from './pages/TemporalHub';
 import KnowledgeVault from './pages/KnowledgeVault';
+import HealthHub from './pages/HealthHub';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DailyLog from './pages/DailyLog';
@@ -75,6 +76,7 @@ export default function App() {
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
             <Route path="todos" element={<Todos />} />
             <Route path="knowledge" element={<KnowledgeVault />} />
+            <Route path="health" element={<HealthHub />} />
             <Route path="books/:bookId" element={<BookDetail />} />
             <Route path="reframes" element={<Reframes />} />
             <Route path="thoughts" element={<Thoughts />} />

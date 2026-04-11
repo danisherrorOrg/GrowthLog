@@ -16,3 +16,10 @@ def create_indexes():
     db.daily_logs.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
     db.manifestations.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
     db.snapshots.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
+
+    db.sleep_logs.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
+    db.workouts.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
+    db.exercise_goals.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
+    db.health_metrics.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
+    db.meal_logs.create_index([("user_id", ASCENDING), ("date", DESCENDING)])
+

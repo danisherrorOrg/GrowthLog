@@ -26,6 +26,7 @@ from api.routers.insights import router as insights_router
 from api.routers.growth_career import router as growth_career_router
 from api.routers.passions import router as passions_router
 from api.routers.time_capsule import router as time_capsule_router
+from api.routers.health import router as health_router
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
 
@@ -65,6 +66,7 @@ app.include_router(insights_router)
 app.include_router(growth_career_router)
 app.include_router(passions_router)
 app.include_router(time_capsule_router)
+app.include_router(health_router, prefix="/health", tags=["Health"])
 
 
 
