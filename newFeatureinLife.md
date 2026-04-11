@@ -1,19 +1,3 @@
-# Life Tracker — Complete Feature List (v3)
- 
-> The most comprehensive reference for building a life tracker.
-> Tags: `[core]` = must-have · `[power]` = adds depth · `[insight]` = reveals patterns · `[advanced]` = complex but powerful
- 
----
- 
-<!-- ## 1. Daily Logging
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Gratitude log | 3 things you're grateful for each day | `core` [DONE] |
-| Regret log | Something you wish you'd done differently today | `insight` | -->
- 
----
- 
 ## 2. Health & Body
  
 | Feature | Description | Tag |
@@ -24,41 +8,7 @@
 | Water & nutrition | Water intake and general eating quality score | `core` |
 | Calorie tracking | Optional calorie and macro logging per meal | `power` |
  
----
- 
-## 3. Goals & Habits
- 
-<!-- | Feature | Description | Tag |
-|---|---|---|
-| Anti-goals | Things you actively want to avoid or stop | `insight` |
-| Habit graveyard | Log habits you tried and abandoned — and why | `insight` | -->
-
----
- 
-<!-- ## 4. Time & Productivity
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Time tracking | Log hours per category: work, learning, leisure | `core`  |
-| Screen time | Hours on phone/computer, by app category | `insight` |
-| Procrastination log | What you avoided, why, and the outcome | `insight` |
-| Not-to-do list | Recurring time-wasters to consciously avoid | `power` | -->
-
-
----
- 
-## 6. Learning & Growth
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Skills tracker | Skills you're developing with progress levels | `core` |
-| Courses & learning | Courses taken, hours spent, what you learned | `power` |
-| Failure log | Record mistakes and what you learned from them | `insight` |
-
- 
----
- 
-## 7. Finance
+## 2. Finance
  
 | Feature | Description | Tag |
 |---|---|---|
@@ -69,63 +19,6 @@
 | Impulse buy log | Things you almost bought — helps identify patterns | `insight` |
 | Side income tracker | Freelance, gigs, selling — separate from main income | `power` |
 
- 
----
-
- 
----
- 
-## 9. Career & Work
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Skills gap tracker | Skills you need for your next career move | `power` |
-| Feedback received | Positive and critical feedback from peers/managers | `power` |
- 
----
- 
-## 10. Creativity & Passion Projects
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Project ideas | Backlog of things you want to make or explore | `power` |
-| Creative sessions | Time spent on creative work with output notes | `power` |
- 
----
- 
- 
----
- 
-## 12. Spirituality & Philosophy
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Meaning & purpose log | Moments that felt deeply meaningful or purposeful | `insight` |
-| Philosophy notes | Ideas from books, thinkers, or your own reflection | `power` [DONE] |
- 
----
- 
-## 13. Fun, Play & Leisure
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Travel log | Places visited, memories, and photos | `power` |
-| Bucket list | Things to do in life with done/in-progress status | `power` |
- 
----
-
- 
----
- 
-## 15. Aging & Long-term Life
- 
-| Feature | Description | Tag |
-|---|---|---|
-| Decade goals | What you want to achieve in the next 10 years | `advanced` |
-| Regrets tracker | Things you regret — and action to avoid future ones | `insight` |
-| Advice to my future self | Letters, notes, warnings for yourself years from now | `power` |
-| Advice from my past self | What your younger self would say to you now | `insight` |
-| Life lessons list | Principles you've earned through experience | `power` |
 
 ---
  
