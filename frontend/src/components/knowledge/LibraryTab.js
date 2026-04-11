@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import API from '../utils/api';
-import { getErrorMessage } from '../utils/errors';
-import ConfirmModal from '../components/ui/ConfirmModal';
+import API from '../../utils/api';
+import { getErrorMessage } from '../../utils/errors';
+import ConfirmModal from '../ui/ConfirmModal';
 
 export default function Books() {
   const navigate = useNavigate();
@@ -86,13 +86,7 @@ export default function Books() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2>Library & Wisdom 📚</h2>
-          <p>Track books and absorb their knowledge.</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>+ Add Book</button>
-      </div>
+
 
       <div className="page-body">
         {/* Unified Toolbar */}

@@ -2,27 +2,49 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 
-const NAV = [
-  { to: '/dashboard', icon: '◈', label: 'Dashboard', shortcut: 'D' },
-  { to: '/log', icon: '✦', label: 'Daily Log', shortcut: 'L' },
-  { to: '/history', icon: '📅', label: 'Log History', shortcut: 'H' },
-  { to: '/growth', icon: '◎', label: 'Growth', shortcut: null },
-  { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
-  { to: '/activity', icon: '⏳', label: 'Activity Log', shortcut: 'A' },
-  { to: '/thoughts', icon: '🪴', label: 'Mind Garden', shortcut: 'M' },
-  { to: '/insights', icon: '🔬', label: 'Insight Lab', shortcut: 'I' },
-  { to: '/growth-hub', icon: '🚀', label: 'Growth Hub', shortcut: 'W' },
-  { to: '/life-canvas', icon: '🎨', label: 'Life Canvas', shortcut: 'V' },
-  { to: '/time-capsule', icon: '⏳', label: 'Time Capsule', shortcut: 'P' },
-  { to: '/quotes', icon: '🗝️', label: 'Quote Vault', shortcut: 'Q' },
-  { to: '/books', icon: '📚', label: 'Library', shortcut: 'B' },
-  { to: '/reframes', icon: '🧠', label: 'Reframing', shortcut: 'R' },
-  { to: '/goals', icon: '◇', label: 'Goals', shortcut: 'G' },
-  { to: '/manifestations', icon: '✧', label: 'Manifestations', shortcut: 'F' },
-  { to: '/snapshots', icon: '○', label: 'Snapshots', shortcut: 'S' },
-  { to: '/categories', icon: '▦', label: 'Categories', shortcut: 'C' },
-  { to: '/timeline', icon: '🗓️', label: 'Timeline', shortcut: 'E' },
+const NAV_GROUPS = [
+  {
+    group: 'Daily Actions',
+    items: [
+      { to: '/dashboard', icon: '◈', label: 'Dashboard', shortcut: 'D' },
+      { to: '/log', icon: '✦', label: 'Daily Log', shortcut: 'L' },
+      { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
+    ]
+  },
+  {
+    group: 'Mind & Reflection',
+    items: [
+      { to: '/thoughts', icon: '🪴', label: 'Mind Garden', shortcut: 'M' },
+      { to: '/insights', icon: '🔬', label: 'Insight Lab', shortcut: 'I' },
+      { to: '/temporal', icon: '🕰️', label: 'Temporal Space', shortcut: 'P' },
+      { to: '/reframes', icon: '🧠', label: 'Reframing', shortcut: 'R' },
+    ]
+  },
+  {
+    group: 'Vision & Strategy',
+    items: [
+      { to: '/life-canvas', icon: '🎨', label: 'Life Canvas', shortcut: 'V' },
+      { to: '/growth-hub', icon: '🚀', label: 'Growth Hub', shortcut: 'W' },
+      { to: '/goals', icon: '◇', label: 'Goals', shortcut: 'G' },
+      { to: '/manifestations', icon: '✧', label: 'Manifestations', shortcut: 'F' },
+    ]
+  },
+  {
+    group: 'Learning & Career',
+    items: [
+      { to: '/knowledge', icon: '📚', label: 'Knowledge Vault', shortcut: 'K' },
+    ]
+  },
+  {
+    group: 'Analytics & History',
+    items: [
+      { to: '/growth', icon: '◎', label: 'Growth Analytics', shortcut: null },
+      { to: '/history', icon: '⏳', label: 'History Hub', shortcut: 'H' },
+    ]
+  }
 ];
+
+const NAV = NAV_GROUPS.flatMap(g => g.items);
 
 // Shortcut map for keyboard navigation
 const SHORTCUT_MAP = {};
@@ -120,31 +142,40 @@ export default function Layout() {
           </div>
         </div>
 
-        <nav className="sidebar-nav">
-          {NAV.map(({ to, icon, label, shortcut }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              title={shortcut ? `${label} (${shortcut})` : label}
-            >
-              <span className="icon">{icon}</span>
-              {label}
-              {shortcut && (
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: 10,
-                  color: 'rgba(245,240,232,0.2)',
-                  background: 'rgba(245,240,232,0.06)',
-                  borderRadius: 4,
-                  padding: '2px 5px',
-                  fontFamily: 'monospace',
-                  letterSpacing: 0,
-                }}>
-                  {shortcut}
-                </span>
-              )}
-            </NavLink>
+        <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {NAV_GROUPS.map((group, gIdx) => (
+            <div key={gIdx} className="nav-group">
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(245,240,232,0.4)', fontWeight: 700, padding: '0 16px', marginBottom: 8 }}>
+                {group.group}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {group.items.map(({ to, icon, label, shortcut }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    title={shortcut ? `${label} (${shortcut})` : label}
+                  >
+                    <span className="icon">{icon}</span>
+                    {label}
+                    {shortcut && (
+                      <span style={{
+                        marginLeft: 'auto',
+                        fontSize: 10,
+                        color: 'rgba(245,240,232,0.2)',
+                        background: 'rgba(245,240,232,0.06)',
+                        borderRadius: 4,
+                        padding: '2px 5px',
+                        fontFamily: 'monospace',
+                        letterSpacing: 0,
+                      }}>
+                        {shortcut}
+                      </span>
+                    )}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

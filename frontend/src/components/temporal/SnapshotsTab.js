@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API from '../utils/api';
+import API from '../../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
-import { getErrorMessage } from '../utils/errors';
-import MarkdownRenderer from '../components/ui/MarkdownRenderer';
-import ConfirmModal from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../../utils/errors';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
+import ConfirmModal from '../ui/ConfirmModal';
 
 export default function Snapshots() {
   const navigate = useNavigate();
@@ -123,10 +123,7 @@ export default function Snapshots() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2>Snapshots ○</h2>
-        <p>Who are you right now? Capture it. Compare later.</p>
-      </div>
+
 
       <div className="page-body" style={{ minHeight: '600px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 24 }}>

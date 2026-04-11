@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import API from '../utils/api';
+import API from '../../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
-import { getErrorMessage } from '../utils/errors';
-import MarkdownRenderer from '../components/ui/MarkdownRenderer';
-import ConfirmModal from '../components/ui/ConfirmModal';
+import { getErrorMessage } from '../../utils/errors';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
+import ConfirmModal from '../ui/ConfirmModal';
 
 const TABS = [
   { id: 'lessons',       label: 'Life Lessons',      icon: '🏛️', color: '#8b6bc4' },
@@ -155,10 +155,7 @@ export default function TimeCapsule() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2>Time Capsule ⏳</h2>
-        <p>A multi-decade journal for storing life lessons, regrets, and cross-temporal advice.</p>
-      </div>
+
 
       <div className="page-body">
         {/* Tab bar */}

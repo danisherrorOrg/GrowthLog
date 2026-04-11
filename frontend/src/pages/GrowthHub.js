@@ -11,16 +11,15 @@ const SECTIONS = [
   {
     label: '📈 Learning & Growth',
     tabs: [
-      { id: 'skills',   label: 'Skills',        icon: '📈', color: 'var(--sage)' },
-      { id: 'courses',  label: 'Courses',        icon: '📚', color: '#5b8ba8' },
-      { id: 'failures', label: 'Failure Log',    icon: '💥', color: '#c9a84c' },
+      { id: 'skills', label: 'Skills', icon: '📈', color: 'var(--sage)' },
+      { id: 'failures', label: 'Failure Log', icon: '💥', color: '#c9a84c' },
     ],
   },
   {
     label: '💼 Career & Work',
     tabs: [
-      { id: 'skillsgap', label: 'Skills Gap',       icon: '🎯', color: '#8b6bc4' },
-      { id: 'feedback',  label: 'Feedback Received', icon: '💬', color: '#c4623a' },
+      { id: 'skillsgap', label: 'Skills Gap', icon: '🎯', color: '#8b6bc4' },
+      { id: 'feedback', label: 'Feedback Received', icon: '💬', color: '#c4623a' },
     ],
   },
 ];
@@ -30,8 +29,8 @@ const TODAY = new Date().toISOString().slice(0, 10);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const dateLabel = (d) => { try { return format(parseISO(d), 'MMM d, yyyy'); } catch { return d || '—'; } };
-const onHover   = (c) => (e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${c}`; };
-const offHover  = () => (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = ''; };
+const onHover = (c) => (e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${c}`; };
+const offHover = () => (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = ''; };
 const Skeletons = ({ n = 3, h = 90 }) => (<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{Array.from({ length: n }).map((_, i) => <div key={i} className="skeleton" style={{ height: h, borderRadius: 14 }} />)}</div>);
 const Empty = ({ icon, title, desc, onAdd, label }) => (<div className="empty-state"><div className="empty-icon">{icon}</div><h3>{title}</h3><p>{desc}</p><button className="btn btn-primary" onClick={onAdd} style={{ borderRadius: 30 }}>{label}</button></div>);
 
@@ -50,22 +49,12 @@ function LevelDots({ level, size = 10 }) {
   );
 }
 
-// ── Course status badge ───────────────────────────────────────────────────────
-const STATUS_CONFIG = {
-  in_progress: { label: 'In Progress', bg: 'rgba(91,139,168,0.12)', color: '#5b8ba8' },
-  completed:   { label: 'Completed',   bg: 'rgba(107,140,107,0.12)', color: 'var(--sage)' },
-  dropped:     { label: 'Dropped',     bg: 'rgba(13,13,13,0.06)',    color: 'rgba(13,13,13,0.4)' },
-};
-function StatusBadge({ status }) {
-  const s = STATUS_CONFIG[status] || STATUS_CONFIG.in_progress;
-  return <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: s.bg, color: s.color }}>{s.label}</span>;
-}
 
 // ── Feedback type badge ────────────────────────────────────────────────────────
 const FB_CONFIG = {
   positive: { label: '👍 Positive', bg: 'rgba(107,140,107,0.1)', color: 'var(--sage)', border: 'var(--sage)' },
-  critical: { label: '⚡ Critical', bg: 'rgba(196,98,58,0.08)',  color: 'var(--rust)', border: 'var(--rust)' },
-  mixed:    { label: '⚖️ Mixed',   bg: 'rgba(201,168,76,0.1)',   color: '#c9a84c',     border: '#c9a84c' },
+  critical: { label: '⚡ Critical', bg: 'rgba(196,98,58,0.08)', color: 'var(--rust)', border: 'var(--rust)' },
+  mixed: { label: '⚖️ Mixed', bg: 'rgba(201,168,76,0.1)', color: '#c9a84c', border: '#c9a84c' },
 };
 function FeedbackBadge({ type }) {
   const f = FB_CONFIG[type] || FB_CONFIG.positive;
@@ -98,37 +87,37 @@ export default function GrowthHub() {
   const [activeTab, setActiveTab] = useState('skills');
 
   // ── Skills ─────────────────────────────────────────────────────────────────
-  const [skills, setSkills]         = useState([]); const [skLoad, setSkLoad] = useState(true);
-  const [skModal, setSkModal]       = useState(false); const [skEdit, setSkEdit] = useState(null);
-  const [skForm, setSkForm]         = useState({ name: '', category: '', level: 1, notes: '', started_at: '' });
-  const [skPreview, setSkPreview]   = useState(null);
+  const [skills, setSkills] = useState([]); const [skLoad, setSkLoad] = useState(true);
+  const [skModal, setSkModal] = useState(false); const [skEdit, setSkEdit] = useState(null);
+  const [skForm, setSkForm] = useState({ name: '', category: '', level: 1, notes: '', started_at: '' });
+  const [skPreview, setSkPreview] = useState(null);
 
   // ── Courses ────────────────────────────────────────────────────────────────
-  const [courses, setCourses]       = useState([]); const [crLoad, setCrLoad] = useState(true);
-  const [crModal, setCrModal]       = useState(false); const [crEdit, setCrEdit] = useState(null);
-  const [crForm, setCrForm]         = useState({ title: '', provider: '', hours_spent: '', status: 'in_progress', what_learned: '', started_at: '', completed_at: '' });
-  const [crPreview, setCrPreview]   = useState(null);
+  const [courses, setCourses] = useState([]); const [crLoad, setCrLoad] = useState(true);
+  const [crModal, setCrModal] = useState(false); const [crEdit, setCrEdit] = useState(null);
+  const [crForm, setCrForm] = useState({ title: '', provider: '', hours_spent: '', status: 'in_progress', what_learned: '', started_at: '', completed_at: '' });
+  const [crPreview, setCrPreview] = useState(null);
 
   // ── Failure Log ────────────────────────────────────────────────────────────
-  const [failures, setFailures]     = useState([]); const [flLoad, setFlLoad] = useState(true);
-  const [flModal, setFlModal]       = useState(false); const [flEdit, setFlEdit] = useState(null);
-  const [flForm, setFlForm]         = useState({ date: TODAY, what_happened: '', lesson: '', domain: '' });
-  const [flPreview, setFlPreview]   = useState(null);
+  const [failures, setFailures] = useState([]); const [flLoad, setFlLoad] = useState(true);
+  const [flModal, setFlModal] = useState(false); const [flEdit, setFlEdit] = useState(null);
+  const [flForm, setFlForm] = useState({ date: TODAY, what_happened: '', lesson: '', domain: '' });
+  const [flPreview, setFlPreview] = useState(null);
 
   // ── Skills Gap ─────────────────────────────────────────────────────────────
-  const [gaps, setGaps]             = useState([]); const [sgLoad, setSgLoad] = useState(true);
-  const [sgModal, setSgModal]       = useState(false); const [sgEdit, setSgEdit] = useState(null);
-  const [sgForm, setSgForm]         = useState({ skill: '', current_level: '', target_level: '', why_needed: '', resources: '' });
-  const [sgPreview, setSgPreview]   = useState(null);
+  const [gaps, setGaps] = useState([]); const [sgLoad, setSgLoad] = useState(true);
+  const [sgModal, setSgModal] = useState(false); const [sgEdit, setSgEdit] = useState(null);
+  const [sgForm, setSgForm] = useState({ skill: '', current_level: '', target_level: '', why_needed: '', resources: '' });
+  const [sgPreview, setSgPreview] = useState(null);
 
   // ── Feedback ───────────────────────────────────────────────────────────────
-  const [feedbacks, setFeedbacks]   = useState([]); const [fbLoad, setFbLoad] = useState(true);
-  const [fbModal, setFbModal]       = useState(false); const [fbEdit, setFbEdit] = useState(null);
-  const [fbForm, setFbForm]         = useState({ date: TODAY, from_person: '', feedback_type: 'positive', content: '', action_taken: '' });
-  const [fbPreview, setFbPreview]   = useState(null);
+  const [feedbacks, setFeedbacks] = useState([]); const [fbLoad, setFbLoad] = useState(true);
+  const [fbModal, setFbModal] = useState(false); const [fbEdit, setFbEdit] = useState(null);
+  const [fbForm, setFbForm] = useState({ date: TODAY, from_person: '', feedback_type: 'positive', content: '', action_taken: '' });
+  const [fbPreview, setFbPreview] = useState(null);
 
   // ── Shared ─────────────────────────────────────────────────────────────────
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
 
   // ── Loaders ────────────────────────────────────────────────────────────────
@@ -140,18 +129,16 @@ export default function GrowthHub() {
   };
 
   useEffect(() => {
-    load('/growth-hub/skills',     setSkills,    setSkLoad);
-    load('/growth-hub/courses',    setCourses,   setCrLoad);
-    load('/growth-hub/failures',   setFailures,  setFlLoad);
-    load('/growth-hub/skills-gap', setGaps,      setSgLoad);
-    load('/growth-hub/feedback',   setFeedbacks, setFbLoad);
+    load('/growth-hub/skills', setSkills, setSkLoad);
+    load('/growth-hub/failures', setFailures, setFlLoad);
+    load('/growth-hub/skills-gap', setGaps, setSgLoad);
+    load('/growth-hub/feedback', setFeedbacks, setFbLoad);
   }, []);
 
-  const reloadSk = () => load('/growth-hub/skills',     setSkills,    setSkLoad);
-  const reloadCr = () => load('/growth-hub/courses',    setCourses,   setCrLoad);
-  const reloadFl = () => load('/growth-hub/failures',   setFailures,  setFlLoad);
-  const reloadSg = () => load('/growth-hub/skills-gap', setGaps,      setSgLoad);
-  const reloadFb = () => load('/growth-hub/feedback',   setFeedbacks, setFbLoad);
+  const reloadSk = () => load('/growth-hub/skills', setSkills, setSkLoad);
+  const reloadFl = () => load('/growth-hub/failures', setFailures, setFlLoad);
+  const reloadSg = () => load('/growth-hub/skills-gap', setGaps, setSgLoad);
+  const reloadFb = () => load('/growth-hub/feedback', setFeedbacks, setFbLoad);
 
   // ── Generic CRUD ───────────────────────────────────────────────────────────
   const crudSave = async ({ editItem, postUrl, putUrl, form, onSuccess }) => {
@@ -164,37 +151,29 @@ export default function GrowthHub() {
   };
   const crudDel = (baseUrl, reload) => (item) => setConfirm({
     title: 'Delete?', message: 'This cannot be undone.', confirmLabel: 'Delete', danger: true,
-    onConfirm: async () => { try { await API.delete(`${baseUrl}/${item.id}`); toast.success('Deleted'); reload(); } catch {} }
+    onConfirm: async () => { try { await API.delete(`${baseUrl}/${item.id}`); toast.success('Deleted'); reload(); } catch { } }
   });
 
   // ── Skills CRUD ────────────────────────────────────────────────────────────
   const openSkCreate = () => { setSkEdit(null); setSkForm({ name: '', category: '', level: 1, notes: '', started_at: '' }); setSkModal(true); };
-  const openSkEdit   = (i) => { setSkEdit(i); setSkForm({ name: i.name, category: i.category||'', level: i.level||1, notes: i.notes||'', started_at: i.started_at||'' }); setSkModal(true); };
+  const openSkEdit = (i) => { setSkEdit(i); setSkForm({ name: i.name, category: i.category || '', level: i.level || 1, notes: i.notes || '', started_at: i.started_at || '' }); setSkModal(true); };
   const handleSkSave = () => {
     if (!skForm.name.trim()) return toast.error('Name the skill');
-    crudSave({ editItem: skEdit, postUrl: '/growth-hub/skills', putUrl: id => `/growth-hub/skills/${id}`, form: { ...skForm, level: +skForm.level },
+    crudSave({
+      editItem: skEdit, postUrl: '/growth-hub/skills', putUrl: id => `/growth-hub/skills/${id}`, form: { ...skForm, level: +skForm.level },
       onSuccess: () => { toast.success(skEdit ? 'Updated' : '📈 Skill added'); setSkModal(false); reloadSk(); }
     });
   };
   const handleSkDel = crudDel('/growth-hub/skills', reloadSk);
 
-  // ── Courses CRUD ───────────────────────────────────────────────────────────
-  const openCrCreate = () => { setCrEdit(null); setCrForm({ title: '', provider: '', hours_spent: '', status: 'in_progress', what_learned: '', started_at: '', completed_at: '' }); setCrModal(true); };
-  const openCrEdit   = (i) => { setCrEdit(i); setCrForm({ title: i.title, provider: i.provider||'', hours_spent: i.hours_spent||'', status: i.status||'in_progress', what_learned: i.what_learned||'', started_at: i.started_at||'', completed_at: i.completed_at||'' }); setCrModal(true); };
-  const handleCrSave = () => {
-    if (!crForm.title.trim()) return toast.error('Name the course');
-    crudSave({ editItem: crEdit, postUrl: '/growth-hub/courses', putUrl: id => `/growth-hub/courses/${id}`, form: { ...crForm, hours_spent: +crForm.hours_spent || 0 },
-      onSuccess: () => { toast.success(crEdit ? 'Updated' : '📚 Course added'); setCrModal(false); reloadCr(); }
-    });
-  };
-  const handleCrDel = crudDel('/growth-hub/courses', reloadCr);
 
   // ── Failure Log CRUD ───────────────────────────────────────────────────────
   const openFlCreate = () => { setFlEdit(null); setFlForm({ date: TODAY, what_happened: '', lesson: '', domain: '' }); setFlModal(true); };
-  const openFlEdit   = (i) => { setFlEdit(i); setFlForm({ date: i.date||TODAY, what_happened: i.what_happened, lesson: i.lesson||'', domain: i.domain||'' }); setFlModal(true); };
+  const openFlEdit = (i) => { setFlEdit(i); setFlForm({ date: i.date || TODAY, what_happened: i.what_happened, lesson: i.lesson || '', domain: i.domain || '' }); setFlModal(true); };
   const handleFlSave = () => {
     if (!flForm.what_happened.trim()) return toast.error('Describe what happened');
-    crudSave({ editItem: flEdit, postUrl: '/growth-hub/failures', putUrl: id => `/growth-hub/failures/${id}`, form: flForm,
+    crudSave({
+      editItem: flEdit, postUrl: '/growth-hub/failures', putUrl: id => `/growth-hub/failures/${id}`, form: flForm,
       onSuccess: () => { toast.success(flEdit ? 'Updated' : '💥 Entry logged'); setFlModal(false); reloadFl(); }
     });
   };
@@ -202,10 +181,11 @@ export default function GrowthHub() {
 
   // ── Skills Gap CRUD ────────────────────────────────────────────────────────
   const openSgCreate = () => { setSgEdit(null); setSgForm({ skill: '', current_level: '', target_level: '', why_needed: '', resources: '' }); setSgModal(true); };
-  const openSgEdit   = (i) => { setSgEdit(i); setSgForm({ skill: i.skill, current_level: i.current_level||'', target_level: i.target_level||'', why_needed: i.why_needed||'', resources: i.resources||'' }); setSgModal(true); };
+  const openSgEdit = (i) => { setSgEdit(i); setSgForm({ skill: i.skill, current_level: i.current_level || '', target_level: i.target_level || '', why_needed: i.why_needed || '', resources: i.resources || '' }); setSgModal(true); };
   const handleSgSave = () => {
     if (!sgForm.skill.trim()) return toast.error('Name the skill');
-    crudSave({ editItem: sgEdit, postUrl: '/growth-hub/skills-gap', putUrl: id => `/growth-hub/skills-gap/${id}`, form: sgForm,
+    crudSave({
+      editItem: sgEdit, postUrl: '/growth-hub/skills-gap', putUrl: id => `/growth-hub/skills-gap/${id}`, form: sgForm,
       onSuccess: () => { toast.success(sgEdit ? 'Updated' : '🎯 Gap added'); setSgModal(false); reloadSg(); }
     });
   };
@@ -213,10 +193,11 @@ export default function GrowthHub() {
 
   // ── Feedback CRUD ──────────────────────────────────────────────────────────
   const openFbCreate = () => { setFbEdit(null); setFbForm({ date: TODAY, from_person: '', feedback_type: 'positive', content: '', action_taken: '' }); setFbModal(true); };
-  const openFbEdit   = (i) => { setFbEdit(i); setFbForm({ date: i.date||TODAY, from_person: i.from_person||'', feedback_type: i.feedback_type||'positive', content: i.content, action_taken: i.action_taken||'' }); setFbModal(true); };
+  const openFbEdit = (i) => { setFbEdit(i); setFbForm({ date: i.date || TODAY, from_person: i.from_person || '', feedback_type: i.feedback_type || 'positive', content: i.content, action_taken: i.action_taken || '' }); setFbModal(true); };
   const handleFbSave = () => {
     if (!fbForm.content.trim()) return toast.error('Enter the feedback');
-    crudSave({ editItem: fbEdit, postUrl: '/growth-hub/feedback', putUrl: id => `/growth-hub/feedback/${id}`, form: fbForm,
+    crudSave({
+      editItem: fbEdit, postUrl: '/growth-hub/feedback', putUrl: id => `/growth-hub/feedback/${id}`, form: fbForm,
       onSuccess: () => { toast.success(fbEdit ? 'Updated' : '💬 Feedback logged'); setFbModal(false); reloadFb(); }
     });
   };
@@ -518,32 +499,6 @@ export default function GrowthHub() {
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSkSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : skEdit ? 'Save Changes' : 'Add Skill'}</button></div>
       </div></div>)}
 
-      {/* Courses */}
-      {crModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCrModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
-        <div className="modal-header"><h3>{crEdit ? 'Edit Course' : 'Add Course'}</h3><button className="modal-close" onClick={() => setCrModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Course / Book title</label><input className="form-input" value={crForm.title} onChange={e => setCrForm({ ...crForm, title: e.target.value })} placeholder="e.g. The Psychology of Money…" /></div>
-        <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Provider</label><input className="form-input" value={crForm.provider} onChange={e => setCrForm({ ...crForm, provider: e.target.value })} placeholder="Udemy / YouTube / Book…" /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours invested</label><input type="number" className="form-input" value={crForm.hours_spent} onChange={e => setCrForm({ ...crForm, hours_spent: e.target.value })} placeholder="e.g. 8" min="0" step="0.5" /></div>
-        </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Status</label>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-              <button key={key} onClick={() => setCrForm({ ...crForm, status: key })}
-                style={{ padding: '6px 14px', borderRadius: 20, border: `1px solid ${crForm.status === key ? cfg.color : 'rgba(13,13,13,0.1)'}`, background: crForm.status === key ? cfg.bg : 'transparent', color: crForm.status === key ? cfg.color : 'rgba(13,13,13,0.4)', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                {cfg.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started</label><input type="date" className="form-input" value={crForm.started_at} onChange={e => setCrForm({ ...crForm, started_at: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed</label><input type="date" className="form-input" value={crForm.completed_at} onChange={e => setCrForm({ ...crForm, completed_at: e.target.value })} /></div>
-        </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What did you learn?</label><textarea className="form-textarea" value={crForm.what_learned} onChange={e => setCrForm({ ...crForm, what_learned: e.target.value })} placeholder="Key insights, frameworks, skills gained…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Add Course'}</button></div>
-      </div></div>)}
-
       {/* Failure Log */}
       {flModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFlModal(false)}><div className="modal">
         <div className="modal-header"><h3>{flEdit ? 'Edit Entry' : 'Log a Failure'}</h3><button className="modal-close" onClick={() => setFlModal(false)}>✕</button></div>
@@ -597,18 +552,6 @@ export default function GrowthHub() {
         <LevelDots level={skPreview.level || 1} size={14} />
         {skPreview.started_at && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>🌱 Started {skPreview.started_at}</div>}
         {skPreview.notes && <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, margin: 0 }}><MarkdownRenderer content={skPreview.notes} /></div>}
-      </div>)} />
-
-      <PreviewModal item={crPreview} onClose={() => setCrPreview(null)} icon="📚" iconBg="rgba(91,139,168,0.1)" titleColor="#5b8ba8" title={crPreview?.title} subtitle={crPreview?.provider} body={crPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <StatusBadge status={crPreview.status} />
-          {crPreview.hours_spent > 0 && <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)' }}>⏱ {crPreview.hours_spent}h invested</span>}
-          {crPreview.started_at && <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)' }}>📅 {crPreview.started_at}</span>}
-        </div>
-        {crPreview.what_learned && <div style={{ padding: '16px 20px', background: 'rgba(91,139,168,0.06)', borderRadius: 12, borderLeft: '4px solid #5b8ba8' }}>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: '#5b8ba8', marginBottom: 10 }}>What I learned</div>
-          <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, margin: 0 }}><MarkdownRenderer content={crPreview.what_learned} /></div>
-        </div>}
       </div>)} />
 
       <PreviewModal item={flPreview} onClose={() => setFlPreview(null)} icon="💥" iconBg="rgba(201,168,76,0.1)" titleColor="#c9a84c" title={flPreview?.what_happened} subtitle={`${flPreview?.date ? dateLabel(flPreview.date) : '—'}${flPreview?.domain ? ' · ' + flPreview.domain : ''}`} body={flPreview?.lesson && (<div style={{ padding: '16px 20px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}>
