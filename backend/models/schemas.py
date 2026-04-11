@@ -1,6 +1,5 @@
 from pydantic import BaseModel, field_validator, EmailStr
-from typing import Optional, List
-
+from typing import Optional, List, Literal
 # --- Auth & Profile ---
 class RegisterModel(BaseModel):
     name: str
@@ -515,3 +514,12 @@ class MealLogModel(BaseModel):
     carbs_g: Optional[int] = 0
     fat_g: Optional[int] = 0
     notes: Optional[str] = ""
+
+
+
+class CustomExerciseIn(BaseModel):
+    exercise_name: str
+    muscle_group: str
+
+class ExerciseGoalStatusPatch(BaseModel):
+    status: Literal["pending", "achieved", "failed"]
