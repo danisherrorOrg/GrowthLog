@@ -169,66 +169,137 @@ def delete_meal(meal_id: str, current_user=Depends(get_current_user)):
 # ----------------- BODY MAPPING AGGREGATION -----------------
 @router.get("/body-mapping", response_model=dict)
 def get_body_mapping(current_user=Depends(get_current_user)):
-    # Calculate muscle group "status" based on volume (Weight * Reps) over last 30 days
-    thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
-    workouts = list(db.workouts.find({"user_id": str(current_user["_id"]), "date": {"$gte": thirty_days_ago}}))
+    # Calculate muscle group "status" using the detailed Composite Rank formulation
+    forty_days_ago = (datetime.utcnow() - timedelta(days=40)).strftime("%Y-%m-%d")
+    workouts = list(db.workouts.find({"user_id": str(current_user["_id"]), "date": {"$gte": forty_days_ago}}))
     
     # Initialize data structures
-    stats = {
-        "Chest": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Back": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Legs": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Arms": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Shoulders": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Core": {"volume": 0, "max_weight": 0, "sets": 0},
-        "Cardio": {"volume": 0, "max_weight": 0, "sets": 0}
-    }
+    stats = {}
+    for g in ["Chest", "Back", "Legs", "Arms", "Shoulders", "Core", "Cardio"]:
+        stats[g] = {"volume": 0, "max_weight": 0, "sets": 0, "max_intensity": 0, "days_ago": 999}
 
-    # Aggregate total volume per muscle group
+    # Aggregate metrics per muscle group
     for w in workouts:
+        # Calculate days since this workout
+        w_date_str = w.get("date", forty_days_ago)[:10]
+        try:
+            w_date = datetime.strptime(w_date_str, "%Y-%m-%d")
+            d_ago = max(0, (datetime.utcnow() - w_date).days)
+        except Exception:
+            d_ago = 999
+
         for ex in w.get("exercises", []):
             group = ex.get("muscle_group", "").capitalize()
             if group in stats:
+                stats[group]["days_ago"] = min(stats[group]["days_ago"], d_ago)
                 for s in ex.get("sets", []):
                     reps = s.get("reps", 0)
                     weight = s.get("weight", 0)
+                    
                     vol = reps * weight
                     stats[group]["volume"] += vol
                     stats[group]["sets"] += 1
+                    
                     if weight > stats[group]["max_weight"]:
                         stats[group]["max_weight"] = weight
+                        
+                    # Calculate intensity via Brzycki (fallback for bodyweight)
+                    safe_reps = min(reps, 36)
+                    intensity = 0
+                    if weight > 0 and safe_reps > 0:
+                        orm = weight * (36 / (37 - safe_reps))
+                        intensity = min(100, (weight / orm) * 100)
+                    elif weight == 0 and safe_reps > 0: # Proxy effort for bodyweight
+                        intensity = min(100, ((37 - safe_reps) / 36) * 100)
+                        
+                    stats[group]["max_intensity"] = max(stats[group]["max_intensity"], intensity)
 
-    # Map volume to ranking classifications (Thresholds based on monthly volume in KG)
+    # Compute Composite Score (0-100)
     ranks = {}
     for group, data in stats.items():
         vol = data["volume"]
+        sets = data["sets"]
+        intensity = data["max_intensity"]
+        d_ago = data["days_ago"]
         
-        if vol == 0:
-            rank = "Untrained"
-        elif vol < 1500:
-            rank = "Weak"
-        elif vol < 6000:
-            rank = "Average"
-        elif vol < 18000:
-            rank = "Good"
-        elif vol < 40000:
-            rank = "Elite"
+        # recency factor (decays to 0 at 10 days)
+        recency = 0 if d_ago >= 10 else max(0, 1 - (d_ago / 10))
+        
+        score = min(vol / 50, 40) + min(sets * 5, 20) + (intensity * 0.25) + (recency * 15)
+        score = round(min(100, score))
+        
+        if score >= 80:
+            rank = "Peak"
+        elif score >= 60:
+            rank = "Heavy"
+        elif score >= 35:
+            rank = "Moderate"
+        elif score >= 15:
+            rank = "Light"
         else:
-            rank = "Diamond"
+            rank = "Untrained"
         
         ranks[group] = {
             "volume": vol,
-            "sets": data["sets"],
+            "sets": sets,
             "max_weight": data["max_weight"],
+            "score": score,
             "rank": rank,
-            "thresholds": {
-                "Weak": 0,
-                "Average": 1500,
-                "Good": 6000,
-                "Elite": 18000,
-                "Diamond": 40000
-            }
+            "recency_factor": round(recency, 2),
+            "days_ago": d_ago if d_ago != 999 else "—"
         }
     
     return ranks
 
+
+# ── Custom Exercises (per-user exercise library) ──────────────────────────────
+
+@router.get("/custom-exercises")
+def get_custom_exercises(current_user=Depends(get_current_user)):
+    """Return all custom exercises saved by this user, grouped-friendly."""
+    docs = list(db.custom_exercises.find({"user_id": str(current_user["_id"])}).sort("muscle_group", 1))
+    result = []
+    for d in docs:
+        d["id"] = str(d.pop("_id"))
+        result.append(d)
+    return result
+
+
+@router.post("/custom-exercises")
+def add_custom_exercise(payload: dict, current_user=Depends(get_current_user)):
+    """Save a new exercise name under a muscle group for the current user."""
+    name  = (payload.get("exercise_name") or "").strip()
+    group = (payload.get("muscle_group")  or "").strip()
+    if not name or not group:
+        raise HTTPException(status_code=400, detail="exercise_name and muscle_group are required")
+    # Idempotent — don't create duplicates
+    existing = db.custom_exercises.find_one({
+        "user_id": str(current_user["_id"]),
+        "muscle_group": group,
+        "exercise_name": name,
+    })
+    if existing:
+        existing["id"] = str(existing.pop("_id"))
+        return existing
+    doc = {
+        "user_id": str(current_user["_id"]),
+        "muscle_group": group,
+        "exercise_name": name,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    res = db.custom_exercises.insert_one(doc)
+    doc["id"] = str(res.inserted_id)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.delete("/custom-exercises/{ex_id}")
+def delete_custom_exercise(ex_id: str, current_user=Depends(get_current_user)):
+    """Remove a custom exercise from the user's personal library."""
+    res = db.custom_exercises.delete_one({
+        "_id": ObjectId(ex_id),
+        "user_id": str(current_user["_id"]),
+    })
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {"message": "Deleted"}

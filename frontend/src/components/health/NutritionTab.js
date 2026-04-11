@@ -52,6 +52,21 @@ export default function NutritionTab() {
     setShowMealModal(true);
   };
 
+  const openEditMeal = (meal, e) => {
+    e?.stopPropagation();
+    setEditingMealId(meal.id);
+    setMealForm({
+      date: meal.date,
+      meal_type: meal.meal_type,
+      calories: meal.calories,
+      protein_g: meal.protein_g,
+      carbs_g: meal.carbs_g,
+      fat_g: meal.fat_g,
+      notes: meal.notes || '',
+    });
+    setShowMealModal(true);
+  };
+
   const saveMeal = async () => {
     setSaving(true);
     try {
@@ -63,6 +78,7 @@ export default function NutritionTab() {
         toast.success('Meal logged');
       }
       setShowMealModal(false);
+      setViewingDay(null);   // close detail so list re-renders with fresh data
       loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to save meal'));
@@ -89,13 +105,14 @@ export default function NutritionTab() {
   };
 
   // --- Metrics Handlers ---
-  const openMetrics = (e) => {
+  const openMetrics = (e, targetDate, existingMetric) => {
     e?.stopPropagation();
-    const todayMetric = metrics.find(m => m.date === TODAY);
-    if (todayMetric) {
-      setMetricsForm({ date: TODAY, water_ml: todayMetric.water_ml, nutrition_quality: todayMetric.nutrition_quality, notes: todayMetric.notes || '' });
+    const date = targetDate || TODAY;
+    const m    = existingMetric;
+    if (m) {
+      setMetricsForm({ date, water_ml: m.water_ml, nutrition_quality: m.nutrition_quality, notes: m.notes || '' });
     } else {
-      setMetricsForm({ date: TODAY, water_ml: 2000, nutrition_quality: 7, notes: '' });
+      setMetricsForm({ date, water_ml: 2000, nutrition_quality: 7, notes: '' });
     }
     setShowMetricsModal(true);
   };
@@ -104,8 +121,9 @@ export default function NutritionTab() {
     setSaving(true);
     try {
       await API.post('/health/metrics', metricsForm);
-      toast.success('Daily metrics saved');
+      toast.success('Hydration saved');
       setShowMetricsModal(false);
+      setViewingDay(null);   // close detail so list re-renders with fresh data
       loadData();
     } catch (err) {
       toast.error('Failed to save metrics');
@@ -166,7 +184,7 @@ export default function NutritionTab() {
                   {dayMetrics && <span style={{ fontSize: 12 }}>💧 {dayMetrics.water_ml}ml</span>}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
                   <div>
                     <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>{tCals}</div>
                     <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4 }}>TOTAL CALORIES</div>
@@ -177,9 +195,24 @@ export default function NutritionTab() {
                   </div>
                 </div>
 
-                <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.5, borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 12 }}>
-                  View {dayMeals.length} Meals →
-                </div>
+                {/* Meal name chips preview */}
+                {dayMeals.length > 0 && (
+                  <div style={{ borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {dayMeals.slice(0, 4).map(m => (
+                      <span key={m.id} style={{
+                        fontSize: 10, fontWeight: 700, padding: '3px 8px',
+                        background: 'rgba(13,13,13,0.05)', borderRadius: 20,
+                        color: 'rgba(13,13,13,0.6)', maxWidth: 110,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>
+                        {m.meal_type[0]}· {m.notes || m.meal_type}
+                      </span>
+                    ))}
+                    {dayMeals.length > 4 && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(13,13,13,0.4)', padding: '3px 6px' }}>+{dayMeals.length - 4} more</span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -214,33 +247,75 @@ export default function NutritionTab() {
               ))}
             </div>
 
-            {viewingDay.dayMetrics && (
-              <div style={{ display: 'flex', gap: 16, padding: '16px 20px', background: 'rgba(91,139,168,0.05)', borderRadius: 16, marginBottom: 32, alignItems: 'center' }}>
+            {viewingDay.dayMetrics ? (
+              <div style={{ display: 'flex', gap: 16, padding: '16px 20px', background: 'rgba(91,139,168,0.06)', borderRadius: 16, marginBottom: 32, alignItems: 'center' }}>
                 <div style={{ fontSize: 24 }}>💧</div>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#5b8ba8' }}>HYDRATION</div>
-                  <div style={{ fontSize: 18, fontWeight: 800 }}>{viewingDay.dayMetrics.water_ml} <span style={{ fontSize: 12, fontWeight: 400 }}>ml</span></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#5b8ba8', letterSpacing: 1 }}>HYDRATION</div>
+                  <div style={{ fontSize: 20, fontWeight: 800 }}>{viewingDay.dayMetrics.water_ml} <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.6 }}>ml</span></div>
+                  {viewingDay.dayMetrics.nutrition_quality && (
+                    <div style={{ fontSize: 11, color: '#5b8ba8', fontWeight: 700, marginTop: 2 }}>Quality: {viewingDay.dayMetrics.nutrition_quality}/10</div>
+                  )}
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openMetrics(e, viewingDay.date, viewingDay.dayMetrics); }}
+                  title="Edit hydration"
+                  style={{ background: 'none', border: '1.5px solid rgba(91,139,168,0.3)', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 14, color: '#5b8ba8' }}
+                >✎</button>
               </div>
+            ) : (
+              <button
+                className="btn btn-outline"
+                onClick={(e) => openMetrics(e, viewingDay.date, null)}
+                style={{ width: '100%', borderRadius: 12, marginBottom: 32, color: '#5b8ba8', borderColor: 'rgba(91,139,168,0.3)' }}
+              >💧 Add Hydration for this day</button>
             )}
 
             <h4 style={{ fontSize: 12, fontWeight: 800, opacity: 0.4, textTransform: 'uppercase', marginBottom: 16 }}>Meal History</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {viewingDay.dayMeals.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'white', border: '1px solid rgba(13,13,13,0.05)', borderRadius: 16 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--mist)', padding: '2px 6px', borderRadius: 4 }}>{m.meal_type}</span>
-                      <span style={{ fontWeight: 700 }}>{m.notes || 'Unnamed Meal'}</span>
+              {viewingDay.dayMeals.map(m => {
+                const MEAL_COLORS = { Breakfast: '#f97316', Lunch: '#059669', Dinner: '#7c3aed', Snack: '#db2777' };
+                const mc = MEAL_COLORS[m.meal_type] || '#6b7280';
+                return (
+                  <div key={m.id} style={{
+                    borderLeft: `4px solid ${mc}`,
+                    borderRadius: 14,
+                    background: 'white',
+                    border: `1px solid ${mc}20`,
+                    borderLeftWidth: 4,
+                    padding: '14px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: mc, textTransform: 'uppercase', letterSpacing: 1, flexShrink: 0 }}>{m.meal_type}</span>
+                        <span style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.notes || '—'}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, fontSize: 11, color: 'rgba(13,13,13,0.5)', fontWeight: 700 }}>
+                        <span>{m.protein_g}g P</span>
+                        <span>{m.carbs_g}g C</span>
+                        <span>{m.fat_g}g F</span>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>{m.protein_g}P / {m.carbs_g}C / {m.fat_g}F</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 900 }}>{m.calories}<span style={{ fontSize: 10, fontWeight: 400, marginLeft: 2, opacity: 0.5 }}>kcal</span></div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditMeal(m, e); }}
+                        title="Edit meal"
+                        style={{ background: 'none', border: '1.5px solid rgba(13,13,13,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', fontSize: 13, color: 'rgba(13,13,13,0.4)' }}
+                      >✎</button>
+                      <button
+                        onClick={(e) => deleteMeal(m.id, e)}
+                        title="Delete meal"
+                        style={{ background: 'none', border: 'none', color: 'rgba(13,13,13,0.2)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}
+                      >×</button>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800 }}>{m.calories} <span style={{ fontSize: 10, fontWeight: 400 }}>kcal</span></div>
-                    <button onClick={(e) => deleteMeal(m.id, e)} style={{ background: 'none', border: 'none', color: 'rgba(13,13,13,0.2)', cursor: 'pointer' }}>✕</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <button className="btn btn-outline" style={{ marginTop: 32, width: '100%', borderRadius: 30 }} onClick={openAddMeal}>+ Log Another Meal</button>
@@ -265,7 +340,7 @@ export default function NutritionTab() {
       {showMealModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowMealModal(false)}>
           <div className="modal" style={{ maxWidth: 500 }}>
-            <div className="modal-header"><h3>Log Meal</h3><button className="modal-close" onClick={() => setShowMealModal(false)}>✕</button></div>
+            <div className="modal-header"><h3>{editingMealId ? '✎ Edit Meal' : 'Log Meal'}</h3><button className="modal-close" onClick={() => setShowMealModal(false)}>✕</button></div>
 
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={mealForm.date} onChange={e => setMealForm({ ...mealForm, date: e.target.value })} /></div>

@@ -6,6 +6,16 @@ import ConfirmModal from '../ui/ConfirmModal';
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Arms', 'Shoulders', 'Core', 'Cardio'];
 
+const EXERCISES_BY_GROUP = {
+  Chest: ['Bench Press', 'Incline Bench Press', 'Decline Bench Press', 'Dumbbell Flyes', 'Cable Crossover', 'Push-Ups', 'Chest Dips', 'Pec Deck Machine'],
+  Back: ['Deadlift', 'Pull-Ups', 'Barbell Row', 'Seated Cable Row', 'Lat Pulldown', 'T-Bar Row', 'Single-Arm Dumbbell Row', 'Face Pulls'],
+  Legs: ['Squat', 'Leg Press', 'Romanian Deadlift', 'Lunges', 'Leg Curl', 'Leg Extension', 'Bulgarian Split Squat', 'Hip Thrust', 'Calf Raises', 'Hack Squat'],
+  Arms: ['Barbell Curl', 'Hammer Curl', 'Preacher Curl', 'Tricep Pushdown', 'Skull Crushers', 'Overhead Tricep Extension', 'Close-Grip Bench', 'Dips'],
+  Shoulders: ['Overhead Press (Barbell)', 'Dumbbell Shoulder Press', 'Lateral Raises', 'Front Raises', 'Arnold Press', 'Rear Delt Flyes', 'Upright Row'],
+  Core: ['Plank', 'Crunches', 'Cable Crunch', 'Leg Raises', 'Russian Twists', 'Ab Wheel Rollout', 'Hanging Knee Raises', 'Dragon Flag'],
+  Cardio: ['Running', 'Cycling', 'Rowing Machine', 'Jump Rope', 'Stair Climber', 'Elliptical', 'Swimming', 'HIIT Sprint'],
+};
+
 export default function ExerciseGoalsTab() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +31,7 @@ export default function ExerciseGoalsTab() {
     muscle_group: 'Chest',
     target_sets: 3,
     target_reps: 10,
-    target_weight: 135,
+    target_weight: 60,
     deadline: '',
     status: 'pending'
   });
@@ -44,7 +54,7 @@ export default function ExerciseGoalsTab() {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ exercise_name: '', muscle_group: 'Chest', target_sets: 3, target_reps: 10, target_weight: 135, deadline: '', status: 'pending' });
+    setForm({ exercise_name: '', muscle_group: 'Chest', target_sets: 3, target_reps: 10, target_weight: 60, deadline: '', status: 'pending' });
     setShowModal(true);
   };
 
@@ -152,7 +162,11 @@ export default function ExerciseGoalsTab() {
               <h4 style={{ margin: 0, fontSize: 18, color: 'var(--ink)' }}>{g.exercise_name}</h4>
 
               <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: 14, fontWeight: 800 }}>{g.target_weight} <span style={{ fontWeight: 400, opacity: 0.5 }}>lbs</span></div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>
+                  {g.muscle_group === 'Cardio'
+                    ? <>{g.target_weight > 0 ? <>{g.target_weight} <span style={{ fontWeight: 400, opacity: 0.5 }}>km</span></> : `${g.target_reps} min`}</>
+                    : <>{g.target_weight} <span style={{ fontWeight: 400, opacity: 0.5 }}>kg</span></>}
+                </div>
                 <div style={{ fontSize: 10, fontWeight: 800, color: g.status === 'achieved' ? 'var(--sage)' : g.status === 'failed' ? 'var(--rust)' : 'var(--gold)' }}>
                   {g.status.toUpperCase()}
                 </div>
@@ -179,11 +193,19 @@ export default function ExerciseGoalsTab() {
             <div style={{ padding: 24, background: 'rgba(13,13,13,0.02)', borderRadius: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4, marginBottom: 16 }}>TARGET TARGET SPECIFICATIONS</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontWeight: 700 }}>Weight</span>
-                <span style={{ fontSize: 18, fontWeight: 800 }}>{viewingGoal.target_weight} lbs</span>
+                <span style={{ fontWeight: 700 }}>Target</span>
+                {viewingGoal.muscle_group === 'Cardio' ? (
+                  <span style={{ fontSize: 18, fontWeight: 800 }}>
+                    {viewingGoal.target_weight > 0 ? <>{viewingGoal.target_weight} km</> : ''}
+                    {viewingGoal.target_weight > 0 && viewingGoal.target_reps > 0 ? ' · ' : ''}
+                    {viewingGoal.target_reps > 0 ? <>{viewingGoal.target_reps} min</> : ''}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 18, fontWeight: 800 }}>{viewingGoal.target_weight} kg</span>
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontWeight: 700 }}>Rep Range</span>
+                <span style={{ fontWeight: 700 }}>{viewingGoal.muscle_group === 'Cardio' ? 'Rounds / Sets' : 'Rep Range'}</span>
                 <span style={{ fontSize: 18, fontWeight: 800 }}>{viewingGoal.target_sets} × {viewingGoal.target_reps}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -216,7 +238,10 @@ export default function ExerciseGoalsTab() {
             </div>
 
             <div className="form-group"><label className="form-label">Exercise Name</label>
-              <input type="text" className="form-input" value={form.exercise_name} onChange={e => setForm({ ...form, exercise_name: e.target.value })} placeholder="e.g. Squat" />
+              <datalist id="goal-exercise-list">
+                {(EXERCISES_BY_GROUP[form.muscle_group] || []).map(ex => <option key={ex} value={ex} />)}
+              </datalist>
+              <input type="text" className="form-input" list="goal-exercise-list" value={form.exercise_name} onChange={e => setForm({ ...form, exercise_name: e.target.value })} placeholder={form.muscle_group === 'Cardio' ? 'e.g. Running' : 'e.g. Squat'} />
             </div>
 
             <div className="form-group"><label className="form-label">Muscle Group</label>
@@ -226,17 +251,22 @@ export default function ExerciseGoalsTab() {
             </div>
 
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Target Sets</label>
+              <div className="form-group">
+                <label className="form-label">{form.muscle_group === 'Cardio' ? 'Target Rounds' : 'Target Sets'}</label>
                 <input type="number" className="form-input" value={form.target_sets} onChange={e => setForm({ ...form, target_sets: Number(e.target.value) })} />
               </div>
-              <div className="form-group"><label className="form-label">Target Reps</label>
+              <div className="form-group">
+                <label className="form-label">{form.muscle_group === 'Cardio' ? 'Duration per Round (min)' : 'Target Reps'}</label>
                 <input type="number" className="form-input" value={form.target_reps} onChange={e => setForm({ ...form, target_reps: Number(e.target.value) })} />
               </div>
             </div>
 
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Target Weight (lbs)</label>
-                <input type="number" className="form-input" value={form.target_weight} onChange={e => setForm({ ...form, target_weight: Number(e.target.value) })} />
+              <div className="form-group">
+                <label className="form-label">
+                  {form.muscle_group === 'Cardio' ? 'Target Distance (km)' : 'Target Weight (kg)'}
+                </label>
+                <input type="number" step={form.muscle_group === 'Cardio' ? '0.5' : '1'} className="form-input" value={form.target_weight} onChange={e => setForm({ ...form, target_weight: Number(e.target.value) })} />
               </div>
               <div className="form-group"><label className="form-label">Deadline</label>
                 <input type="date" className="form-input" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
