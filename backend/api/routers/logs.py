@@ -93,7 +93,8 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     entries = [e.model_dump() for e in data.entries]
     if existing:
         db.daily_logs.update_one({"_id": existing["_id"]},
-            {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating}})
+            {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating,
+                      "gratitude": data.gratitude or [], "regret": data.regret or ""}})
         cache_invalidate(f"dashboard:{uid}")
         cache_invalidate(f"stats:{uid}")
         from utils.activity import log_activity
@@ -103,6 +104,7 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     result = db.daily_logs.insert_one({
         "user_id": uid, "date": today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
+        "gratitude": data.gratitude or [], "regret": data.regret or "",
         "created_at": utcnow(),
     })
     

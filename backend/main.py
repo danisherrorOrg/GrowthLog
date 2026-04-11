@@ -22,6 +22,10 @@ from api.routers.books import router as books_router
 from api.routers.reframes import router as reframes_router
 from api.routers.activity import router as activity_router
 from api.routers.thoughts import router as thoughts_router
+from api.routers.insights import router as insights_router
+from api.routers.insights import router as insights_router
+from api.routers.growth_career import router as growth_career_router
+from api.routers.passions import router as passions_router
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
 
@@ -57,6 +61,9 @@ app.include_router(books_router)
 app.include_router(reframes_router)
 app.include_router(activity_router)
 app.include_router(thoughts_router)
+app.include_router(insights_router)
+app.include_router(growth_career_router)
+app.include_router(passions_router)
 
 
 

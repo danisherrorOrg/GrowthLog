@@ -24,6 +24,8 @@ export default function AllLogs() {
   const [confirm, setConfirm] = useState(null);
   const [previewEntry, setPreviewEntry] = useState(null);
   const [previewPeak, setPreviewPeak] = useState(null);
+  const [previewGratitude, setPreviewGratitude] = useState(null); // { gratitude: [], date }
+  const [previewRegret, setPreviewRegret] = useState(null);       // { regret: '', date }
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -94,7 +96,9 @@ export default function AllLogs() {
       const q = searchQuery.toLowerCase();
       const matchHighlight = log.highlight?.toLowerCase().includes(q);
       const matchEntries = log.entries?.some(e => e.text?.toLowerCase().includes(q));
-      if (!matchHighlight && !matchEntries) return false;
+      const matchGratitude = log.gratitude?.some(g => g?.toLowerCase().includes(q));
+      const matchRegret = log.regret?.toLowerCase().includes(q);
+      if (!matchHighlight && !matchEntries && !matchGratitude && !matchRegret) return false;
     }
     return true;
   });
@@ -277,6 +281,52 @@ export default function AllLogs() {
                           </div>
                         )}
 
+                        {/* Gratitude + Regret row */}
+                        {((log.gratitude?.some(g => g?.trim())) || log.regret?.trim()) && (
+                          <div style={{ display: 'grid', gridTemplateColumns: log.gratitude?.some(g => g?.trim()) && log.regret?.trim() ? '1fr 1fr' : '1fr', gap: 16, marginBottom: 24 }}>
+                            {log.gratitude?.some(g => g?.trim()) && (
+                              <div
+                                onClick={() => setPreviewGratitude({ gratitude: log.gratitude, date: log.date })}
+                                style={{ padding: '18px 20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '4px solid var(--gold)', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(201,146,10,0.12)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)'; }}
+                              >
+                                <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: '#c9920a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, cursor: 'inherit' }}>
+                                  🌿 Gratitude
+                                </label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  {log.gratitude.filter(g => g?.trim()).map((g, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                      <span style={{
+                                        minWidth: 22, height: 22, borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, var(--gold), #f4a22d)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 11, fontWeight: 700, color: '#1a1a1a', flexShrink: 0, marginTop: 1
+                                      }}>{i + 1}</span>
+                                      <span style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{g}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {log.regret?.trim() && (
+                              <div
+                                onClick={() => setPreviewRegret({ regret: log.regret, date: log.date })}
+                                style={{ padding: '18px 20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '4px solid #8b6bc4', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(139,107,196,0.12)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)'; }}
+                              >
+                                <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8b6bc4', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, cursor: 'inherit' }}>
+                                  🔍 Regret & Insight
+                                </label>
+                                <div className="markdown-body" style={{ fontSize: 14, color: 'var(--ink)', lineHeight: 1.6, margin: 0, fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                  <MarkdownRenderer content={log.regret} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
                           {log.entries?.map(entry => {
                             const cat = getCategory(entry.category_id);
@@ -405,6 +455,66 @@ export default function AllLogs() {
       )}
 
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
+
+      {/* Gratitude Preview Modal */}
+      {previewGratitude && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewGratitude(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 560, padding: '32px 40px' }}>
+            <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{ fontSize: 32, background: 'linear-gradient(135deg, #fff8e7, #fdefc2)', width: 60, height: 60, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--gold)' }}>🌿</span>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 24, color: '#c9920a' }}>Gratitude Log</h3>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>
+                    {format(parseISO(previewGratitude.date), 'EEEE, MMMM d, yyyy')}
+                  </div>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setPreviewGratitude(null)}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {previewGratitude.gratitude.filter(g => g?.trim()).map((g, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 18px', background: 'linear-gradient(135deg, #fff8e7, #fdf6dd)', borderRadius: 14, border: '1px solid rgba(201,146,10,0.15)' }}>
+                  <span style={{
+                    minWidth: 30, height: 30, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--gold), #f4a22d)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700, color: '#1a1a1a', flexShrink: 0
+                  }}>{i + 1}</span>
+                  <div className="markdown-body" style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink)', margin: 0 }}>
+                    <MarkdownRenderer content={g} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Regret Preview Modal */}
+      {previewRegret && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewRegret(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 560, padding: '32px 40px' }}>
+            <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{ fontSize: 32, background: 'linear-gradient(135deg, #f3eeff, #e8dcff)', width: 60, height: 60, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #8b6bc4' }}>🔍</span>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 24, color: '#8b6bc4' }}>Regret & Insight</h3>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>
+                    {format(parseISO(previewRegret.date), 'EEEE, MMMM d, yyyy')}
+                  </div>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setPreviewRegret(null)}>✕</button>
+            </div>
+            <div style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #f3eeff, #ede4ff)', borderRadius: 16, border: '1px solid rgba(139,107,196,0.2)' }}>
+              <div className="markdown-body" style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--ink)', fontStyle: 'italic', margin: 0 }}>
+                <MarkdownRenderer content={previewRegret.regret} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

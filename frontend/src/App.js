@@ -30,6 +30,9 @@ import BookDetail from './pages/BookDetail';
 import Reframes from './pages/Reframes';
 import ActivityLog from './pages/ActivityLog';
 import Thoughts from './pages/Thoughts';
+import Insights from './pages/Insights';
+import GrowthHub from './pages/GrowthHub';
+import LifeCanvas from './pages/LifeCanvas';
 
 
 function PrivateRoute({ children }) {
@@ -81,6 +84,9 @@ export default function App() {
             <Route path="reframes" element={<Reframes />} />
             <Route path="activity" element={<ActivityLog />} />
             <Route path="thoughts" element={<Thoughts />} />
+            <Route path="insights" element={<Insights />} />
+            <Route path="growth-hub" element={<GrowthHub />} />
+            <Route path="life-canvas" element={<LifeCanvas />} />
             <Route path="growth" element={<Growth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />

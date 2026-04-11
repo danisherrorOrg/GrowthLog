@@ -5,14 +5,12 @@
  
 ---
  
-## 1. Daily Logging
+<!-- ## 1. Daily Logging
  
 | Feature | Description | Tag |
 |---|---|---|
 | Gratitude log | 3 things you're grateful for each day | `core` [DONE] |
-| Voice memo log | Record a quick audio note instead of typing | `power` |
-| Location log | Where you were — home, office, travelling, etc. | `insight` |
-| Regret log | Something you wish you'd done differently today | `insight` |
+| Regret log | Something you wish you'd done differently today | `insight` | -->
  
 ---
  
@@ -20,36 +18,31 @@
  
 | Feature | Description | Tag |
 |---|---|---|
-| Sleep tracker | Bedtime, wake time, quality rating, notes | `core` |
-| Nap log | Duration and timing of naps and effect on night sleep | `power` |
+| Sleep tracker and nap log| Bedtime, wake time, quality rating, notes | `core` |
 | Exercise log | Type, duration, intensity — gym, run, yoga etc. | `core` |
 | Workout splits | Track muscle groups trained across the week | `power` |
 | Water & nutrition | Water intake and general eating quality score | `core` |
-| Meal log | Breakfast, lunch, dinner with notes or photos | `power` |
 | Calorie tracking | Optional calorie and macro logging per meal | `power` |
  
 ---
  
 ## 3. Goals & Habits
  
-| Feature | Description | Tag |
+<!-- | Feature | Description | Tag |
 |---|---|---|
-
 | Anti-goals | Things you actively want to avoid or stop | `insight` |
-| Habit graveyard | Log habits you tried and abandoned — and why | `insight` |
-| Goal tracking | Define and track progress on life objectives | `core` [DONE] |
+| Habit graveyard | Log habits you tried and abandoned — and why | `insight` | -->
 
 ---
  
-## 4. Time & Productivity
+<!-- ## 4. Time & Productivity
  
 | Feature | Description | Tag |
 |---|---|---|
-| Time tracking | Log hours per category: work, learning, leisure | `core` [DONE] |
+| Time tracking | Log hours per category: work, learning, leisure | `core`  |
 | Screen time | Hours on phone/computer, by app category | `insight` |
-| Time audit | Weekly breakdown of where your hours actually went | `insight` |
 | Procrastination log | What you avoided, why, and the outcome | `insight` |
-| Not-to-do list | Recurring time-wasters to consciously avoid | `power` |
+| Not-to-do list | Recurring time-wasters to consciously avoid | `power` | -->
 
 
 ---
@@ -60,8 +53,6 @@
 |---|---|---|
 | Skills tracker | Skills you're developing with progress levels | `core` |
 | Courses & learning | Courses taken, hours spent, what you learned | `power` |
-| Books & Media | Track reading progress and lessons learned | `core` [DONE] |
-| Ideas & insights | Capture random ideas and aha-moments | `power` [DONE] |
 | Failure log | Record mistakes and what you learned from them | `insight` |
 
  
@@ -88,7 +79,6 @@
  
 | Feature | Description | Tag |
 |---|---|---|
-
 | Skills gap tracker | Skills you need for your next career move | `power` |
 | Feedback received | Positive and critical feedback from peers/managers | `power` |
  
