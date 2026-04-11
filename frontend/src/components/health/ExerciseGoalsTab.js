@@ -9,11 +9,12 @@ const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Arms', 'Shoulders', 'Core', 'Ca
 export default function ExerciseGoalsTab() {
   const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [viewingGoal, setViewingGoal] = useState(null);
 
   const [form, setForm] = useState({
     exercise_name: '',
@@ -47,7 +48,8 @@ export default function ExerciseGoalsTab() {
     setShowModal(true);
   };
 
-  const openEdit = (g) => {
+  const openEdit = (g, e) => {
+    e?.stopPropagation();
     setEditingId(g.id);
     setForm({
       exercise_name: g.exercise_name,
@@ -58,12 +60,13 @@ export default function ExerciseGoalsTab() {
       deadline: g.deadline,
       status: g.status
     });
+    setViewingGoal(null);
     setShowModal(true);
   };
 
   const handleSave = async () => {
     if (!form.exercise_name || !form.deadline) return toast.error('Name and deadline required');
-    
+
     setSaving(true);
     try {
       if (editingId) {
@@ -82,7 +85,8 @@ export default function ExerciseGoalsTab() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, e) => {
+    e?.stopPropagation();
     setConfirm({
       title: 'Delete Goal?',
       message: 'This cannot be undone.',
@@ -92,6 +96,7 @@ export default function ExerciseGoalsTab() {
         try {
           await API.delete(`/health/exercise-goals/${id}`);
           toast.success('Goal deleted');
+          setViewingGoal(null);
           loadGoals();
         } catch (err) {
           toast.error('Failed to delete goal');
@@ -100,7 +105,8 @@ export default function ExerciseGoalsTab() {
     });
   };
 
-  const updateStatus = async (id, currentForm, newStatus) => {
+  const updateStatus = async (id, currentForm, newStatus, e) => {
+    e?.stopPropagation();
     try {
       const payload = { ...currentForm, status: newStatus };
       await API.put(`/health/exercise-goals/${id}`, payload);
@@ -133,45 +139,71 @@ export default function ExerciseGoalsTab() {
           <button className="btn btn-primary" onClick={openAdd} style={{ borderRadius: 30 }}>+ Create Goal</button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {goals.map(g => (
-            <div key={g.id} className="card" style={{ padding: '20px', borderLeft: `5px solid ${g.status === 'achieved' ? 'var(--sage)' : g.status === 'failed' ? 'var(--rust)' : '#c9a84c'}`, position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontSize: 10, background: 'rgba(13,13,13,0.06)', padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, display: 'inline-block' }}>
-                    {g.muscle_group}
-                  </div>
-                  <h4 style={{ margin: 0, fontSize: 18 }}>{g.exercise_name}</h4>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-sm btn-ghost" onClick={() => openEdit(g)} style={{ padding: 6 }}>✎</button>
-                  <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(g.id)} style={{ padding: 6, color: 'rgba(13,13,13,0.3)' }}>🗑</button>
+            <div key={g.id} className="card" onClick={() => setViewingGoal(g)} style={{
+              padding: '20px',
+              cursor: 'pointer',
+              borderLeft: `5px solid ${g.status === 'achieved' ? 'var(--sage)' : g.status === 'failed' ? 'var(--rust)' : '#c9a84c'}`
+            }}>
+              <div style={{ fontSize: 10, background: 'rgba(13,13,13,0.06)', padding: '3px 8px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase', marginBottom: 6, display: 'inline-block' }}>
+                {g.muscle_group}
+              </div>
+              <h4 style={{ margin: 0, fontSize: 18, color: 'var(--ink)' }}>{g.exercise_name}</h4>
+
+              <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{g.target_weight} <span style={{ fontWeight: 400, opacity: 0.5 }}>lbs</span></div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: g.status === 'achieved' ? 'var(--sage)' : g.status === 'failed' ? 'var(--rust)' : 'var(--gold)' }}>
+                  {g.status.toUpperCase()}
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: 16, marginBottom: 16, padding: '12px', background: 'rgba(13,13,13,0.02)', borderRadius: 8 }}>
-                <div>
-                  <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>Target</div>
-                  <div style={{ fontWeight: 700, fontSize: 16 }}>{g.target_sets} × {g.target_reps} <span style={{ fontSize: 13, opacity: 0.5 }}>@</span> {g.target_weight} lbs</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>Deadline</div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>{g.deadline}</div>
-                </div>
-              </div>
-
-              {g.status === 'pending' ? (
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button className="btn btn-sm" style={{ flex: 1, background: 'rgba(107,140,107,0.1)', color: 'var(--sage)', border: 'none', fontWeight: 700 }} onClick={() => updateStatus(g.id, g, 'achieved')}>✓ Mark Achieved</button>
-                  <button className="btn btn-sm" style={{ flex: 1, background: 'rgba(196,98,58,0.1)', color: 'var(--rust)', border: 'none', fontWeight: 700 }} onClick={() => updateStatus(g.id, g, 'failed')}>✕ Mark Failed</button>
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, fontWeight: 700, textAlign: 'center', padding: '8px 0', color: g.status === 'achieved' ? 'var(--sage)' : 'var(--rust)' }}>
-                  {g.status === 'achieved' ? '🎉 Target Achieved' : '💥 Deadline Missed / Failed'}
-                </div>
-              )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Goal Detail Modal (Content View) */}
+      {viewingGoal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewingGoal(null)}>
+          <div className="modal" style={{ maxWidth: 450, padding: 32 }}>
+            <div className="modal-header" style={{ marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+                  PERFORMANCE GOAL
+                </div>
+                <h2 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 32 }}>{viewingGoal.exercise_name}</h2>
+              </div>
+              <button className="modal-close" onClick={() => setViewingGoal(null)}>✕</button>
+            </div>
+
+            <div style={{ padding: 24, background: 'rgba(13,13,13,0.02)', borderRadius: 20, marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4, marginBottom: 16 }}>TARGET TARGET SPECIFICATIONS</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontWeight: 700 }}>Weight</span>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>{viewingGoal.target_weight} lbs</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontWeight: 700 }}>Rep Range</span>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>{viewingGoal.target_sets} × {viewingGoal.target_reps}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 700 }}>Deadline</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--rust)' }}>{viewingGoal.deadline}</span>
+              </div>
+            </div>
+
+            {viewingGoal.status === 'pending' && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 32 }}>
+                <button className="btn btn-sm" style={{ flex: 1, height: 40, background: 'rgba(107,140,107,0.1)', color: 'var(--sage)', border: 'none', fontWeight: 800 }} onClick={(e) => updateStatus(viewingGoal.id, viewingGoal, 'achieved', e)}>✓ ACHIEVED</button>
+                <button className="btn btn-sm" style={{ flex: 1, height: 40, background: 'rgba(196,98,58,0.1)', color: 'var(--rust)', border: 'none', fontWeight: 800 }} onClick={(e) => updateStatus(viewingGoal.id, viewingGoal, 'failed', e)}>✕ FAILED</button>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={(e) => openEdit(viewingGoal, e)}>✎ Edit Goal</button>
+              <button className="btn btn-outline" style={{ flex: 1, color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.2)' }} onClick={(e) => handleDelete(viewingGoal.id, e)}>🗑 Delete</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -184,36 +216,36 @@ export default function ExerciseGoalsTab() {
             </div>
 
             <div className="form-group"><label className="form-label">Exercise Name</label>
-              <input type="text" className="form-input" value={form.exercise_name} onChange={e => setForm({...form, exercise_name: e.target.value})} placeholder="e.g. Squat" />
+              <input type="text" className="form-input" value={form.exercise_name} onChange={e => setForm({ ...form, exercise_name: e.target.value })} placeholder="e.g. Squat" />
             </div>
-            
+
             <div className="form-group"><label className="form-label">Muscle Group</label>
-              <select className="form-input" value={form.muscle_group} onChange={e => setForm({...form, muscle_group: e.target.value})}>
+              <select className="form-input" value={form.muscle_group} onChange={e => setForm({ ...form, muscle_group: e.target.value })}>
                 {MUSCLE_GROUPS.map(mg => <option key={mg} value={mg}>{mg}</option>)}
               </select>
             </div>
 
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group"><label className="form-label">Target Sets</label>
-                <input type="number" className="form-input" value={form.target_sets} onChange={e => setForm({...form, target_sets: Number(e.target.value)})} />
+                <input type="number" className="form-input" value={form.target_sets} onChange={e => setForm({ ...form, target_sets: Number(e.target.value) })} />
               </div>
               <div className="form-group"><label className="form-label">Target Reps</label>
-                <input type="number" className="form-input" value={form.target_reps} onChange={e => setForm({...form, target_reps: Number(e.target.value)})} />
+                <input type="number" className="form-input" value={form.target_reps} onChange={e => setForm({ ...form, target_reps: Number(e.target.value) })} />
               </div>
             </div>
 
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group"><label className="form-label">Target Weight (lbs)</label>
-                <input type="number" className="form-input" value={form.target_weight} onChange={e => setForm({...form, target_weight: Number(e.target.value)})} />
+                <input type="number" className="form-input" value={form.target_weight} onChange={e => setForm({ ...form, target_weight: Number(e.target.value) })} />
               </div>
               <div className="form-group"><label className="form-label">Deadline</label>
-                <input type="date" className="form-input" value={form.deadline} onChange={e => setForm({...form, deadline: e.target.value})} />
+                <input type="date" className="form-input" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} />
               </div>
             </div>
 
             {editingId && (
               <div className="form-group"><label className="form-label">Status</label>
-                <select className="form-input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                <select className="form-input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
                   <option value="pending">Pending</option>
                   <option value="achieved">Achieved</option>
                   <option value="failed">Failed</option>
@@ -230,7 +262,7 @@ export default function ExerciseGoalsTab() {
           </div>
         </div>
       )}
-      
+
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );

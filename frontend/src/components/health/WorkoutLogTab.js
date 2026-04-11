@@ -11,7 +11,7 @@ const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Arms', 'Shoulders', 'Core', 'Ca
 export default function WorkoutLogTab() {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -25,6 +25,8 @@ export default function WorkoutLogTab() {
     notes: ''
   });
   const [exercises, setExercises] = useState([]);
+
+  const [viewingWorkout, setViewingWorkout] = useState(null);
 
   useEffect(() => {
     loadWorkouts();
@@ -85,7 +87,7 @@ export default function WorkoutLogTab() {
   const handleSave = async () => {
     if (!form.date) return toast.error('Date required');
     if (exercises.some(e => !e.exercise_name)) return toast.error('Exercise names are required');
-    
+
     setSaving(true);
     try {
       const payload = { ...form, exercises };
@@ -100,7 +102,8 @@ export default function WorkoutLogTab() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, e) => {
+    e?.stopPropagation();
     setConfirm({
       title: 'Delete Workout?',
       message: 'This removes all sets and progression data for this session.',
@@ -110,6 +113,7 @@ export default function WorkoutLogTab() {
         try {
           await API.delete(`/health/workouts/${id}`);
           toast.success('Workout deleted');
+          setViewingWorkout(null);
           loadWorkouts();
         } catch (err) {
           toast.error('Failed to delete workout');
@@ -140,55 +144,108 @@ export default function WorkoutLogTab() {
           <button className="btn btn-primary" onClick={openAdd} style={{ borderRadius: 30 }}>+ Log First Workout</button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {workouts.map(w => (
-            <div key={w.id} className="card" style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div key={w.id} className="card" onClick={() => setViewingWorkout(w)} style={{
+              padding: '16px 20px',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              borderLeft: '4px solid var(--sage)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--sage)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>
-                    {w.date}
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(13,13,13,0.3)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>
+                    {format(parseISO(w.date), 'MMMM dd, yyyy')}
                   </div>
-                  <div style={{ fontSize: 18, fontWeight: 700, display: 'flex', gap: 8, alignItems: 'center' }}>
-                    {w.type} <span style={{ fontSize: 12, background: 'var(--mist)', padding: '2px 8px', borderRadius: 10, color: 'rgba(13,13,13,0.5)' }}>{w.duration_minutes}m</span>
-                  </div>
+                  <h4 style={{ margin: 0, fontSize: 18, color: 'var(--ink)' }}>{w.type}</h4>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                   <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(13,13,13,0.4)' }}>
-                     Intensity: <span style={{ color: 'var(--ink)' }}>{w.intensity}/10</span>
-                   </div>
-                   <button className="btn btn-sm btn-ghost" onClick={() => handleDelete(w.id)} style={{ color: 'rgba(13,13,13,0.3)', padding: 5 }}>🗑</button>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 18, fontWeight: 800 }}>{w.duration_minutes}m</div>
+                  <div style={{ fontSize: 10, opacity: 0.4, fontWeight: 700 }}>DURATION</div>
                 </div>
               </div>
 
-              {w.notes && <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', fontStyle: 'italic', marginBottom: 16 }}>{w.notes}</p>}
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                {(w.exercises || []).map((e, idx) => (
-                  <div key={idx} style={{ background: 'rgba(13,13,13,0.03)', padding: 14, borderRadius: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ fontWeight: 700, fontSize: 14 }}>{e.exercise_name}</span>
-                      <span style={{ fontSize: 10, background: 'rgba(13,13,13,0.08)', padding: '2px 6px', borderRadius: 4, fontWeight: 700, textTransform: 'uppercase' }}>
-                        {e.muscle_group}
-                      </span>
-                    </div>
-                    {e.sets && e.sets.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {e.sets.map((s, sIdx) => (
-                          <div key={sIdx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>
-                            <span>Set {sIdx + 1}</span>
-                            <span>{s.reps} reps <span style={{ opacity: 0.5 }}>@</span> {s.weight > 0 ? `${s.weight} lbs` : 'BW'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center', borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>EXERCISES</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{(w.exercises || []).length} Movements</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>INTENSITY</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{w.intensity}/10</div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
+      {/* Workout Detail Modal (Content View) */}
+      {viewingWorkout && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewingWorkout(null)}>
+          <div className="modal" style={{ maxWidth: 650, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
+            <div className="modal-header" style={{ marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--sage)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+                  {format(parseISO(viewingWorkout.date), 'EEEE · MMMM dd')}
+                </div>
+                <h2 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 32 }}>{viewingWorkout.type}</h2>
+              </div>
+              <button className="modal-close" onClick={() => setViewingWorkout(null)}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+              <div style={{ flex: 1, padding: 16, background: 'rgba(13,13,13,0.02)', borderRadius: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4, marginBottom: 4 }}>TOTAL TIME</div>
+                <div style={{ fontSize: 24, fontWeight: 800 }}>{viewingWorkout.duration_minutes} <span style={{ fontSize: 14, fontWeight: 400 }}>min</span></div>
+              </div>
+              <div style={{ flex: 1, padding: 16, background: 'rgba(13,13,13,0.02)', borderRadius: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4, marginBottom: 4 }}>SESSION INTENSITY</div>
+                <div style={{ fontSize: 24, fontWeight: 800 }}>{viewingWorkout.intensity} <span style={{ fontSize: 14, fontWeight: 400 }}>/ 10</span></div>
+              </div>
+            </div>
+
+            {viewingWorkout.notes && (
+              <div style={{ marginBottom: 32, padding: '16px 20px', background: 'var(--parchment)', borderRadius: 12, borderLeft: '4px solid var(--gold)', fontStyle: 'italic', color: 'rgba(13,13,13,0.7)' }}>
+                "{viewingWorkout.notes}"
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {(viewingWorkout.exercises || []).map((e, idx) => (
+                <div key={idx} style={{
+                  padding: '20px',
+                  background: 'white',
+                  borderRadius: 20,
+                  boxShadow: '0 4px 12px rgba(13,13,13,0.03)',
+                  border: '1px solid rgba(13,13,13,0.05)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--ink)' }}>{e.exercise_name}</div>
+                    <span style={{ fontSize: 10, background: 'var(--mist)', padding: '4px 10px', borderRadius: 8, fontWeight: 800, textTransform: 'uppercase', color: 'rgba(13,13,13,0.5)' }}>
+                      {e.muscle_group}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {e.sets.map((s, sIdx) => (
+                      <div key={sIdx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(13,13,13,0.02)', borderRadius: 10 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'rgba(13,13,13,0.4)' }}>SET {sIdx + 1}</span>
+                        <div style={{ fontWeight: 800 }}>{s.reps} <span style={{ fontWeight: 400, opacity: 0.5 }}>reps</span> · {s.weight > 0 ? `${s.weight} lbs` : 'Bodyweight'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 40, display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setShowModal(true); setViewingWorkout(null); /* populate with edit */ }}>✎ Edit Session</button>
+              <button className="btn btn-outline" style={{ flex: 1, color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.2)' }} onClick={(e) => handleDelete(viewingWorkout.id, e)}>🗑 Delete Log</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Workout Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
@@ -200,22 +257,22 @@ export default function WorkoutLogTab() {
 
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group"><label className="form-label">Date</label>
-                <input type="date" className="form-input" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+                <input type="date" className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
               </div>
               <div className="form-group"><label className="form-label">Type</label>
-                <input type="text" className="form-input" value={form.type} onChange={e => setForm({...form, type: e.target.value})} placeholder="Gym, Run, Yoga..." />
+                <input type="text" className="form-input" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} placeholder="Gym, Run, Yoga..." />
               </div>
               <div className="form-group"><label className="form-label">Duration (min)</label>
-                <input type="number" className="form-input" value={form.duration_minutes} onChange={e => setForm({...form, duration_minutes: Number(e.target.value)})} />
+                <input type="number" className="form-input" value={form.duration_minutes} onChange={e => setForm({ ...form, duration_minutes: Number(e.target.value) })} />
               </div>
               <div className="form-group"><label className="form-label">Intensity (1-10)</label>
-                <input type="number" min="1" max="10" className="form-input" value={form.intensity} onChange={e => setForm({...form, intensity: Number(e.target.value)})} />
+                <input type="number" min="1" max="10" className="form-input" value={form.intensity} onChange={e => setForm({ ...form, intensity: Number(e.target.value) })} />
               </div>
             </div>
-            
+
             <div className="form-group">
               <label className="form-label">Session Notes</label>
-              <textarea className="form-textarea" placeholder="How did you feel? Energy levels?" rows="2" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+              <textarea className="form-textarea" placeholder="How did you feel? Energy levels?" rows="2" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
 
             <div style={{ marginTop: 20, marginBottom: 20 }}>
@@ -235,7 +292,7 @@ export default function WorkoutLogTab() {
                     </div>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleRemoveExercise(exIdx)} style={{ marginLeft: 10, padding: 8, color: 'rgba(13,13,13,0.3)' }}>✕</button>
                   </div>
-                  
+
                   <div style={{ paddingLeft: 10 }}>
                     {e.sets.map((s, setIdx) => (
                       <div key={setIdx} style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
@@ -264,7 +321,7 @@ export default function WorkoutLogTab() {
           </div>
         </div>
       )}
-      
+
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );

@@ -18,6 +18,7 @@ export default function NutritionTab() {
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
   const [editingMealId, setEditingMealId] = useState(null);
+  const [viewingDay, setViewingDay] = useState(null);
 
   // Forms
   const [mealForm, setMealForm] = useState({ date: TODAY, meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
@@ -44,7 +45,8 @@ export default function NutritionTab() {
   };
 
   // --- Meal Log Handlers ---
-  const openAddMeal = () => {
+  const openAddMeal = (e) => {
+    e?.stopPropagation();
     setEditingMealId(null);
     setMealForm({ date: TODAY, meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
     setShowMealModal(true);
@@ -69,7 +71,8 @@ export default function NutritionTab() {
     }
   };
 
-  const deleteMeal = (id) => {
+  const deleteMeal = (id, e) => {
+    e?.stopPropagation();
     setConfirm({
       title: 'Delete Meal?',
       message: 'This removes the calories and macros from your history.',
@@ -86,7 +89,8 @@ export default function NutritionTab() {
   };
 
   // --- Metrics Handlers ---
-  const openMetrics = () => {
+  const openMetrics = (e) => {
+    e?.stopPropagation();
     const todayMetric = metrics.find(m => m.date === TODAY);
     if (todayMetric) {
       setMetricsForm({ date: TODAY, water_ml: todayMetric.water_ml, nutrition_quality: todayMetric.nutrition_quality, notes: todayMetric.notes || '' });
@@ -123,7 +127,7 @@ export default function NutritionTab() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
-          <h3 style={{ fontSize: 20, marginBottom: 4 }}>💧 Nutrition & Water</h3>
+          <h3 style={{ fontSize: 20, marginBottom: 4 }}>🥗 Nutrition & Fuel</h3>
           <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Fuel the machine. Track intake and calories.</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -144,68 +148,103 @@ export default function NutritionTab() {
           <button className="btn btn-primary" onClick={openAddMeal} style={{ borderRadius: 30 }}>+ Log First Meal</button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
           {dates.map(date => {
             const dayMetrics = metrics.find(m => m.date === date);
             const dayMeals = groupedMeals[date] || [];
-            
-            // Calc totals
             const tCals = dayMeals.reduce((acc, m) => acc + (m.calories || 0), 0);
             const tPro = dayMeals.reduce((acc, m) => acc + (m.protein_g || 0), 0);
-            const tCarbs = dayMeals.reduce((acc, m) => acc + (m.carbs_g || 0), 0);
-            const tFat = dayMeals.reduce((acc, m) => acc + (m.fat_g || 0), 0);
 
             return (
-              <div key={date} className="card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--sage)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{date}</div>
-                  {dayMetrics && (
-                    <div style={{ display: 'flex', gap: 16, fontSize: 12, fontWeight: 700 }}>
-                      <span style={{ color: '#5b8ba8' }}>💧 {dayMetrics.water_ml} ml</span>
-                      <span style={{ color: dayMetrics.nutrition_quality >= 8 ? 'var(--sage)' : 'var(--rust)' }}>Quality: {dayMetrics.nutrition_quality}/10</span>
-                    </div>
-                  )}
+              <div key={date} className="card" onClick={() => setViewingDay({ date, dayMetrics, dayMeals })} style={{
+                padding: '20px',
+                cursor: 'pointer',
+                borderTop: '5px solid var(--gold)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(13,13,13,0.3)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{date}</div>
+                  {dayMetrics && <span style={{ fontSize: 12 }}>💧 {dayMetrics.water_ml}ml</span>}
                 </div>
 
-                <div style={{ display: 'flex', gap: 16, padding: '16px', background: 'rgba(13,13,13,0.02)', borderRadius: 12, marginBottom: 16 }}>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.5, fontWeight: 700 }}>Calories</div>
-                    <div style={{ fontSize: 20, fontWeight: 800 }}>{tCals}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1 }}>{tCals}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4 }}>TOTAL CALORIES</div>
                   </div>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.5, fontWeight: 700 }}>Protein</div>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>{tPro}g</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.5, fontWeight: 700 }}>Carbs</div>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>{tCarbs}g</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', opacity: 0.5, fontWeight: 700 }}>Fat</div>
-                    <div style={{ fontSize: 16, fontWeight: 700 }}>{tFat}g</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{tPro}g</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4 }}>PROTEIN</div>
                   </div>
                 </div>
 
-                {dayMeals.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {dayMeals.map(m => (
-                      <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid rgba(13,13,13,0.05)', borderRadius: 8, alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 11, background: 'rgba(13,13,13,0.04)', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>{m.meal_type}</span>
-                          <span style={{ fontSize: 14, fontWeight: 600 }}>{m.notes || 'Unnamed Meal'}</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700 }}>{m.calories} kcal</span>
-                          <span style={{ fontSize: 11, opacity: 0.5 }}>{m.protein_g}p / {m.carbs_g}c / {m.fat_g}f</span>
-                          <button onClick={() => deleteMeal(m.id)} style={{ background: 'none', border: 'none', color: 'rgba(13,13,13,0.3)', cursor: 'pointer' }}>✕</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.5, borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 12 }}>
+                  View {dayMeals.length} Meals →
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Nutrition Detail Modal (Content View) */}
+      {viewingDay && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setViewingDay(null)}>
+          <div className="modal" style={{ maxWidth: 550, padding: 32 }}>
+            <div className="modal-header" style={{ marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+                  NUTRITION BREAKDOWN
+                </div>
+                <h2 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 32 }}>{viewingDay.date}</h2>
+              </div>
+              <button className="modal-close" onClick={() => setViewingDay(null)}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 32 }}>
+              {[
+                { label: 'CALORIES', val: viewingDay.dayMeals.reduce((acc, m) => acc + (m.calories || 0), 0), unit: 'kcal' },
+                { label: 'PROTEIN', val: viewingDay.dayMeals.reduce((acc, m) => acc + (m.protein_g || 0), 0), unit: 'g' },
+                { label: 'CARBS', val: viewingDay.dayMeals.reduce((acc, m) => acc + (m.carbs_g || 0), 0), unit: 'g' },
+                { label: 'FAT', val: viewingDay.dayMeals.reduce((acc, m) => acc + (m.fat_g || 0), 0), unit: 'g' }
+              ].map(stat => (
+                <div key={stat.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(13,13,13,0.02)', borderRadius: 12 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.4, marginBottom: 4 }}>{stat.label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{stat.val}</div>
+                </div>
+              ))}
+            </div>
+
+            {viewingDay.dayMetrics && (
+              <div style={{ display: 'flex', gap: 16, padding: '16px 20px', background: 'rgba(91,139,168,0.05)', borderRadius: 16, marginBottom: 32, alignItems: 'center' }}>
+                <div style={{ fontSize: 24 }}>💧</div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: '#5b8ba8' }}>HYDRATION</div>
+                  <div style={{ fontSize: 18, fontWeight: 800 }}>{viewingDay.dayMetrics.water_ml} <span style={{ fontSize: 12, fontWeight: 400 }}>ml</span></div>
+                </div>
+              </div>
+            )}
+
+            <h4 style={{ fontSize: 12, fontWeight: 800, opacity: 0.4, textTransform: 'uppercase', marginBottom: 16 }}>Meal History</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {viewingDay.dayMeals.map(m => (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'white', border: '1px solid rgba(13,13,13,0.05)', borderRadius: 16 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, background: 'var(--mist)', padding: '2px 6px', borderRadius: 4 }}>{m.meal_type}</span>
+                      <span style={{ fontWeight: 700 }}>{m.notes || 'Unnamed Meal'}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', fontWeight: 700 }}>{m.protein_g}P / {m.carbs_g}C / {m.fat_g}F</div>
+                  </div>
+                  <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800 }}>{m.calories} <span style={{ fontSize: 10, fontWeight: 400 }}>kcal</span></div>
+                    <button onClick={(e) => deleteMeal(m.id, e)} style={{ background: 'none', border: 'none', color: 'rgba(13,13,13,0.2)', cursor: 'pointer' }}>✕</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn btn-outline" style={{ marginTop: 32, width: '100%', borderRadius: 30 }} onClick={openAddMeal}>+ Log Another Meal</button>
+          </div>
         </div>
       )}
 
@@ -214,9 +253,9 @@ export default function NutritionTab() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowMetricsModal(false)}>
           <div className="modal" style={{ maxWidth: 400 }}>
             <div className="modal-header"><h3>Daily Overview</h3><button className="modal-close" onClick={() => setShowMetricsModal(false)}>✕</button></div>
-            <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={metricsForm.date} onChange={e => setMetricsForm({...metricsForm, date: e.target.value})} /></div>
-            <div className="form-group"><label className="form-label">Water Intake (ml)</label><input type="number" step="100" className="form-input" value={metricsForm.water_ml} onChange={e => setMetricsForm({...metricsForm, water_ml: Number(e.target.value)})} /></div>
-            <div className="form-group"><label className="form-label">Nutrition Quality (1-10)</label><input type="number" min="1" max="10" className="form-input" value={metricsForm.nutrition_quality} onChange={e => setMetricsForm({...metricsForm, nutrition_quality: Number(e.target.value)})} /></div>
+            <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={metricsForm.date} onChange={e => setMetricsForm({ ...metricsForm, date: e.target.value })} /></div>
+            <div className="form-group"><label className="form-label">Water Intake (ml)</label><input type="number" step="100" className="form-input" value={metricsForm.water_ml} onChange={e => setMetricsForm({ ...metricsForm, water_ml: Number(e.target.value) })} /></div>
+            <div className="form-group"><label className="form-label">Nutrition Quality (1-10)</label><input type="number" min="1" max="10" className="form-input" value={metricsForm.nutrition_quality} onChange={e => setMetricsForm({ ...metricsForm, nutrition_quality: Number(e.target.value) })} /></div>
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowMetricsModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex: 1 }} onClick={saveMetrics}>Save</button></div>
           </div>
         </div>
@@ -227,31 +266,31 @@ export default function NutritionTab() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowMealModal(false)}>
           <div className="modal" style={{ maxWidth: 500 }}>
             <div className="modal-header"><h3>Log Meal</h3><button className="modal-close" onClick={() => setShowMealModal(false)}>✕</button></div>
-            
+
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={mealForm.date} onChange={e => setMealForm({...mealForm, date: e.target.value})} /></div>
+              <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={mealForm.date} onChange={e => setMealForm({ ...mealForm, date: e.target.value })} /></div>
               <div className="form-group"><label className="form-label">Meal Type</label>
-                <select className="form-input" value={mealForm.meal_type} onChange={e => setMealForm({...mealForm, meal_type: e.target.value})}>
+                <select className="form-input" value={mealForm.meal_type} onChange={e => setMealForm({ ...mealForm, meal_type: e.target.value })}>
                   {MEAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
             </div>
 
-            <div className="form-group"><label className="form-label">Total Calories</label><input type="number" className="form-input" value={mealForm.calories} onChange={e => setMealForm({...mealForm, calories: Number(e.target.value)})} /></div>
-            
+            <div className="form-group"><label className="form-label">Total Calories</label><input type="number" className="form-input" value={mealForm.calories} onChange={e => setMealForm({ ...mealForm, calories: Number(e.target.value) })} /></div>
+
             <div className="grid-3" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Protein (g)</label><input type="number" className="form-input" value={mealForm.protein_g} onChange={e => setMealForm({...mealForm, protein_g: Number(e.target.value)})} /></div>
-              <div className="form-group"><label className="form-label">Carbs (g)</label><input type="number" className="form-input" value={mealForm.carbs_g} onChange={e => setMealForm({...mealForm, carbs_g: Number(e.target.value)})} /></div>
-              <div className="form-group"><label className="form-label">Fat (g)</label><input type="number" className="form-input" value={mealForm.fat_g} onChange={e => setMealForm({...mealForm, fat_g: Number(e.target.value)})} /></div>
+              <div className="form-group"><label className="form-label">Protein (g)</label><input type="number" className="form-input" value={mealForm.protein_g} onChange={e => setMealForm({ ...mealForm, protein_g: Number(e.target.value) })} /></div>
+              <div className="form-group"><label className="form-label">Carbs (g)</label><input type="number" className="form-input" value={mealForm.carbs_g} onChange={e => setMealForm({ ...mealForm, carbs_g: Number(e.target.value) })} /></div>
+              <div className="form-group"><label className="form-label">Fat (g)</label><input type="number" className="form-input" value={mealForm.fat_g} onChange={e => setMealForm({ ...mealForm, fat_g: Number(e.target.value) })} /></div>
             </div>
 
-            <div className="form-group"><label className="form-label">What did you eat?</label><input type="text" className="form-input" value={mealForm.notes} onChange={e => setMealForm({...mealForm, notes: e.target.value})} placeholder="Chicken, Rice..." /></div>
+            <div className="form-group"><label className="form-label">What did you eat?</label><input type="text" className="form-input" value={mealForm.notes} onChange={e => setMealForm({ ...mealForm, notes: e.target.value })} placeholder="Chicken, Rice..." /></div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowMealModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex: 1 }} onClick={saveMeal} disabled={saving}>{saving ? 'Saving...' : 'Save Meal'}</button></div>
           </div>
         </div>
       )}
-      
+
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
