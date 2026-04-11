@@ -25,7 +25,7 @@ export default function DailyLog() {
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [smartPrompts, setSmartPrompts] = useState({});
-  const [expandedCategory, setExpandedCategory] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState([]);
   const todayDisplay = format(targetDate, 'EEEE, MMMM d');
   const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
@@ -61,9 +61,34 @@ export default function DailyLog() {
       })
 
 
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        // Load draft from localStorage if available
+        const draftKey = `growthlog_draft_${todayDateStr}`;
+        const draft = localStorage.getItem(draftKey);
+        if (draft && !logRes.data) {
+          try {
+            const parsed = JSON.parse(draft);
+            setEntries(parsed.entries || entries);
+            if (parsed.highlight) setHighlight(parsed.highlight);
+            if (parsed.overallRating) setOverallRating(parsed.overallRating);
+          } catch (e) { /* ignore parse errors */ }
+        }
+      });
 
   }, []);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (loading || error || todayLog) return; // Don't draft if already logged or loading
+    const draftKey = `growthlog_draft_${todayDateStr}`;
+    const data = { entries, highlight, overallRating };
+    // Only save if there's actual content
+    const hasContent = highlight.trim() || Object.values(entries).some(e => e.text && e.text.trim());
+    if (hasContent) {
+      localStorage.setItem(draftKey, JSON.stringify(data));
+    }
+  }, [entries, highlight, overallRating, loading, error, todayLog, todayDateStr]);
 
   const updateEntry = (catId, field, val) => {
     setEntries((prev) => ({ ...prev, [catId]: { ...prev[catId], [field]: val } }));
@@ -94,6 +119,8 @@ export default function DailyLog() {
       await refreshUser();
       if (res.data.streak > 1) toast.success(`🔥 ${res.data.streak} day streak!`);
       else toast.success('✦ Log saved!');
+      // Clear draft on successful save
+      localStorage.removeItem(`growthlog_draft_${todayDateStr}`);
       navigate('/dashboard');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to save log'));
@@ -137,21 +164,35 @@ export default function DailyLog() {
   return (
     <div>
       <div className="page-header">
-        <h2>Daily Log ✦</h2>
-        <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2>Daily Log ✦</h2>
+            <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
+          </div>
+          {categories.length > 0 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-outline btn-sm" onClick={() => setExpandedCategories(categories.map(c => c.id))} style={{ fontSize: 11 }}>
+                Expand All
+              </button>
+              <button className="btn btn-outline btn-sm" onClick={() => setExpandedCategories([])} style={{ fontSize: 11 }}>
+                Collapse All
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="page-body">
         {/* Category entries */}
         {categories.map((cat) => {
           const entry = entries[cat.id] || { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 };
-          const isExpanded = expandedCategory === cat.id;
+          const isExpanded = expandedCategories.includes(cat.id);
 
           return (
             <div key={cat.id} className="card" style={{ marginBottom: 16, borderLeft: `4px solid ${cat.color}` }}>
               <div 
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: isExpanded ? 16 : 0 }} 
-                onClick={() => setExpandedCategory(isExpanded ? null : cat.id)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: isExpanded ? 16 : 0, userSelect: 'none' }} 
+                onClick={() => setExpandedCategories(prev => prev.includes(cat.id) ? prev.filter(id => id !== cat.id) : [...prev, cat.id])}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 24 }}>{cat.icon}</span>
@@ -168,11 +209,11 @@ export default function DailyLog() {
                     <label className="form-label" style={{ color: 'var(--sage)', fontWeight: 600, fontStyle: 'italic' }}>
                       "{((catName) => {
                         const c = catName.toLowerCase();
-                        if (c.includes('mind')) return smartPrompts.mind;
-                        if (c.includes('body') || c.includes('fitness')) return smartPrompts.body;
-                        if (c.includes('career') || c.includes('work')) return smartPrompts.career;
-                        if (c.includes('social') || c.includes('relation')) return smartPrompts.social;
-                        if (c.includes('soul') || c.includes('peace')) return smartPrompts.soul;
+                        if (/\bmind\b|\bmindset\b|\bmindfulness\b|\bpersonality\b|\blearning\b/.test(c)) return smartPrompts.mind;
+                        if (/\bbody\b|\bfitness\b|\bhealth\b|\bphysical\b/.test(c)) return smartPrompts.body;
+                        if (/\bcareer\b|\bwork\b|\bprofessional\b|\bbusiness\b|\bwealth\b/.test(c)) return smartPrompts.career;
+                        if (/\bsocial\b|\brelationships?\b|\bconnection\b|\bfriends?\b|\bfamily\b/.test(c)) return smartPrompts.social;
+                        if (/\bsoul\b|\bpeace\b|\bspirituality\b|\bspiritual\b|\bfaith\b|\bemotion\b/.test(c)) return smartPrompts.soul;
                         return smartPrompts.default || "What happened in this category today?";
                       })(cat.name)}"
                     </label>
@@ -208,10 +249,14 @@ export default function DailyLog() {
                       </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label">Time Invested (min)</label>
-                      <input type="number" className="form-input" value={entry.time_spent}
-                        onChange={(e) => updateEntry(cat.id, 'time_spent', Math.min(1440, Math.max(0, parseInt(e.target.value) || 0)))}
-                        placeholder="0" min="0" max="1440" />
+                      <label className="form-label">Time Invested — {entry.time_spent} min</label>
+                      <div className="rating-row">
+                        <span style={{ fontSize: 16 }}>⏱</span>
+                        <input type="range" className="rating-slider" min={0} max={180} step={5} value={entry.time_spent}
+                          onChange={(e) => updateEntry(cat.id, 'time_spent', parseInt(e.target.value) || 0)}
+                          style={{ '--val': `${(entry.time_spent / 180) * 100}%`, '--color': '#8b6bc4' }} />
+                        <span style={{ fontSize: 16 }}>⏳</span>
+                      </div>
                     </div>
                   </div>
 

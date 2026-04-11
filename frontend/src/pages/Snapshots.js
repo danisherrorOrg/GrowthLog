@@ -227,11 +227,14 @@ export default function Snapshots() {
               return (
                 <div key={snap.id} className="card" style={{
                   display: 'flex', flexDirection: 'column', gap: 16,
-                  cursor: compareMode ? 'pointer' : 'default',
+                  cursor: 'pointer',
                   border: isSelectedA ? '2px solid var(--sage)' : isSelectedB ? '2px solid var(--gold)' : 'none',
                   transform: (isSelectedA || isSelectedB) ? 'translateY(-4px)' : 'none',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
                   background: (isSelectedA || isSelectedB) ? 'rgba(107,140,107,0.02)' : 'white'
-                }} onClick={() => compareMode && toggleCompareSelect(snap)}>
+                }} onClick={() => compareMode ? toggleCompareSelect(snap) : navigate(`/snapshots/${snap.id}`)}
+                onMouseEnter={e => { if(!compareMode && !isSelectedA && !isSelectedB) { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; } }}
+                onMouseLeave={e => { if(!compareMode && !isSelectedA && !isSelectedB) { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; } }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: idx === 0 ? 'var(--sage)' : 'rgba(13,13,13,0.4)', marginBottom: 4, fontWeight: 700 }}>
@@ -263,7 +266,7 @@ export default function Snapshots() {
                       Enter Detail ◈
                     </button>
                     {!compareMode && (
-                      <div style={{ display: 'flex', gap: 4 }}>
+                      <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                         <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(snap); }} style={{ padding: 4, color: 'rgba(13,13,13,0.4)' }}>✎</button>
                         <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); handleDelete(snap); }} style={{ padding: 4, color: 'rgba(13,13,13,0.2)' }}>🗑</button>
                       </div>

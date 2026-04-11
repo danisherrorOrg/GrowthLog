@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Books() {
+  const navigate = useNavigate();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -161,7 +162,9 @@ export default function Books() {
         ) : (
           <div className="auto-grid">
             {filteredBooks.map(b => (
-              <div key={b.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div key={b.id} className="card" onClick={() => navigate(`/books/${b.id}`)} style={{ display: 'flex', flexDirection: 'column', gap: 16, cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ fontSize: 32, background: 'var(--mist)', width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -195,7 +198,7 @@ export default function Books() {
                   <div style={{ fontSize: 13, fontWeight: 500 }}>
                     {b.status === 'finished' && b.rating && <span style={{ color: 'var(--gold)' }}>★ {b.rating}/10</span>}
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
                     <Link to={`/books/${b.id}`} className="btn btn-sm btn-outline" style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, textDecoration: 'none' }}>
                       Absorb ◈
                     </Link>

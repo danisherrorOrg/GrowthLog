@@ -158,7 +158,6 @@ export default function Manifestations() {
       </div>
 
       <div className="page-body">
-      <div className="page-body">
         {/* Unified Toolbar */}
         <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -207,11 +206,20 @@ export default function Manifestations() {
               const showProg = expandedProgress[item.id];
 
               return (
-                <div key={item.id} className="card" style={{ 
+                <div key={item.id} className="card" onClick={() => navigate(`/manifestations/${item.id}`)} style={{ 
                   display: 'flex', flexDirection: 'column', gap: 16,
                   background: isReady ? 'var(--ink)' : 'white', 
                   color: isReady ? 'var(--paper)' : 'var(--ink)',
-                  border: isReady ? '1px solid var(--gold)' : 'none'
+                  border: isReady ? '1px solid var(--gold)' : 'none',
+                  cursor: 'pointer', transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
@@ -252,12 +260,17 @@ export default function Manifestations() {
                   <div className="divider" style={{ opacity: isReady ? 0.1 : 0.05, margin: '4px 0' }} />
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="btn btn-sm btn-ghost" style={{ color: 'inherit', opacity: 0.5, padding: 4 }} onClick={() => navigate(`/manifestations/${item.id}`)} title="Explore Vision">
+                    <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                      <button className="btn btn-sm btn-ghost" style={{ color: 'inherit', opacity: 0.8, padding: '4px 8px', fontWeight: 600, background: 'rgba(13,13,13,0.03)', borderRadius: 6 }} onClick={() => navigate(`/manifestations/${item.id}`)} title="Explore Vision">
                         ◈ Explore Detail
                       </button>
+                      {progressEntries.length > 0 && (
+                        <div className="tag tag-mist" style={{ fontSize: 10, alignSelf: 'center', fontWeight: 'bold' }}>
+                           {progressEntries.length} {progressEntries.length === 1 ? 'entry' : 'entries'}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', gap: 4 }}>
+                    <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                       {isActive && (
                         <>
                           <button className="btn btn-sm btn-ghost" onClick={() => openEdit(item)} title="Edit" style={{ color: 'inherit', opacity: 0.4 }}>✎</button>
@@ -269,7 +282,7 @@ export default function Manifestations() {
                   </div>
 
                   {isReady && isActive && (
-                    <button className="btn btn-gold btn-sm" style={{ width: '100%', borderRadius: 8, fontWeight: 700 }} onClick={() => { setCompleteItem(item); setReflection(''); }}>
+                    <button className="btn btn-gold btn-sm" style={{ width: '100%', borderRadius: 8, fontWeight: 700 }} onClick={(e) => { e.stopPropagation(); setCompleteItem(item); setReflection(''); }}>
                        Reflect & Complete Cycle ✧
                     </button>
                   )}
@@ -278,7 +291,6 @@ export default function Manifestations() {
             })}
           </div>
         )}
-      </div>
       </div>
 
       {/* Create Modal */}

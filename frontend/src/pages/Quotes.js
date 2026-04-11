@@ -364,6 +364,7 @@ export default function Quotes() {
                     onFavorite={() => toggleFavorite(q.id, q.is_favorite)}
                     onEdit={() => setEditingQuote({ ...q, tags: q.tags?.join(', ') || '' })}
                     onDelete={() => setDeleteTarget(q.id)}
+                    onOpen={() => setSpotlight(q)}
                   />
                 ))}
               </div>
@@ -461,12 +462,11 @@ export default function Quotes() {
 }
 
 // ── QuoteCard ─────────────────────────────────────────────────────────────────
-function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete }) {
+function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete, onOpen }) {
   const PREVIEW_LENGTH = 200;
   const isLong = q.content?.length > PREVIEW_LENGTH;
-  const [expanded, setExpanded] = useState(false);
 
-  const displayContent = (expanded || !isLong) ? q.content : q.content.slice(0, PREVIEW_LENGTH) + '…';
+  const displayContent = !isLong ? q.content : q.content.slice(0, PREVIEW_LENGTH) + '…';
 
   const renderContent = () => {
     if (search?.trim()) return highlightText(displayContent, search);
@@ -474,9 +474,10 @@ function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete }) {
   };
 
   return (
-    <div className="card" style={{
+    <div className="card" onClick={onOpen} style={{
       display: 'flex', flexDirection: 'column', gap: 16,
       transition: 'box-shadow 0.2s, transform 0.15s',
+      cursor: 'pointer',
       ...(q.is_favorite && { borderTop: '2px solid rgba(201,168,76,0.4)', background: 'rgba(201,168,76,0.01)' }),
     }}
       onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(13,13,13,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
@@ -486,7 +487,7 @@ function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ color: 'var(--gold)', fontSize: 36, fontFamily: 'Fraunces',
           lineHeight: 0.5, marginTop: 10, opacity: 0.7 }}>"</div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
           <button className="btn btn-ghost btn-sm" onClick={onFavorite}
             style={{ fontSize: 17, color: q.is_favorite ? 'var(--gold)' : 'rgba(13,13,13,0.12)',
               transition: 'color 0.2s' }}>
@@ -505,14 +506,6 @@ function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete }) {
         fontStyle: 'italic', lineHeight: 1.7, flex: 1,
       }}>
         {renderContent()}
-        {isLong && (
-          <button className="btn btn-ghost btn-sm"
-            onClick={() => setExpanded(s => !s)}
-            style={{ display: 'block', marginTop: 6, fontSize: 11,
-              color: 'var(--sage)', fontStyle: 'normal', padding: 0 }}>
-            {expanded ? 'Show less ↑' : 'Read more →'}
-          </button>
-        )}
       </div>
 
       {/* Attribution + tags */}

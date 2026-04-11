@@ -5,13 +5,28 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend,
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar
 } from 'recharts';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+
+const hoverStyles = () => ({
+  boxShadow: 'none',
+});
+
+const hoverEvents = () => ({
+  onMouseEnter: e => {
+    e.currentTarget.style.transform = 'translateY(-4px)';
+    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+  },
+  onMouseLeave: e => {
+    e.currentTarget.style.transform = 'translateY(0)';
+    e.currentTarget.style.boxShadow = 'none';
+  }
+});
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -27,10 +42,10 @@ export default function Dashboard() {
       if (r.data) {
         setQuote({ text: r.data.content, author: r.data.author });
       } else {
-        API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+        API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => { });
       }
     }).catch(() => {
-      API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => {});
+      API.get('/prompts/quote').then(res => setQuote(res.data)).catch(() => { });
     });
   }, []);
 
@@ -57,11 +72,11 @@ export default function Dashboard() {
   const today = new Date();
   const startDate = subDays(today, days - 1);
   const dateRange = eachDayOfInterval({ start: startDate, end: today });
-  
+
   // Create a map of weeks for a vertical column layout
   const weeks = [];
   let currentWeek = [];
-  
+
   // Fill initial week if it's partial
   const firstDay = startOfWeek(startDate);
   let d = firstDay;
@@ -77,7 +92,7 @@ export default function Dashboard() {
     }
     currentWeek.push({ date, padding: false });
   });
-  
+
   // Fill last week if partial
   while (currentWeek.length < 7) {
     currentWeek.push({ date: null, padding: true });
@@ -92,7 +107,7 @@ export default function Dashboard() {
       </div>
       <div className="page-body">
         <div className="grid-4" style={{ marginBottom: 24 }}>
-          {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
         </div>
       </div>
     </div>
@@ -130,8 +145,8 @@ export default function Dashboard() {
             </div>
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
               {data.insights.map((insight, i) => (
-                <div key={i} className="card" style={{ 
-                  minWidth: 300, flex: 1, padding: '16px 20px', 
+                <div key={i} className="card" style={{
+                  minWidth: 300, flex: 1, padding: '16px 20px',
                   background: `linear-gradient(135deg, white 0%, ${insight.color}05 100%)`,
                   borderLeft: `4px solid ${insight.color}`,
                   display: 'flex', alignItems: 'center', gap: 14,
@@ -151,17 +166,17 @@ export default function Dashboard() {
 
         {/* Onboarding Nudge for New Users */}
         {user?.total_logs === 0 && (
-          <div className="card" style={{ 
-            marginBottom: 28, 
-            background: 'var(--mist)', 
-            border: '2px dashed var(--sage)', 
+          <div className="card" style={{
+            marginBottom: 28,
+            background: 'var(--mist)',
+            border: '2px dashed var(--sage)',
             padding: '32px 40px',
             textAlign: 'center'
           }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>🌱</div>
             <h3 style={{ fontFamily: 'Fraunces', fontSize: 24, marginBottom: 12 }}>Welcome to your growth story</h3>
             <p style={{ maxWidth: 500, margin: '0 auto 24px', color: 'rgba(13,13,13,0.6)', lineHeight: 1.6 }}>
-              GrowthLog is built on the compound effect of small, daily reflections. 
+              GrowthLog is built on the compound effect of small, daily reflections.
               The best way to start is by capturing who you are today.
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
@@ -186,20 +201,20 @@ export default function Dashboard() {
 
         {/* Quote of the Day */}
         {quote && (
-          <div className="card" style={{ 
-            marginBottom: 28, 
-            padding: '24px 32px', 
-            background: 'rgba(201,168,76,0.04)', 
+          <div className="card" style={{
+            marginBottom: 28,
+            padding: '24px 32px',
+            background: 'rgba(201,168,76,0.04)',
             border: '1px solid rgba(201,168,76,0.15)',
             textAlign: 'center',
             borderRadius: 20
           }}>
             <div style={{ fontSize: 24, color: 'var(--gold)', marginBottom: 12 }}>“</div>
-            <div className="markdown-body" style={{ 
-              fontFamily: 'Fraunces', 
-              fontSize: 20, 
-              color: 'var(--ink)', 
-              lineHeight: 1.6, 
+            <div className="markdown-body" style={{
+              fontFamily: 'Fraunces',
+              fontSize: 20,
+              color: 'var(--ink)',
+              lineHeight: 1.6,
               margin: '0 auto 8px',
               fontStyle: 'italic',
               maxWidth: 600
@@ -252,18 +267,18 @@ export default function Dashboard() {
               <span>Activity Heatmap</span>
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Last {days} days</span>
             </div>
-            
+
             <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
               {weeks.map((week, wi) => (
                 <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {week.map((day, di) => {
                     if (day.padding || !day.date) return <div key={di} className="heatmap-cell" style={{ opacity: 0 }} />;
-                    
+
                     const key = format(day.date, 'yyyy-MM-dd');
                     const entry = data?.heatmap?.[key];
                     const rating = entry?.rating || 0;
                     const level = rating ? Math.ceil(rating / 2) : 0;
-                    
+
                     return (
                       <div
                         key={key}
@@ -281,11 +296,11 @@ export default function Dashboard() {
             </div>
 
             {/* Tooltip / Insight Area */}
-            <div style={{ 
-              marginTop: 'auto', 
-              padding: '12px 16px', 
-              background: 'var(--mist)', 
-              borderRadius: 12, 
+            <div style={{
+              marginTop: 'auto',
+              padding: '12px 16px',
+              background: 'var(--mist)',
+              borderRadius: 12,
               minHeight: 80,
               display: 'flex',
               flexDirection: 'column',
@@ -323,7 +338,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, fontSize: 11, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
               <span>Low</span>
               <div style={{ display: 'flex', gap: 3 }}>
-                {[0,1,2,3,4,5].map(l => (
+                {[0, 1, 2, 3, 4, 5].map(l => (
                   <div key={l} style={{ width: 10, height: 10, borderRadius: 2, background: l === 0 ? 'var(--mist)' : `rgba(107,140,107,${0.2 + (l * 0.16)})` }} />
                 ))}
               </div>
@@ -367,21 +382,21 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data?.mood_trend?.map((m, i) => ({ ...m, energy: data?.energy_trend?.[i]?.energy || 5 }))}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(13,13,13,0.05)" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.4)' }}
                     minTickGap={30}
                     tickFormatter={(str) => {
-                      try { return format(parseISO(str), 'MMM d'); } catch(e) { return str; }
+                      try { return format(parseISO(str), 'MMM d'); } catch (e) { return str; }
                     }}
                   />
                   <YAxis domain={[0, 10]} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.4)' }} />
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontFamily: 'DM Sans', fontSize: 12 }}
                     labelFormatter={(label) => {
-                      try { return format(parseISO(label), 'EEEE, MMMM do'); } catch(e) { return label; }
+                      try { return format(parseISO(label), 'EEEE, MMMM do'); } catch (e) { return label; }
                     }}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
@@ -455,10 +470,10 @@ export default function Dashboard() {
 
         {/* Goals summary + Manifestations */}
         <div className="grid-2">
-          <div className="card">
+          <div className="card" onClick={() => navigate('/goals')} style={{ cursor: 'pointer', transition: 'transform 0.2s', ...hoverStyles() }} {...hoverEvents()}>
             <div className="section-title">
               <span>Goals Overview</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/goals')}>View all →</button>
+              <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate('/goals'); }}>View all →</button>
             </div>
             {/* Donut chart + legend */}
             {(data?.goals?.total || 0) > 0 ? (
@@ -517,10 +532,10 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)' }}>
+          <div className="card" onClick={() => navigate('/manifestations')} style={{ background: 'var(--ink)', color: 'var(--paper)', cursor: 'pointer', transition: 'transform 0.2s', ...hoverStyles() }} {...hoverEvents()}>
             <div className="section-title" style={{ color: 'var(--paper)' }}>
               <span>Manifestations</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/manifestations')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
+              <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate('/manifestations'); }} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--sage)' }}>
@@ -533,10 +548,10 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)' }}>
+          <div className="card" onClick={() => navigate('/todos')} style={{ background: 'var(--ink)', color: 'var(--paper)', cursor: 'pointer', transition: 'transform 0.2s', ...hoverStyles() }} {...hoverEvents()}>
             <div className="section-title" style={{ color: 'var(--paper)' }}>
               <span>Action Board</span>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/todos')} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
+              <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate('/todos'); }} style={{ color: 'rgba(245,240,232,0.5)' }}>View →</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontFamily: 'Fraunces', fontSize: 48, color: 'var(--gold)' }}>
