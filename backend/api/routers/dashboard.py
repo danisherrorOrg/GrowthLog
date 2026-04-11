@@ -133,6 +133,12 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     manifestations_count = db.manifestations.count_documents({"user_id": uid, "status": "active"})
     todos_count = db.todos.count_documents({"user_id": uid, "status": "pending"})
     
+    # New module counts
+    time_capsule_count = db.regrets.count_documents({"user_id": uid}) + db.future_advice.count_documents({"user_id": uid}) + db.past_advice.count_documents({"user_id": uid}) + db.life_lessons.count_documents({"user_id": uid})
+    growth_hub_count = db.skills.count_documents({"user_id": uid}) + db.courses.count_documents({"user_id": uid}) + db.failure_log.count_documents({"user_id": uid}) + db.skills_gap.count_documents({"user_id": uid}) + db.feedback.count_documents({"user_id": uid})
+    life_canvas_count = db.project_ideas.count_documents({"user_id": uid}) + db.creative_sessions.count_documents({"user_id": uid}) + db.meaning_log.count_documents({"user_id": uid}) + db.travel_log.count_documents({"user_id": uid}) + db.bucket_list.count_documents({"user_id": uid})
+    insights_count = db.time_entries.count_documents({"user_id": uid}) + db.screen_time.count_documents({"user_id": uid}) + db.procrastination_log.count_documents({"user_id": uid}) + db.anti_goals.count_documents({"user_id": uid}) + db.habit_graveyard.count_documents({"user_id": uid})
+    
     insights = []
     if cat_consistency:
         by_time = sorted(cat_consistency, key=lambda x: x["time_spent"], reverse=True)
@@ -193,6 +199,10 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         },
         "active_manifestations": manifestations_count,
         "todos_pending": todos_count,
+        "time_capsule_count": time_capsule_count,
+        "growth_hub_count": growth_hub_count,
+        "life_canvas_count": life_canvas_count,
+        "insights_count": insights_count,
 
     }
 

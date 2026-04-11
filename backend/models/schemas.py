@@ -257,6 +257,57 @@ class NotToDoModel(BaseModel):
             raise ValueError("Not-to-do item cannot be empty")
         return v
 
+# --- Aging & Long-term Life (Time Capsule) ---
+class RegretModel(BaseModel):
+    text: str
+    action_to_avoid: Optional[str] = ""
+    date: Optional[str] = None
+
+    @field_validator("text")
+    @classmethod
+    def text_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Regret cannot be empty")
+        return v
+
+class FutureAdviceModel(BaseModel):
+    content: str
+    target_read_date: Optional[str] = ""
+    target_age: Optional[int] = None
+    created_at: Optional[str] = None
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Advice cannot be empty")
+        return v
+
+class PastAdviceModel(BaseModel):
+    from_age: Optional[int] = None
+    content: str
+    applied: Optional[str] = ""
+
+    @field_validator("content")
+    @classmethod
+    def content_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Advice cannot be empty")
+        return v
+
+class LifeLessonModel(BaseModel):
+    principle: str
+    context: Optional[str] = ""
+    date_learned: Optional[str] = None
+    category: Optional[str] = ""
+
+    @field_validator("principle")
+    @classmethod
+    def principle_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Lesson principle cannot be empty")
+        return v
+
 # --- Creativity & Passion Projects ---
 class ProjectIdeaModel(BaseModel):
     title: str

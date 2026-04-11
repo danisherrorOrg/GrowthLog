@@ -146,6 +146,29 @@ export default function Growth() {
           </div>
         </div>
 
+        <div className="section-title" style={{ marginBottom: 16 }}>
+          <span>Module Engagement</span>
+          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Total entries across extended hubs</span>
+        </div>
+        <div className="grid-4" style={{ marginBottom: 28 }}>
+          <div className="stat-card" style={{ background: 'rgba(13,13,13,0.02)' }}>
+            <div className="stat-value" style={{ color: 'var(--ink)' }}>{data?.insights_count || 0}</div>
+            <div className="stat-label">🔬 Insight Lab</div>
+          </div>
+          <div className="stat-card" style={{ background: 'rgba(107,140,107,0.05)' }}>
+            <div className="stat-value" style={{ color: 'var(--sage)' }}>{data?.growth_hub_count || 0}</div>
+            <div className="stat-label">🚀 Growth Hub</div>
+          </div>
+          <div className="stat-card" style={{ background: 'rgba(201,168,76,0.05)' }}>
+            <div className="stat-value" style={{ color: '#c9a84c' }}>{data?.life_canvas_count || 0}</div>
+            <div className="stat-label">🎨 Life Canvas</div>
+          </div>
+          <div className="stat-card" style={{ background: 'rgba(139,107,196,0.05)' }}>
+            <div className="stat-value" style={{ color: '#8b6bc4' }}>{data?.time_capsule_count || 0}</div>
+            <div className="stat-label">⏳ Time Capsule</div>
+          </div>
+        </div>
+
         <div className="card" style={{ marginBottom: 24 }}>
           <div className="section-title">
             <span>Mood & Energy Trend</span>
