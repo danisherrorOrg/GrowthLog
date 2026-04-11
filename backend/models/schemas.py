@@ -1,10 +1,10 @@
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, field_validator, EmailStr, Field
 from typing import Optional, List, Literal
 # --- Auth & Profile ---
 class RegisterModel(BaseModel):
-    name: str
+    name: str = Field(..., max_length=10000)
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=10000)
 
     @field_validator("name")
     @classmethod
@@ -22,18 +22,18 @@ class RegisterModel(BaseModel):
 
 class LoginModel(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=10000)
 
 class ProfileUpdateModel(BaseModel):
-    name: Optional[str] = None
-    bio: Optional[str] = None
-    avatar_emoji: Optional[str] = None
-    timezone: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=20000)
+    bio: Optional[str] = Field(None, max_length=20000)
+    avatar_emoji: Optional[str] = Field(None, max_length=20000)
+    timezone: Optional[str] = Field(None, max_length=20000)
     email_notifications: Optional[bool] = None
 
 class PasswordChangeModel(BaseModel):
-    current_password: str
-    new_password: str
+    current_password: str = Field(..., max_length=10000)
+    new_password: str = Field(..., max_length=10000)
 
     @field_validator("new_password")
     @classmethod
@@ -43,18 +43,18 @@ class PasswordChangeModel(BaseModel):
         return v
 
 class EmailChangeModel(BaseModel):
-    new_email: str
-    password: str
+    new_email: str = Field(..., max_length=10000)
+    password: str = Field(..., max_length=10000)
 
 class PublicToggleModel(BaseModel):
     is_public: bool
 
 # --- Categories ---
 class CategoryModel(BaseModel):
-    name: str
-    icon: str
-    color: str
-    description: Optional[str] = ""
+    name: str = Field(..., max_length=10000)
+    icon: str = Field(..., max_length=10000)
+    color: str = Field(..., max_length=10000)
+    description: Optional[str] = Field("", max_length=20000)
 
     @field_validator("name")
     @classmethod
@@ -64,50 +64,50 @@ class CategoryModel(BaseModel):
         return v
 
 class CategoryTemplateModel(BaseModel):
-    name: str
-    icon: str
-    color: str
-    description: Optional[str] = ""
+    name: str = Field(..., max_length=10000)
+    icon: str = Field(..., max_length=10000)
+    color: str = Field(..., max_length=10000)
+    description: Optional[str] = Field("", max_length=20000)
 
 class CategoryUpdateModel(BaseModel):
-    name: Optional[str] = None
-    icon: Optional[str] = None
-    color: Optional[str] = None
-    description: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=20000)
+    icon: Optional[str] = Field(None, max_length=20000)
+    color: Optional[str] = Field(None, max_length=20000)
+    description: Optional[str] = Field(None, max_length=20000)
 
 # --- Goals ---
 class GoalModel(BaseModel):
-    category_id: str
-    title: str
-    description: Optional[str] = ""
-    deadline: str
+    category_id: str = Field(..., max_length=10000)
+    title: str = Field(..., max_length=10000)
+    description: Optional[str] = Field("", max_length=20000)
+    deadline: str = Field(..., max_length=10000)
 
 class GoalUpdateModel(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    deadline: Optional[str] = None
-    category_id: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=20000)
+    description: Optional[str] = Field(None, max_length=20000)
+    deadline: Optional[str] = Field(None, max_length=20000)
+    category_id: Optional[str] = Field(None, max_length=20000)
 
 class GoalReflectModel(BaseModel):
-    status: str
-    reflection: str
-    new_deadline: Optional[str] = None
+    status: str = Field(..., max_length=10000)
+    reflection: str = Field(..., max_length=10000)
+    new_deadline: Optional[str] = Field(None, max_length=20000)
 
 class MicroGoalModel(BaseModel):
-    text: str
+    text: str = Field(..., max_length=10000)
     time_spent: Optional[int] = 0
 
 class GoalReflectionAddModel(BaseModel):
-    text: str
-    date: Optional[str] = None
+    text: str = Field(..., max_length=10000)
+    date: Optional[str] = Field(None, max_length=20000)
 
 class NoteModel(BaseModel):
-    text: str
+    text: str = Field(..., max_length=10000)
 
 # --- Daily Logs ---
 class DailyLogEntryModel(BaseModel):
-    category_id: str
-    text: str
+    category_id: str = Field(..., max_length=10000)
+    text: str = Field(..., max_length=10000)
     mood: int
     energy: int
     emotions: Optional[List[str]] = []
@@ -121,12 +121,12 @@ class DailyLogEntryModel(BaseModel):
         return v
 
 class DailyLogModel(BaseModel):
-    date: Optional[str] = None
+    date: Optional[str] = Field(None, max_length=20000)
     entries: List[DailyLogEntryModel]
-    highlight: Optional[str] = ""
+    highlight: Optional[str] = Field("", max_length=20000)
     overall_rating: Optional[int] = 5
     gratitude: Optional[List[str]] = []
-    regret: Optional[str] = ""
+    regret: Optional[str] = Field("", max_length=20000)
 
     @field_validator("overall_rating")
     @classmethod
@@ -137,36 +137,36 @@ class DailyLogModel(BaseModel):
 
 # --- Manifestations ---
 class ManifestationModel(BaseModel):
-    vision: str
+    vision: str = Field(..., max_length=10000)
     target_days: Optional[int] = None
-    target_date: Optional[str] = None
+    target_date: Optional[str] = Field(None, max_length=20000)
     categories: Optional[List[str]] = []
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
 class ManifestationUpdateModel(BaseModel):
-    vision: Optional[str] = None
-    target_date: Optional[str] = None
+    vision: Optional[str] = Field(None, max_length=20000)
+    target_date: Optional[str] = Field(None, max_length=20000)
     target_days: Optional[int] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(None, max_length=20000)
     categories: Optional[List[str]] = None
 
 class ManifestationProgressModel(BaseModel):
-    text: str
-    type: Optional[str] = "improvement"
+    text: str = Field(..., max_length=10000)
+    type: Optional[str] = Field("improvement", max_length=20000)
 
 class ManifestationProgressUpdateModel(BaseModel):
-    text: Optional[str] = None
-    type: Optional[str] = None
+    text: Optional[str] = Field(None, max_length=20000)
+    type: Optional[str] = Field(None, max_length=20000)
 
 class ManifestationCompleteModel(BaseModel):
-    text: str
+    text: str = Field(..., max_length=10000)
 
 # --- Snapshots ---
 class SnapshotModel(BaseModel):
-    description: str
+    description: str = Field(..., max_length=10000)
     values: Optional[List[str]] = []
     mood: Optional[int] = 5
-    date: Optional[str] = None
+    date: Optional[str] = Field(None, max_length=20000)
 
     @field_validator("mood")
     @classmethod
@@ -176,14 +176,14 @@ class SnapshotModel(BaseModel):
         return v
 
 class SnapshotUpdateModel(BaseModel):
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=20000)
     values: Optional[List[str]] = None
     mood: Optional[int] = None
 
 # --- Insights: Anti-Goals & Habit Graveyard ---
 class AntiGoalModel(BaseModel):
-    text: str
-    reason: Optional[str] = ""
+    text: str = Field(..., max_length=10000)
+    reason: Optional[str] = Field("", max_length=20000)
 
     @field_validator("text")
     @classmethod
@@ -193,10 +193,10 @@ class AntiGoalModel(BaseModel):
         return v
 
 class HabitGraveyardModel(BaseModel):
-    habit: str
-    reason: Optional[str] = ""
-    started_at: Optional[str] = ""
-    abandoned_at: Optional[str] = ""
+    habit: str = Field(..., max_length=10000)
+    reason: Optional[str] = Field("", max_length=20000)
+    started_at: Optional[str] = Field("", max_length=20000)
+    abandoned_at: Optional[str] = Field("", max_length=20000)
 
     @field_validator("habit")
     @classmethod
@@ -207,10 +207,10 @@ class HabitGraveyardModel(BaseModel):
 
 # --- Time & Productivity ---
 class TimeEntryModel(BaseModel):
-    date: Optional[str] = None   # yyyy-MM-dd, defaults to today
-    category: str                # e.g. work, learning, leisure
+    date: Optional[str] = Field(None, max_length=20000) # yyyy-MM-dd, defaults to today
+    category: str = Field(..., max_length=10000) # e.g. work, learning, leisure
     hours: float
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
     @field_validator("category")
     @classmethod
@@ -220,10 +220,10 @@ class TimeEntryModel(BaseModel):
         return v
 
 class ScreenTimeModel(BaseModel):
-    date: Optional[str] = None
-    app_category: str            # e.g. Social, News, Work, Entertainment
+    date: Optional[str] = Field(None, max_length=20000)
+    app_category: str = Field(..., max_length=10000) # e.g. Social, News, Work, Entertainment
     hours: float
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
     @field_validator("app_category")
     @classmethod
@@ -233,10 +233,10 @@ class ScreenTimeModel(BaseModel):
         return v
 
 class ProcrastinationLogModel(BaseModel):
-    date: Optional[str] = None
-    what: str                    # what was avoided
-    why: Optional[str] = ""
-    outcome: Optional[str] = ""
+    date: Optional[str] = Field(None, max_length=20000)
+    what: str = Field(..., max_length=10000) # what was avoided
+    why: Optional[str] = Field("", max_length=20000)
+    outcome: Optional[str] = Field("", max_length=20000)
 
     @field_validator("what")
     @classmethod
@@ -246,8 +246,8 @@ class ProcrastinationLogModel(BaseModel):
         return v
 
 class NotToDoModel(BaseModel):
-    text: str
-    reason: Optional[str] = ""
+    text: str = Field(..., max_length=10000)
+    reason: Optional[str] = Field("", max_length=20000)
 
     @field_validator("text")
     @classmethod
@@ -258,9 +258,9 @@ class NotToDoModel(BaseModel):
 
 # --- Aging & Long-term Life (Time Capsule) ---
 class RegretModel(BaseModel):
-    text: str
-    action_to_avoid: Optional[str] = ""
-    date: Optional[str] = None
+    text: str = Field(..., max_length=10000)
+    action_to_avoid: Optional[str] = Field("", max_length=20000)
+    date: Optional[str] = Field(None, max_length=20000)
 
     @field_validator("text")
     @classmethod
@@ -270,10 +270,10 @@ class RegretModel(BaseModel):
         return v
 
 class FutureAdviceModel(BaseModel):
-    content: str
-    target_read_date: Optional[str] = ""
+    content: str = Field(..., max_length=10000)
+    target_read_date: Optional[str] = Field("", max_length=20000)
     target_age: Optional[int] = None
-    created_at: Optional[str] = None
+    created_at: Optional[str] = Field(None, max_length=20000)
 
     @field_validator("content")
     @classmethod
@@ -284,8 +284,8 @@ class FutureAdviceModel(BaseModel):
 
 class PastAdviceModel(BaseModel):
     from_age: Optional[int] = None
-    content: str
-    applied: Optional[str] = ""
+    content: str = Field(..., max_length=10000)
+    applied: Optional[str] = Field("", max_length=20000)
 
     @field_validator("content")
     @classmethod
@@ -295,10 +295,10 @@ class PastAdviceModel(BaseModel):
         return v
 
 class LifeLessonModel(BaseModel):
-    principle: str
-    context: Optional[str] = ""
-    date_learned: Optional[str] = None
-    category: Optional[str] = ""
+    principle: str = Field(..., max_length=10000)
+    context: Optional[str] = Field("", max_length=20000)
+    date_learned: Optional[str] = Field(None, max_length=20000)
+    category: Optional[str] = Field("", max_length=20000)
 
     @field_validator("principle")
     @classmethod
@@ -309,11 +309,11 @@ class LifeLessonModel(BaseModel):
 
 # --- Creativity & Passion Projects ---
 class ProjectIdeaModel(BaseModel):
-    title: str
-    description: Optional[str] = ""
-    status: Optional[str] = "backlog"   # backlog | in_progress | done
-    link: Optional[str] = ""
-    created_at: Optional[str] = None
+    title: str = Field(..., max_length=10000)
+    description: Optional[str] = Field("", max_length=20000)
+    status: Optional[str] = Field("backlog", max_length=20000) # backlog | in_progress | done
+    link: Optional[str] = Field("", max_length=20000)
+    created_at: Optional[str] = Field(None, max_length=20000)
 
     @field_validator("title")
     @classmethod
@@ -323,10 +323,10 @@ class ProjectIdeaModel(BaseModel):
         return v
 
 class CreativeSessionModel(BaseModel):
-    date: Optional[str] = None
-    project_name: str
+    date: Optional[str] = Field(None, max_length=20000)
+    project_name: str = Field(..., max_length=10000)
     hours: float
-    output_notes: Optional[str] = ""
+    output_notes: Optional[str] = Field("", max_length=20000)
 
     @field_validator("project_name")
     @classmethod
@@ -337,9 +337,9 @@ class CreativeSessionModel(BaseModel):
 
 # --- Spirituality & Philosophy ---
 class MeaningLogModel(BaseModel):
-    date: Optional[str] = None
-    experience: str
-    why_meaningful: Optional[str] = ""
+    date: Optional[str] = Field(None, max_length=20000)
+    experience: str = Field(..., max_length=10000)
+    why_meaningful: Optional[str] = Field("", max_length=20000)
 
     @field_validator("experience")
     @classmethod
@@ -350,10 +350,10 @@ class MeaningLogModel(BaseModel):
 
 # --- Fun, Play & Leisure ---
 class TravelLogModel(BaseModel):
-    date: Optional[str] = None
-    destination: str
-    memories: Optional[str] = ""
-    photos_link: Optional[str] = ""
+    date: Optional[str] = Field(None, max_length=20000)
+    destination: str = Field(..., max_length=10000)
+    memories: Optional[str] = Field("", max_length=20000)
+    photos_link: Optional[str] = Field("", max_length=20000)
 
     @field_validator("destination")
     @classmethod
@@ -363,11 +363,11 @@ class TravelLogModel(BaseModel):
         return v
 
 class BucketListModel(BaseModel):
-    title: str
-    description: Optional[str] = ""
-    status: Optional[str] = "not_started"   # not_started | in_progress | done
-    target_date: Optional[str] = ""
-    completed_date: Optional[str] = ""
+    title: str = Field(..., max_length=10000)
+    description: Optional[str] = Field("", max_length=20000)
+    status: Optional[str] = Field("not_started", max_length=20000) # not_started | in_progress | done
+    target_date: Optional[str] = Field("", max_length=20000)
+    completed_date: Optional[str] = Field("", max_length=20000)
 
     @field_validator("title")
     @classmethod
@@ -378,11 +378,11 @@ class BucketListModel(BaseModel):
 
 # --- Learning & Growth ---
 class SkillModel(BaseModel):
-    name: str
-    category: Optional[str] = ""   # Technical, Creative, Soft Skills, etc.
+    name: str = Field(..., max_length=10000)
+    category: Optional[str] = Field("", max_length=20000) # Technical, Creative, Soft Skills, etc.
     level: Optional[int] = 1       # 1-5
-    notes: Optional[str] = ""
-    started_at: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
+    started_at: Optional[str] = Field("", max_length=20000)
 
     @field_validator("name")
     @classmethod
@@ -392,13 +392,13 @@ class SkillModel(BaseModel):
         return v
 
 class CourseModel(BaseModel):
-    title: str
-    provider: Optional[str] = ""
+    title: str = Field(..., max_length=10000)
+    provider: Optional[str] = Field("", max_length=20000)
     hours_spent: Optional[float] = 0.0
-    status: Optional[str] = "in_progress"   # in_progress | completed | dropped
-    what_learned: Optional[str] = ""
-    started_at: Optional[str] = ""
-    completed_at: Optional[str] = ""
+    status: Optional[str] = Field("in_progress", max_length=20000) # in_progress | completed | dropped
+    what_learned: Optional[str] = Field("", max_length=20000)
+    started_at: Optional[str] = Field("", max_length=20000)
+    completed_at: Optional[str] = Field("", max_length=20000)
 
     @field_validator("title")
     @classmethod
@@ -408,10 +408,10 @@ class CourseModel(BaseModel):
         return v
 
 class FailureLogEntryModel(BaseModel):
-    date: Optional[str] = None
-    what_happened: str
-    lesson: Optional[str] = ""
-    domain: Optional[str] = ""    # Work, Health, Relationships, etc.
+    date: Optional[str] = Field(None, max_length=20000)
+    what_happened: str = Field(..., max_length=10000)
+    lesson: Optional[str] = Field("", max_length=20000)
+    domain: Optional[str] = Field("", max_length=20000) # Work, Health, Relationships, etc.
 
     @field_validator("what_happened")
     @classmethod
@@ -422,11 +422,11 @@ class FailureLogEntryModel(BaseModel):
 
 # --- Career & Work ---
 class SkillsGapModel(BaseModel):
-    skill: str
-    current_level: Optional[str] = ""
-    target_level: Optional[str] = ""
-    why_needed: Optional[str] = ""
-    resources: Optional[str] = ""
+    skill: str = Field(..., max_length=10000)
+    current_level: Optional[str] = Field("", max_length=20000)
+    target_level: Optional[str] = Field("", max_length=20000)
+    why_needed: Optional[str] = Field("", max_length=20000)
+    resources: Optional[str] = Field("", max_length=20000)
 
     @field_validator("skill")
     @classmethod
@@ -436,11 +436,11 @@ class SkillsGapModel(BaseModel):
         return v
 
 class FeedbackModel(BaseModel):
-    date: Optional[str] = None
-    from_person: Optional[str] = ""
-    feedback_type: Optional[str] = "positive"   # positive | critical | mixed
-    content: str
-    action_taken: Optional[str] = ""
+    date: Optional[str] = Field(None, max_length=20000)
+    from_person: Optional[str] = Field("", max_length=20000)
+    feedback_type: Optional[str] = Field("positive", max_length=20000) # positive | critical | mixed
+    content: str = Field(..., max_length=10000)
+    action_taken: Optional[str] = Field("", max_length=20000)
 
     @field_validator("content")
     @classmethod
@@ -453,11 +453,11 @@ class FeedbackModel(BaseModel):
 
 # --- Health & Body ---
 class SleepLogModel(BaseModel):
-    date: str
-    bedtime: str
-    wake_time: str
+    date: str = Field(..., max_length=10000)
+    bedtime: str = Field(..., max_length=10000)
+    wake_time: str = Field(..., max_length=10000)
     quality: int # 1-10
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
     @field_validator("quality")
     @classmethod
@@ -471,18 +471,18 @@ class ExerciseSetModel(BaseModel):
     weight: float
 
 class ExerciseLogEntryModel(BaseModel):
-    exercise_name: str
-    muscle_group: str # Chest, Back, Legs, Arms, Shoulders, Core, Cardio
+    exercise_name: str = Field(..., max_length=10000)
+    muscle_group: str = Field(..., max_length=10000) # Chest, Back, Legs, Arms, Shoulders, Core, Cardio
     sets: List[ExerciseSetModel]
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
 class WorkoutSessionModel(BaseModel):
-    date: str
-    type: str # gym, run, yoga
+    date: str = Field(..., max_length=10000)
+    type: str = Field(..., max_length=10000) # gym, run, yoga
     duration_minutes: int
     intensity: int # 1-10
     exercises: List[ExerciseLogEntryModel]
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
     @field_validator("intensity")
     @classmethod
@@ -492,34 +492,34 @@ class WorkoutSessionModel(BaseModel):
         return v
 
 class ExerciseGoalModel(BaseModel):
-    exercise_name: str
-    muscle_group: str
+    exercise_name: str = Field(..., max_length=10000)
+    muscle_group: str = Field(..., max_length=10000)
     target_sets: int
     target_reps: int
     target_weight: float
-    deadline: str
-    status: Optional[str] = "pending" # pending, achieved, failed
+    deadline: str = Field(..., max_length=10000)
+    status: Optional[str] = Field("pending", max_length=20000) # pending, achieved, failed
 
 class HealthMetricsModel(BaseModel):
-    date: str
+    date: str = Field(..., max_length=10000)
     water_ml: int
     nutrition_quality: int # 1-10
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
 class MealLogModel(BaseModel):
-    date: str
-    meal_type: str # Breakfast, Lunch, Dinner, Snack
+    date: str = Field(..., max_length=10000)
+    meal_type: str = Field(..., max_length=10000) # Breakfast, Lunch, Dinner, Snack
     calories: int
     protein_g: Optional[int] = 0
     carbs_g: Optional[int] = 0
     fat_g: Optional[int] = 0
-    notes: Optional[str] = ""
+    notes: Optional[str] = Field("", max_length=20000)
 
 
 
 class CustomExerciseIn(BaseModel):
-    exercise_name: str
-    muscle_group: str
+    exercise_name: str = Field(..., max_length=10000)
+    muscle_group: str = Field(..., max_length=10000)
 
 class ExerciseGoalStatusPatch(BaseModel):
     status: Literal["pending", "achieved", "failed"]

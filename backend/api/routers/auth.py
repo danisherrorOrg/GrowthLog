@@ -204,12 +204,22 @@ def get_public_stats(user_id: str):
 @router.delete("/me")
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    db.categories.delete_many({"user_id": uid})
-    db.category_templates.delete_many({"user_id": uid})
-    db.goals.delete_many({"user_id": uid})
-    db.manifestations.delete_many({"user_id": uid})
-    db.snapshots.delete_many({"user_id": uid})
-    db.daily_logs.delete_many({"user_id": uid})
+    
+    collections_to_delete = [
+        "categories", "category_templates", "goals", "manifestations", "snapshots", "daily_logs",
+        "sleep_logs", "workouts", "meal_logs", "health_metrics", "exercise_goals", "custom_exercises",
+        "thoughts", "reframes", "books", "quotes",
+        "anti_goals", "habit_graveyard", "time_entries", "screen_time", "procrastination_log", "not_to_do",
+        "regrets", "future_advice", "past_advice", "life_lessons",
+        "project_ideas", "creative_sessions",
+        "meaning_log", "travel_log", "bucket_list",
+        "skills", "courses", "failure_log", "skills_gap", "feedback",
+        "activity_logs"
+    ]
+    
+    for coll in collections_to_delete:
+        db[coll].delete_many({"user_id": uid})
+        
     db.users.delete_one({"_id": current_user["_id"]})
     cache_invalidate(f"dashboard:{uid}")
     cache_invalidate(f"categories:{uid}")
