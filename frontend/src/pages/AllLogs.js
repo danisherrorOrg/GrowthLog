@@ -16,8 +16,14 @@ export default function AllLogs() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [expandedLog, setExpandedLog] = useState(null); // date string
+  const [expandedLogs, setExpandedLogs] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [minRating, setMinRating] = useState(0);
+  const [focusMode, setFocusMode] = useState(true);
   const [confirm, setConfirm] = useState(null);
+  const [previewEntry, setPreviewEntry] = useState(null);
+  const [previewPeak, setPreviewPeak] = useState(null);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -75,8 +81,33 @@ export default function AllLogs() {
   };
 
   const toggleExpand = (date) => {
-    setExpandedLog(expandedLog === date ? null : date);
+    setExpandedLogs(prev => prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]);
   };
+
+  const filteredLogs = logs.filter(log => {
+    if (minRating > 0 && (log.overall_rating || 0) < minRating) return false;
+    if (filterCategory) {
+      const hasCat = log.entries?.some(e => e.category_id === filterCategory && e.text?.trim());
+      if (!hasCat) return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchHighlight = log.highlight?.toLowerCase().includes(q);
+      const matchEntries = log.entries?.some(e => e.text?.toLowerCase().includes(q));
+      if (!matchHighlight && !matchEntries) return false;
+    }
+    return true;
+  });
+
+  const groupedLogs = filteredLogs.reduce((acc, log) => {
+    const monthYear = format(parseISO(log.date), 'MMMM yyyy');
+    if (!acc[monthYear]) acc[monthYear] = [];
+    acc[monthYear].push(log);
+    return acc;
+  }, {});
+
+  const expandAll = () => setExpandedLogs(filteredLogs.map(l => l.date));
+  const collapseAll = () => setExpandedLogs([]);
 
   if (loading) return (
     <div className="page-body">
@@ -95,6 +126,61 @@ export default function AllLogs() {
       </div>
 
       <div className="page-body">
+        {/* Toolbar */}
+        <div className="card" style={{ marginBottom: 32, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+              <input type="text" className="form-input" placeholder="Search entries, highlights..." 
+                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
+                style={{ paddingLeft: 32 }} />
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: 13 }}>🔍</span>
+              {searchQuery && (
+                 <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.4, padding: 4 }}>✕</button>
+              )}
+            </div>
+            
+            <select className="form-select" style={{ width: 'auto' }} value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+              <option value="">All Categories</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            </select>
+
+            <select className="form-select" style={{ width: 'auto' }} value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
+              <option value={0}>Any Rating</option>
+              <option value={6}>Rating 6+</option>
+              <option value={8}>Rating 8+</option>
+              <option value={10}>Perfect 10s</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 16 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {filteredLogs.length > 0 && (
+                <>
+                  <button className="btn btn-sm btn-outline" onClick={expandAll}>Expand All</button>
+                  <button className="btn btn-sm btn-outline" onClick={collapseAll}>Collapse All</button>
+                </>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--ink)' }}>Focus Mode (Hide empty)</span>
+              <button 
+                onClick={() => setFocusMode(!focusMode)}
+                style={{
+                  width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: focusMode ? 'var(--sage)' : 'var(--mist)',
+                  position: 'relative', transition: 'background 0.3s'
+                }}
+              >
+                <div style={{
+                  width: 16, height: 16, background: 'white', borderRadius: '50%',
+                  position: 'absolute', top: 2, left: focusMode ? 18 : 2, transition: 'left 0.3s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }}/>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {logs.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📂</div>
@@ -102,18 +188,35 @@ export default function AllLogs() {
             <p>Your history will appear here once you start logging your daily progress.</p>
             <button className="btn btn-primary" onClick={() => navigate('/log')}>Log Your First Day →</button>
           </div>
+        ) : Object.keys(groupedLogs).length === 0 ? (
+          <div className="empty-state" style={{ padding: '60px 20px', textAlign: 'center' }}>
+            <div className="empty-icon" style={{ opacity: 0.5 }}>🔍</div>
+            <h3>No logs match your filters</h3>
+            <p>Try adjusting your search criteria or clear the filters to see your history.</p>
+            <button className="btn btn-outline" onClick={() => { setSearchQuery(''); setFilterCategory(''); setMinRating(0); }} style={{ margin: '0 auto' }}>Clear Filters</button>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {logs.map(log => {
-              const isExpanded = expandedLog === log.date;
-              return (
-                <div key={log.id} className="card" style={{
-                  padding: 0,
-                  overflow: 'hidden',
-                  border: isExpanded ? '1px solid var(--sage)' : '1px solid transparent',
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: isExpanded ? '0 12px 32px rgba(0,0,0,0.06)' : 'none'
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {Object.entries(groupedLogs).map(([monthYear, monthLogs]) => (
+              <div key={monthYear} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ 
+                  position: 'relative', background: 'transparent', 
+                  padding: '12px 0 8px', borderBottom: '1px solid rgba(13,13,13,0.05)',
+                  fontFamily: 'Fraunces', fontSize: 20, color: 'var(--sage)', fontWeight: 600
                 }}>
+                  {monthYear} <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans', fontWeight: 500 }}>— {monthLogs.length} day{monthLogs.length !== 1 ? 's' : ''}</span>
+                </div>
+                
+                {monthLogs.map(log => {
+                  const isExpanded = expandedLogs.includes(log.date);
+                  return (
+                    <div key={log.id} className="card" style={{
+                      padding: 0,
+                      overflow: 'hidden',
+                      border: isExpanded ? '1px solid var(--sage)' : '1px solid transparent',
+                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: isExpanded ? '0 12px 32px rgba(0,0,0,0.06)' : 'none'
+                    }}>
                   {/* Summary Header */}
                   <div
                     onClick={() => toggleExpand(log.date)}
@@ -162,9 +265,13 @@ export default function AllLogs() {
                     <div style={{ padding: '0 30px 30px', borderTop: '1px solid rgba(13,13,13,0.05)', animation: 'slideUp 0.3s ease' }}>
                       <div style={{ marginTop: 24 }}>
                         {log.highlight && (
-                          <div style={{ marginBottom: 24, padding: '20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '5px solid var(--sage)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
-                            <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', fontWeight: 800, display: 'block', marginBottom: 8 }}>The Day's Peak</label>
-                            <div className="markdown-body" style={{ margin: 0, fontStyle: 'italic', color: 'var(--ink)', fontSize: 17, lineHeight: 1.7, fontWeight: 400 }}>
+                          <div onClick={() => setPreviewPeak(log)} style={{ 
+                            marginBottom: 24, padding: '20px', background: 'var(--paper)', borderRadius: 16, borderLeft: '5px solid var(--sage)', 
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.02)', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' 
+                          }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.05)'; }}
+                             onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.02)'; }}>
+                            <label style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'var(--sage)', fontWeight: 800, display: 'block', marginBottom: 8, cursor: 'inherit' }}>The Day's Peak</label>
+                            <div className="markdown-body" style={{ margin: 0, fontStyle: 'italic', color: 'var(--ink)', fontSize: 17, lineHeight: 1.7, fontWeight: 400, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               <MarkdownRenderer content={log.highlight} />
                             </div>
                           </div>
@@ -174,8 +281,19 @@ export default function AllLogs() {
                           {log.entries?.map(entry => {
                             const cat = getCategory(entry.category_id);
                             if (!cat) return null;
+                            if (focusMode && (!entry.text || !entry.text.trim().replace(/---/g, '').trim())) return null;
+
                             return (
-                              <div key={cat.id} className="log-entry-item" style={{ padding: '18px', background: 'rgba(13,13,13,0.02)', borderRadius: 14, border: '1px solid rgba(13,13,13,0.04)' }}>
+                              <div key={cat.id} className="log-entry-item" 
+                                onClick={() => setPreviewEntry({ entry, category: cat, date: log.date })}
+                                style={{ 
+                                  padding: '18px', background: 'rgba(13,13,13,0.02)', 
+                                  borderRadius: 14, border: '1px solid rgba(13,13,13,0.04)',
+                                  cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.04)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+                              >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                                   <span style={{ fontSize: 24 }}>{cat.icon}</span>
                                   <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{cat.name}</span>
@@ -184,7 +302,10 @@ export default function AllLogs() {
                                     <span className="tag tag-mist" style={{ fontSize: 10 }}>Energy {entry.energy}</span>
                                   </div>
                                 </div>
-                                <div className="markdown-body" style={{ fontSize: 14, margin: 0, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6 }}>
+                                <div className="markdown-body" style={{ 
+                                  fontSize: 14, margin: 0, color: 'rgba(13,13,13,0.65)', lineHeight: 1.6,
+                                  display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                                }}>
                                   {entry.text ? <MarkdownRenderer content={entry.text} /> : <span style={{ fontStyle: 'italic', opacity: 0.5 }}>No detailed notes...</span>}
                                 </div>
                               </div>
@@ -206,8 +327,10 @@ export default function AllLogs() {
                 </div>
               );
             })}
+            </div>
+            ))}
 
-            {hasMore && (
+            {(hasMore && !searchQuery && !filterCategory && minRating === 0) && (
               <button
                 className="btn btn-outline"
                 onClick={loadMore}
@@ -220,6 +343,66 @@ export default function AllLogs() {
           </div>
         )}
       </div>
+
+      {previewEntry && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewEntry(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 600, padding: '32px 40px' }}>
+            <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ fontSize: 32, background: 'var(--mist)', width: 64, height: 64, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {previewEntry.category.icon}
+                </span>
+                <div>
+                  <h3 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 24 }}>{previewEntry.category.name}</h3>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>
+                    {format(parseISO(previewEntry.date), 'EEEE, MMMM d')}
+                  </div>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setPreviewEntry(null)}>✕</button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: 8, marginBottom: previewEntry.entry.emotions?.length > 0 ? 12 : 24 }}>
+              <span className="tag tag-mist" style={{ fontSize: 11 }}>Mood: {previewEntry.entry.mood}/10</span>
+              <span className="tag tag-mist" style={{ fontSize: 11 }}>Energy: {previewEntry.entry.energy}/10</span>
+              {previewEntry.entry.time_spent > 0 && <span className="tag tag-mist" style={{ fontSize: 11 }}>⏱ {previewEntry.entry.time_spent} mins</span>}
+            </div>
+
+            {previewEntry.entry.emotions?.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
+                <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(13,13,13,0.4)', fontWeight: 700, marginRight: 4 }}>Emotions:</span>
+                {previewEntry.entry.emotions.map(em => (
+                  <span key={em} className="tag tag-mist" style={{ fontSize: 10 }}>{em}</span>
+                ))}
+              </div>
+            )}
+
+            <div className="markdown-body" style={{ fontSize: 16, lineHeight: 1.7, color: 'var(--ink)' }}>
+              {previewEntry.entry.text ? <MarkdownRenderer content={previewEntry.entry.text} /> : <p style={{ fontStyle: 'italic', opacity: 0.5 }}>No detailed notes were recorded for this dimension.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewPeak && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewPeak(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
+          <div className="modal" style={{ maxWidth: 600, padding: '32px 40px' }}>
+            <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 24, color: 'var(--sage)' }}>The Day's Peak</h3>
+                <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontWeight: 700 }}>
+                  {format(parseISO(previewPeak.date), 'EEEE, MMMM d, yyyy')}
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => setPreviewPeak(null)}>✕</button>
+            </div>
+            
+            <div className="markdown-body" style={{ fontSize: 18, lineHeight: 1.7, color: 'var(--ink)', fontStyle: 'italic' }}>
+              <MarkdownRenderer content={previewPeak.highlight} />
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
