@@ -169,41 +169,65 @@ def delete_meal(meal_id: str, current_user=Depends(get_current_user)):
 # ----------------- BODY MAPPING AGGREGATION -----------------
 @router.get("/body-mapping", response_model=dict)
 def get_body_mapping(current_user=Depends(get_current_user)):
-    # Calculate muscle group "status" based on last 30 days of workouts
+    # Calculate muscle group "status" based on volume (Weight * Reps) over last 30 days
     thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
     workouts = list(db.workouts.find({"user_id": str(current_user["_id"]), "date": {"$gte": thirty_days_ago}}))
     
-    # Initialize groups
-    groups = {
-        "Chest": 0, "Back": 0, "Legs": 0, "Arms": 0, "Shoulders": 0, "Core": 0, "Cardio": 0
+    # Initialize data structures
+    stats = {
+        "Chest": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Back": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Legs": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Arms": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Shoulders": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Core": {"volume": 0, "max_weight": 0, "sets": 0},
+        "Cardio": {"volume": 0, "max_weight": 0, "sets": 0}
     }
 
-    # Sum total sets per muscle group
+    # Aggregate total volume per muscle group
     for w in workouts:
         for ex in w.get("exercises", []):
             group = ex.get("muscle_group", "").capitalize()
-            if group in groups:
-                groups[group] += len(ex.get("sets", []))
+            if group in stats:
+                for s in ex.get("sets", []):
+                    reps = s.get("reps", 0)
+                    weight = s.get("weight", 0)
+                    vol = reps * weight
+                    stats[group]["volume"] += vol
+                    stats[group]["sets"] += 1
+                    if weight > stats[group]["max_weight"]:
+                        stats[group]["max_weight"] = weight
 
-    # Map sets to ranking classifications
+    # Map volume to ranking classifications (Thresholds based on monthly volume in KG)
     ranks = {}
-    for group, sets in groups.items():
-        if sets == 0:
+    for group, data in stats.items():
+        vol = data["volume"]
+        
+        if vol == 0:
             rank = "Untrained"
-        elif sets <= 4:
+        elif vol < 1500:
             rank = "Weak"
-        elif sets <= 12:
+        elif vol < 6000:
             rank = "Average"
-        elif sets <= 24:
+        elif vol < 18000:
             rank = "Good"
-        elif sets <= 40:
+        elif vol < 40000:
             rank = "Elite"
         else:
             rank = "Diamond"
         
         ranks[group] = {
-            "sets": sets,
-            "rank": rank
+            "volume": vol,
+            "sets": data["sets"],
+            "max_weight": data["max_weight"],
+            "rank": rank,
+            "thresholds": {
+                "Weak": 0,
+                "Average": 1500,
+                "Good": 6000,
+                "Elite": 18000,
+                "Diamond": 40000
+            }
         }
     
     return ranks
