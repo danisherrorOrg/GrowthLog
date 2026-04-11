@@ -18,11 +18,20 @@ GrowthLog features a custom-crafted UI designed for focus and calm:
 ## 🚀 Exhaustive Feature Set
 
 ### 🧩 Core Modules
-*   **Dashboard**: Real-time Heatmaps, Goal completion stats, and "Growth Insights" cards.
-*   **Growth Analytics**: Mood vs. Energy trends, Time investment (minutes) charts, and Weekly growth summaries.
-*   **Manifestations**: Vision-setting cycles (30/60/90 days) with milestone progress and completion reflections.
-*   **Snapshots**: "State of Being" self-portraits to compare your perspective across months.
-*   **Daily Check-ins**: Granular logging of activities, emotions, mood, and energy per category.
+*   **Daily Logs & Activity Tracking**: A journal to log mood, energy, specific activities, and time spent.
+*   **Goals & Manifestations**: A structured system to set grand quarterly visions and break them down into actionable milestones with deadlines.
+*   **Action Board (Todos)**: A task manager that tracks priority, due dates, and time estimations versus actual time spent.
+*   **Cognitive Reframing Studio (Reframes)**: A psychological tool for emotional regulation to log triggers, identify cognitive distortions, and reframe negative thoughts.
+*   **Mind Garden (Thoughts)**: A distraction-free capture area for raw thoughts, ideas, and sentiments.
+*   **Snapshots**: Periodic check-ins to log current mood and life values.
+*   **Library (Books) & Motivation Vault (Quotes)**: Areas to store reading material, insights, and impactful quotes.
+*   **Dashboard & Analytics**: Real-time Heatmaps, Goal completion stats, Mood vs. Energy trends, and Life Balance Radar Charts.
+
+### 🧭 The Operating System Workflow
+For a complete strategic guide, read our [Ultimate Guide (Guide.md)](./Guide.md).
+1. **Quarterly Setup**: Define life categories and set grand Manifestations and concrete Goals.
+2. **Daily Operations**: Execute daily from the Action Board, capture ideas in the Mind Garden, regulate emotions through Cognitive Reframes, and end the day with a Daily Log.
+3. **Periodic Review**: Take weekly Snapshots and review activity trends to ensure alignment with your changing core values.
 
 ### 🔐 Safety & Security
 *   **70+ Test Suite**: Exhaustive coverage across 14 categories (Auth, Security, Boundary, etc.).

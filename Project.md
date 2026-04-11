@@ -114,16 +114,17 @@ We maintain a rigorous **70+ test suite** across 14 specialized categories:
 
 ## 🚀 The Roadmap
 
-### ✅ Phase 1: Core Foundation (COMPLETED)
+### ✅ Phase 1: Core Foundation & Micro-Modules (COMPLETED)
 *   [x] JWT Auth & Category CRUD
-*   [x] Goal tracking & Deadline reflections
-*   [x] Basic Dashboard & Analytics
+*   [x] Goal, Manifestation tracking & Deadline reflections
+*   [x] Action Board (Todos) with Time Tracking
+*   [x] Mind Garden for raw thoughts and Cognitive Reframing Studio
+*   [x] Library (Books) & Motivation Vault (Quotes)
 
-### ✅ Phase 2: Visualization Mastery (COMPLETED)
-*   [x] Consistency Heatmaps (GitHub style)
-*   [x] Mood/Energy Area Charts
-*   [x] Life Balance Radar Charts
-*   [x] Manifestation Progress Tracking
+### ✅ Phase 2: Visualization & Review Mastery (COMPLETED)
+*   [x] Dashboards & Consistency Heatmaps (GitHub style)
+*   [x] Mood/Energy Area Charts & Life Balance Radar Charts
+*   [x] Periodic Snapshots & Daily Check-ins
 
 ### 🚧 Phase 3: AI & Insights (IN PROGRESS)
 *   [ ] Weekly Growth Letter (AI analysis of last 7 logs)
