@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import API from '../utils/api';
-import { getErrorMessage } from '../utils/errors';
-import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import API from '../../utils/api';
+import { getErrorMessage } from '../../utils/errors';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function highlightText(text, query) {
@@ -77,8 +77,10 @@ function SpotlightModal({ quote, onClose, onNext, onFavorite }) {
         }}>✕</button>
 
         {/* Ornamental quote mark */}
-        <div style={{ color: 'var(--gold)', fontSize: 64, fontFamily: 'Fraunces',
-          lineHeight: 0.6, marginBottom: 20, opacity: 0.6 }}>
+        <div style={{
+          color: 'var(--gold)', fontSize: 64, fontFamily: 'Fraunces',
+          lineHeight: 0.6, marginBottom: 20, opacity: 0.6
+        }}>
           "
         </div>
 
@@ -89,8 +91,10 @@ function SpotlightModal({ quote, onClose, onNext, onFavorite }) {
           <MarkdownRenderer content={quote.content} />
         </div>
 
-        <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5,
-          color: 'rgba(13,13,13,0.4)', marginBottom: 16 }}>
+        <div style={{
+          fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5,
+          color: 'rgba(13,13,13,0.4)', marginBottom: 16
+        }}>
           — {quote.author || 'Unknown'}
           {quote.source && ` · ${quote.source}`}
         </div>
@@ -105,8 +109,10 @@ function SpotlightModal({ quote, onClose, onNext, onFavorite }) {
 
         <div style={{ display: 'flex', gap: 12 }}>
           <button className="btn btn-outline" onClick={onFavorite}
-            style={{ flex: 1, color: quote.is_favorite ? 'var(--gold)' : undefined,
-              borderColor: quote.is_favorite ? 'rgba(201,168,76,0.4)' : undefined }}>
+            style={{
+              flex: 1, color: quote.is_favorite ? 'var(--gold)' : undefined,
+              borderColor: quote.is_favorite ? 'rgba(201,168,76,0.4)' : undefined
+            }}>
             {quote.is_favorite ? '★ Unfavorite' : '☆ Favorite'}
           </button>
           <button className="btn btn-primary" onClick={onNext} style={{ flex: 1 }}>
@@ -120,16 +126,16 @@ function SpotlightModal({ quote, onClose, onNext, onFavorite }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function Quotes() {
-  const [quotes, setQuotes]           = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showAdd, setShowAdd]         = useState(false);
-  const [newQuote, setNewQuote]       = useState({ content: '', author: '', source: '', tags: '' });
-  const [activeTag, setActiveTag]     = useState(null);
-  const [onlyFavs, setOnlyFavs]       = useState(false);
+  const [quotes, setQuotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newQuote, setNewQuote] = useState({ content: '', author: '', source: '', tags: '' });
+  const [activeTag, setActiveTag] = useState(null);
+  const [onlyFavs, setOnlyFavs] = useState(false);
   const [editingQuote, setEditingQuote] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [search, setSearch]           = useState('');
-  const [spotlight, setSpotlight]     = useState(null); // random quote modal
+  const [search, setSearch] = useState('');
+  const [spotlight, setSpotlight] = useState(null); // random quote modal
 
   const fetchQuotes = async () => {
     try {
@@ -207,13 +213,13 @@ export default function Quotes() {
   const allTags = [...new Set(quotes.flatMap(q => q.tags || []))].sort();
 
   const filteredQuotes = quotes.filter(q => {
-    const tagMatch  = !activeTag || q.tags?.includes(activeTag);
-    const favMatch  = !onlyFavs  || q.is_favorite;
-    const q_lower   = search.toLowerCase();
+    const tagMatch = !activeTag || q.tags?.includes(activeTag);
+    const favMatch = !onlyFavs || q.is_favorite;
+    const q_lower = search.toLowerCase();
     const searchMatch = !search.trim() ||
       q.content?.toLowerCase().includes(q_lower) ||
-      q.author?.toLowerCase().includes(q_lower)  ||
-      q.source?.toLowerCase().includes(q_lower)  ||
+      q.author?.toLowerCase().includes(q_lower) ||
+      q.source?.toLowerCase().includes(q_lower) ||
       q.tags?.some(t => t.toLowerCase().includes(q_lower));
     return tagMatch && favMatch && searchMatch;
   });
@@ -222,38 +228,36 @@ export default function Quotes() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2>Motivation Vault 🗝️</h2>
-          <p>Words of wisdom to keep you grounded.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {quotes.length > 0 && (
-            <button className="btn btn-outline" onClick={openSpotlight}
-              style={{ borderRadius: 30 }}>
-              🔀 Shuffle
-            </button>
-          )}
-          {!showAdd && (
-            <button className="btn btn-gold" onClick={() => setShowAdd(true)}
-              style={{ borderRadius: 30, boxShadow: '0 4px 12px rgba(201,168,76,0.2)' }}>
-              + Capture Wisdom
-            </button>
-          )}
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 24 }}>
+        {quotes.length > 0 && (
+          <button className="btn btn-outline" onClick={openSpotlight}
+            style={{ borderRadius: 30 }}>
+            🔀 Shuffle
+          </button>
+        )}
+        {!showAdd && (
+          <button className="btn btn-gold" onClick={() => setShowAdd(true)}
+            style={{ borderRadius: 30, boxShadow: '0 4px 12px rgba(201,168,76,0.2)' }}>
+            + Capture Wisdom
+          </button>
+        )}
       </div>
 
       <div className="page-body">
 
         {/* ── Toolbar ── */}
-        <div className="card" style={{ marginBottom: 32, padding: '14px 20px',
-          display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="card" style={{
+          marginBottom: 32, padding: '14px 20px',
+          display: 'flex', flexDirection: 'column', gap: 14
+        }}>
 
           {/* Tag filter — ALL tags */}
           {allTags.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5,
-                color: 'rgba(13,13,13,0.35)', fontWeight: 700, flexShrink: 0 }}>Tags:</span>
+              <span style={{
+                fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5,
+                color: 'rgba(13,13,13,0.35)', fontWeight: 700, flexShrink: 0
+              }}>Tags:</span>
               <button
                 className={`btn btn-sm ${!activeTag ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setActiveTag(null)}
@@ -281,12 +285,15 @@ export default function Quotes() {
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by quote, author, or source…"
                 style={{ padding: '8px 12px 8px 32px', fontSize: 13, height: 'auto' }} />
-              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                fontSize: 13, opacity: 0.35 }}>🔍</span>
+              <span style={{
+                position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                fontSize: 13, opacity: 0.35
+              }}>🔍</span>
               {search && (
                 <button onClick={() => setSearch('')} style={{
                   position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: 0.4 }}>✕</button>
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, opacity: 0.4
+                }}>✕</button>
               )}
             </div>
 
@@ -316,10 +323,14 @@ export default function Quotes() {
                 value={newQuote.content}
                 onChange={e => setNewQuote({ ...newQuote, content: e.target.value })}
                 required
-                style={{ minHeight: 110, border: 'none', background: 'transparent', padding: 0,
-                  fontSize: 18, fontFamily: 'Fraunces', fontStyle: 'italic', color: 'var(--ink)' }} />
-              <div style={{ paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.05)',
-                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14 }}>
+                style={{
+                  minHeight: 110, border: 'none', background: 'transparent', padding: 0,
+                  fontSize: 18, fontFamily: 'Fraunces', fontStyle: 'italic', color: 'var(--ink)'
+                }} />
+              <div style={{
+                paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.05)',
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14
+              }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 10 }}>Author</label>
                   <input type="text" className="form-input" placeholder="e.g. Marcus Aurelius"
@@ -485,12 +496,16 @@ function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete, onOpen }) {
     >
       {/* Top row: quote mark + actions */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ color: 'var(--gold)', fontSize: 36, fontFamily: 'Fraunces',
-          lineHeight: 0.5, marginTop: 10, opacity: 0.7 }}>"</div>
+        <div style={{
+          color: 'var(--gold)', fontSize: 36, fontFamily: 'Fraunces',
+          lineHeight: 0.5, marginTop: 10, opacity: 0.7
+        }}>"</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
           <button className="btn btn-ghost btn-sm" onClick={onFavorite}
-            style={{ fontSize: 17, color: q.is_favorite ? 'var(--gold)' : 'rgba(13,13,13,0.12)',
-              transition: 'color 0.2s' }}>
+            style={{
+              fontSize: 17, color: q.is_favorite ? 'var(--gold)' : 'rgba(13,13,13,0.12)',
+              transition: 'color 0.2s'
+            }}>
             {q.is_favorite ? '★' : '☆'}
           </button>
           <button className="btn btn-ghost btn-sm" onClick={onEdit}
@@ -512,8 +527,8 @@ function QuoteCard({ quote: q, search, onFavorite, onEdit, onDelete, onOpen }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
         <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.4 }}>
           — {q.author
-              ? (search?.trim() ? highlightText(q.author, search) : q.author)
-              : 'Unknown'}
+            ? (search?.trim() ? highlightText(q.author, search) : q.author)
+            : 'Unknown'}
           {q.source && (
             <span> · {search?.trim() ? highlightText(q.source, search) : q.source}</span>
           )}

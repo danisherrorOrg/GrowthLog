@@ -56,7 +56,7 @@ def update_todo(todo_id: str, data: TodoUpdateModel, current_user=Depends(get_cu
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Todo not found")
 
-    updated_todo = db.todos.find_one({"_id": ObjectId(todo_id)})
+    updated_todo = db.todos.find_one({"_id": ObjectId(todo_id), "user_id": uid})
     from utils.activity import log_activity
     log_activity(uid, "update", "todo", todo_id, "Updated to-do details")
     return serialize(updated_todo)
@@ -95,7 +95,7 @@ def complete_todo(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Todo not found")
 
-    updated_todo = db.todos.find_one({"_id": ObjectId(todo_id)})
+    updated_todo = db.todos.find_one({"_id": ObjectId(todo_id), "user_id": uid})
     from utils.activity import log_activity
     log_activity(uid, "complete", "todo", todo_id, "Completed a to-do")
     return serialize(updated_todo)

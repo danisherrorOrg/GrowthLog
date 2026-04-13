@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from bson import errors as bson_errors
 from datetime import datetime
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from core.rate_limit import limiter
 
 from core.database import create_indexes
 from core.config import ALLOWED_ORIGINS
@@ -22,8 +25,17 @@ from api.routers.books import router as books_router
 from api.routers.reframes import router as reframes_router
 from api.routers.activity import router as activity_router
 from api.routers.thoughts import router as thoughts_router
+from api.routers.insights import router as insights_router
+from api.routers.growth_career import router as growth_career_router
+from api.routers.passions import router as passions_router
+from api.routers.time_capsule import router as time_capsule_router
+from api.routers.health import router as health_router
+from api.routers.spirituality import router as spirituality_router
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,6 +69,12 @@ app.include_router(books_router)
 app.include_router(reframes_router)
 app.include_router(activity_router)
 app.include_router(thoughts_router)
+app.include_router(insights_router)
+app.include_router(growth_career_router)
+app.include_router(passions_router)
+app.include_router(time_capsule_router)
+app.include_router(health_router, prefix="/health", tags=["Health"])
+app.include_router(spirituality_router)
 
 
 
@@ -71,7 +89,16 @@ def root():
     return {"message": "GrowthLog API v2.2.0 Modular backend running"}
 
 # --- Automated Reminders (Nudge Feature) ---
-@app.post("/admin/nudge-silent-users")
+from fastapi import Header, HTTPException, Depends
+import os
+
+def verify_admin(x_admin_token: str = Header(...)):
+    admin_token = os.getenv("ADMIN_TOKEN")
+    # If ADMIN_TOKEN is not set in env, we refuse all requests securely
+    if not admin_token or x_admin_token != admin_token:
+        raise HTTPException(status_code=403, detail="Invalid admin credentials")
+
+@app.post("/admin/nudge-silent-users", dependencies=[Depends(verify_admin)])
 def nudge_silent_users(background_tasks: BackgroundTasks):
     from core.database import db
     from bson import ObjectId
@@ -83,7 +110,7 @@ def nudge_silent_users(background_tasks: BackgroundTasks):
     silent_users = list(db.users.find({
         "_id": {"$nin": logged_user_ids}, 
         "is_verified": True,
-        "email_notifications": {"$ne": False}
+        "email_notifications": True
     }))
     
     for user in silent_users:

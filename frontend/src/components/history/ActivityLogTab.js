@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import API from '../utils/api';
-import { getErrorMessage } from '../utils/errors';
+import API from '../../utils/api';
+import { getErrorMessage } from '../../utils/errors';
 import toast from 'react-hot-toast';
 import { parseISO, format } from 'date-fns';
 
@@ -139,12 +139,8 @@ export default function ActivityLog() {
 
   return (
     <div>
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-          <div>
-            <h2 style={{ fontFamily: 'Fraunces', fontSize: 32 }}>Growth Timeline ⏳</h2>
-            <p>Chronological history of your evolution across all modules.</p>
-          </div>
+      <div style={{ paddingBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ position: 'relative', minWidth: 200 }}>
               <select

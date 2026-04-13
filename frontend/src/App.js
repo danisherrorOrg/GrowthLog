@@ -6,30 +6,31 @@ import './styles/markdown.css';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import HistoryHub from './pages/HistoryHub';
+import TemporalHub from './pages/TemporalHub';
+import KnowledgeVault from './pages/KnowledgeVault';
+import HealthHub from './pages/HealthHub';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import DailyLog from './pages/DailyLog';
-import AllLogs from './pages/AllLogs';
 import Categories from './pages/Categories';
 import Goals from './pages/Goals';
 import GoalDetail from './pages/GoalDetail';
 import CategoryDetail from './pages/CategoryDetail';
 import Manifestations from './pages/Manifestations';
 import ManifestationDetail from './pages/ManifestationDetail';
-import Snapshots from './pages/Snapshots';
 import SnapshotDetail from './pages/SnapshotDetail';
 import Growth from './pages/Growth';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import VerifyEmail from './pages/VerifyEmail';
-import CalendarTimeline from './pages/CalendarTimeline';
 import Todos from './pages/Todos';
-import Quotes from './pages/Quotes';
-import Books from './pages/Books';
 import BookDetail from './pages/BookDetail';
 import Reframes from './pages/Reframes';
-import ActivityLog from './pages/ActivityLog';
 import Thoughts from './pages/Thoughts';
+import Insights from './pages/Insights';
+import GrowthHub from './pages/GrowthHub';
+import LifeCanvas from './pages/LifeCanvas';
 
 
 function PrivateRoute({ children }) {
@@ -64,23 +65,24 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="log" element={<DailyLog />} />
-            <Route path="history" element={<AllLogs />} />
+            <Route path="history" element={<HistoryHub />} />
             <Route path="categories" element={<Categories />} />
             <Route path="categories/:categoryId" element={<CategoryDetail />} />
             <Route path="goals" element={<Goals />} />
             <Route path="goals/:goalId" element={<GoalDetail />} />
             <Route path="manifestations" element={<Manifestations />} />
             <Route path="manifestations/:manifestationId" element={<ManifestationDetail />} />
-            <Route path="snapshots" element={<Snapshots />} />
+            <Route path="temporal" element={<TemporalHub />} />
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
-            <Route path="timeline" element={<CalendarTimeline />} />
             <Route path="todos" element={<Todos />} />
-            <Route path="quotes" element={<Quotes />} />
-            <Route path="books" element={<Books />} />
+            <Route path="knowledge" element={<KnowledgeVault />} />
+            <Route path="health" element={<HealthHub />} />
             <Route path="books/:bookId" element={<BookDetail />} />
             <Route path="reframes" element={<Reframes />} />
-            <Route path="activity" element={<ActivityLog />} />
             <Route path="thoughts" element={<Thoughts />} />
+            <Route path="insights" element={<Insights />} />
+            <Route path="growth-hub" element={<GrowthHub />} />
+            <Route path="life-canvas" element={<LifeCanvas />} />
             <Route path="growth" element={<Growth />} />
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />

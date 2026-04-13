@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import API from '../utils/api';
-import CalendarView from '../components/calendar/CalendarView';
-import JourneyFeed from '../components/timeline/JourneyFeed';
-import DayDetailSidePanel from '../components/shared/DayDetailSidePanel';
+import API from '../../utils/api';
+import CalendarView from '../calendar/CalendarView';
+import JourneyFeed from '../timeline/JourneyFeed';
+import DayDetailSidePanel from '../shared/DayDetailSidePanel';
 import { startOfMonth, endOfMonth, format, subDays, startOfYear } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -110,10 +110,9 @@ export default function CalendarTimeline() {
 
   return (
     <div className="page timeline-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, borderBottom: 'none', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 0 }}>
         <div>
-          <h2 style={{ fontSize: '36px', marginBottom: '4px' }}>Growth Journey</h2>
-          <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: '15px' }}>{total} events found • {format(period, 'MMMM yyyy')}</p>
+          <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: '15px', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{total} events found • {format(period, 'MMMM yyyy')}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.03)', padding: 4, borderRadius: 12 }}>
             <button 

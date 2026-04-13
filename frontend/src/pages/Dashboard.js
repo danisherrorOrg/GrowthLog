@@ -102,12 +102,33 @@ export default function Dashboard() {
   if (loading) return (
     <div>
       <div className="page-header">
-        <div className="skeleton" style={{ height: 36, width: 200, marginBottom: 8 }} />
-        <div className="skeleton" style={{ height: 18, width: 300 }} />
+        <div className="skeleton" style={{ height: 36, width: 250, marginBottom: 8, borderRadius: 8 }} />
+        <div className="skeleton" style={{ height: 18, width: 200, borderRadius: 6 }} />
       </div>
       <div className="page-body">
-        <div className="grid-4" style={{ marginBottom: 24 }}>
-          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
+        {/* Stats Grid Skeleton */}
+        <div className="grid-4" style={{ marginBottom: 28 }}>
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100, borderRadius: 16 }} />)}
+        </div>
+        
+        {/* Heatmap Skeleton */}
+        <div className="card" style={{ marginBottom: 28, height: 240 }}>
+          <div className="skeleton" style={{ height: 24, width: 150, marginBottom: 24, borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 140, width: '100%', borderRadius: 8 }} />
+        </div>
+
+        {/* Charts Grid Skeleton */}
+        <div className="grid-2" style={{ marginBottom: 28 }}>
+          <div className="card" style={{ height: 400 }}>
+            <div className="skeleton" style={{ height: 24, width: 140, marginBottom: 24, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 310, width: '100%', borderRadius: 12 }} />
+          </div>
+          <div className="card" style={{ height: 400 }}>
+            <div className="skeleton" style={{ height: 24, width: 140, marginBottom: 24, borderRadius: 6 }} />
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 310 }}>
+              <div className="skeleton" style={{ height: 280, width: 280, borderRadius: '50%' }} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -563,6 +584,51 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* New Modules Hub */}
+        <div className="section-title" style={{ marginTop: 12, marginBottom: 16 }}>
+          <span>Extended Modules</span>
+          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Deep dive into other life areas</span>
+        </div>
+        <div className="grid-4" style={{ marginBottom: 28 }}>
+          
+          <div className="card" onClick={() => navigate('/insights')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid var(--ink)', ...hoverStyles() }} {...hoverEvents()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <span style={{ fontSize: 24, background: 'rgba(13,13,13,0.05)', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>🔬</span>
+              <span style={{ fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600 }}>{data?.insights_count || 0}</span>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Insight Lab</div>
+            <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.4 }}>Time trackers, anti-goals & buried habits</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('/growth-hub')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid var(--sage)', ...hoverStyles() }} {...hoverEvents()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <span style={{ fontSize: 24, background: 'rgba(107,140,107,0.1)', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>🚀</span>
+              <span style={{ fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, color: 'var(--sage)' }}>{data?.growth_hub_count || 0}</span>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Growth Hub</div>
+            <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.4 }}>Skills, courses, & career gaps</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('/life-canvas')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid #c9a84c', ...hoverStyles() }} {...hoverEvents()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <span style={{ fontSize: 24, background: 'rgba(201,168,76,0.1)', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>🎨</span>
+              <span style={{ fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, color: '#c9a84c' }}>{data?.life_canvas_count || 0}</span>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Life Canvas</div>
+            <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.4 }}>Creativity, passions & meaning</div>
+          </div>
+
+          <div className="card" onClick={() => navigate('/time-capsule')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid #8b6bc4', ...hoverStyles() }} {...hoverEvents()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <span style={{ fontSize: 24, background: 'rgba(139,107,196,0.1)', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>⏳</span>
+              <span style={{ fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, color: '#8b6bc4' }}>{data?.time_capsule_count || 0}</span>
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Time Capsule</div>
+            <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.4 }}>Lessons & temporal advice</div>
+          </div>
+
         </div>
 
 

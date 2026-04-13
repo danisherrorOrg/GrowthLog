@@ -26,10 +26,13 @@ export default function DailyLog() {
   const [saving, setSaving] = useState(false);
   const [smartPrompts, setSmartPrompts] = useState({});
   const [expandedCategories, setExpandedCategories] = useState([]);
+  const [gratitude, setGratitude] = useState(['', '', '']);
+  const [regret, setRegret] = useState('');
   const todayDisplay = format(targetDate, 'EEEE, MMMM d');
   const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
   useEffect(() => {
+    let hasLoadedLog = false;
     Promise.all([
       API.get('/categories'), 
       API.get(`/logs/${todayDateStr}`),
@@ -41,9 +44,12 @@ export default function DailyLog() {
         setSmartPrompts(promptsRes.data);
         const existing = logRes.data;
         if (existing) {
+          hasLoadedLog = true;
           setTodayLog(existing);
           setHighlight(existing.highlight || '');
           setOverallRating(existing.overall_rating || 5);
+          setGratitude(existing.gratitude && existing.gratitude.length > 0 ? [existing.gratitude[0] || '', existing.gratitude[1] || '', existing.gratitude[2] || ''] : ['', '', '']);
+          setRegret(existing.regret || '');
           const map = {};
           existing.entries.forEach((e) => {
             map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [], time_spent: e.time_spent || 0 };
@@ -59,19 +65,19 @@ export default function DailyLog() {
         setError(true);
         toast.error(getErrorMessage(e, 'Failed to load log data'));
       })
-
-
       .finally(() => {
         setLoading(false);
         // Load draft from localStorage if available
         const draftKey = `growthlog_draft_${todayDateStr}`;
         const draft = localStorage.getItem(draftKey);
-        if (draft && !logRes.data) {
+        if (draft && !hasLoadedLog) {
           try {
             const parsed = JSON.parse(draft);
             setEntries(parsed.entries || entries);
             if (parsed.highlight) setHighlight(parsed.highlight);
             if (parsed.overallRating) setOverallRating(parsed.overallRating);
+            if (parsed.gratitude) setGratitude(parsed.gratitude);
+            if (parsed.regret !== undefined) setRegret(parsed.regret);
           } catch (e) { /* ignore parse errors */ }
         }
       });
@@ -80,15 +86,14 @@ export default function DailyLog() {
 
   // Auto-save draft
   useEffect(() => {
-    if (loading || error || todayLog) return; // Don't draft if already logged or loading
+    if (loading || error || todayLog) return;
     const draftKey = `growthlog_draft_${todayDateStr}`;
-    const data = { entries, highlight, overallRating };
-    // Only save if there's actual content
-    const hasContent = highlight.trim() || Object.values(entries).some(e => e.text && e.text.trim());
+    const data = { entries, highlight, overallRating, gratitude, regret };
+    const hasContent = highlight.trim() || regret.trim() || gratitude.some(g => g.trim()) || Object.values(entries).some(e => e.text && e.text.trim());
     if (hasContent) {
       localStorage.setItem(draftKey, JSON.stringify(data));
     }
-  }, [entries, highlight, overallRating, loading, error, todayLog, todayDateStr]);
+  }, [entries, highlight, overallRating, gratitude, regret, loading, error, todayLog, todayDateStr]);
 
   const updateEntry = (catId, field, val) => {
     setEntries((prev) => ({ ...prev, [catId]: { ...prev[catId], [field]: val } }));
@@ -115,17 +120,22 @@ export default function DailyLog() {
 
     setSaving(true);
     try {
-      const res = await API.post('/logs', { date: todayDateStr, entries: entryList, highlight, overall_rating: overallRating });
+      const res = await API.post('/logs', {
+        date: todayDateStr,
+        entries: entryList,
+        highlight,
+        overall_rating: overallRating,
+        gratitude: gratitude.map(g => g.trim()),
+        regret: regret.trim(),
+      });
       await refreshUser();
       if (res.data.streak > 1) toast.success(`🔥 ${res.data.streak} day streak!`);
       else toast.success('✦ Log saved!');
-      // Clear draft on successful save
       localStorage.removeItem(`growthlog_draft_${todayDateStr}`);
       navigate('/dashboard');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to save log'));
     } finally {
-
       setSaving(false);
     }
   };
@@ -276,6 +286,57 @@ export default function DailyLog() {
             </div>
           );
         })}
+
+        {/* Gratitude & Regret */}
+        <div className="card" style={{ marginBottom: 16, borderLeft: '4px solid var(--gold)' }}>
+          <h3 style={{ fontSize: 18, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🌿</span> Gratitude Log
+          </h3>
+          <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 16, marginTop: 0 }}>Three things you're grateful for today</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  minWidth: 28, height: 28, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--gold), #f4a22d)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700, color: '#1a1a1a', flexShrink: 0
+                }}>{i + 1}</span>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={gratitude[i]}
+                  onChange={(e) => {
+                    const updated = [...gratitude];
+                    updated[i] = e.target.value;
+                    setGratitude(updated);
+                  }}
+                  placeholder={[
+                    'I am grateful for…',
+                    'Something that made me smile…',
+                    'A person or moment I appreciate…'
+                  ][i]}
+                  style={{ flex: 1 }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Regret */}
+        <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid #8b6bc4' }}>
+          <h3 style={{ fontSize: 18, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>🔍</span> Regret Log
+          </h3>
+          <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 16, marginTop: 0 }}>Something you wish you'd done differently today — a growth insight</p>
+          <textarea
+            className="form-textarea"
+            value={regret}
+            onChange={(e) => setRegret(e.target.value)}
+            placeholder="What would I do differently if I could replay today? What does this teach me?"
+            style={{ minHeight: 80 }}
+          />
+        </div>
 
         {/* Overall */}
         <div className="card" style={{ marginBottom: 24 }}>
