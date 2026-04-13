@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -29,9 +29,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isExpired = searchParams.get('expired') === 'true';
 
   const emailError = touched.email && email && !isValidEmail(email) ? 'Enter a valid email address' : null;
-  const passwordError = touched.password && password && password.length < 6 ? 'Password must be at least 6 characters' : null;
+  const passwordError = touched.password && password && password.length < 8 ? 'Password must be at least 8 characters' : null;
   const canSubmit = email && password && !emailError && !passwordError;
 
   const handleSubmit = async (e) => {
@@ -104,7 +106,13 @@ export default function Login() {
       <div className="auth-right">
         <div className="auth-form-box">
           <h2>Welcome back</h2>
-          <p style={{ marginBottom: 28 }}>Your growth journal is waiting for you.</p>
+          <p style={{ marginBottom: isExpired ? 16 : 28 }}>Your growth journal is waiting for you.</p>
+
+          {isExpired && (
+            <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.2)', marginBottom: 24, fontSize: 13, color: 'rgba(13,13,13,0.6)', lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--rust)' }}>⚠ Session Expired:</strong> For your security, you have been logged out. Please sign in again.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
             {/* Email */}

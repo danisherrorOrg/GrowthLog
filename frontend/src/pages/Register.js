@@ -24,7 +24,7 @@ function isValidEmail(email) {
 
 function getPasswordStrength(pw) {
   if (!pw) return null;
-  if (pw.length < 6) return { level: 'weak', label: 'Too short (min 6 chars)', color: 'var(--rust)', pct: 25 };
+  if (pw.length < 8) return { level: 'weak', label: 'Too short (min 8 chars)', color: 'var(--rust)', pct: 25 };
   if (pw.length < 10) return { level: 'fair', label: 'Fair — add numbers or symbols', color: 'var(--gold)', pct: 55 };
   if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) return { level: 'strong', label: 'Strong password ✓', color: 'var(--sage)', pct: 100 };
   return { level: 'good', label: 'Good — capitalize or add numbers for stronger', color: '#6ba87b', pct: 78 };
@@ -43,12 +43,12 @@ export default function Register() {
   const nameError = touched.name && !name.trim() ? 'Name is required' : null;
   const emailError = touched.email && email && !isValidEmail(email) ? 'Enter a valid email address' : null;
   const passwordStrength = getPasswordStrength(password);
-  const passwordError = touched.password && password && password.length < 6 ? 'Password must be at least 6 characters' : null;
-  const canSubmit = name.trim() && email && isValidEmail(email) && password.length >= 6;
+  const passwordError = touched.password && password && password.length < 8 ? 'Password must be at least 8 characters' : null;
+  const canSubmit = name.trim() && email && isValidEmail(email) && password.length >= 8;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password.length < 6) return toast.error('Password must be at least 6 characters');
+    if (password.length < 8) return toast.error('Password must be at least 8 characters');
     setLoading(true);
     try {
       await register(name, email, password);
@@ -187,7 +187,7 @@ export default function Register() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, password: true }))}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   style={{ paddingRight: 44, borderColor: passwordError ? 'var(--rust)' : undefined }}
                   required
                 />

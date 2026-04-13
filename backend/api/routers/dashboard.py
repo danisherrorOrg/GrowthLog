@@ -101,17 +101,37 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
     energy_trend = [{"date": t["date"], "energy": round(t["avg_energy"] or 5, 1)} for t in agg_result["trends"]]
     time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result["trends"]]
     
-    cat_stats_map = {s["_id"]: s for s in agg_result["category_stats"]}
-    categories = list(db.categories.find({"user_id": uid, "archived": {"$ne": True}}))
+    categories_agg = list(db.categories.aggregate([
+        {"$match": {"user_id": uid, "archived": {"$ne": True}}},
+        {"$lookup": {
+            "from": "daily_logs",
+            "let": {"cat_id": {"$toString": "$_id"}},
+            "pipeline": [
+                {"$match": {"user_id": uid, "date": {"$gte": since}}},
+                {"$unwind": "$entries"},
+                {"$match": {"$expr": {"$eq": ["$entries.category_id", "$$cat_id"]}}}
+            ],
+            "as": "logs"
+        }},
+        {"$project": {
+            "name": 1,
+            "icon": 1,
+            "color": 1,
+            "count": {"$size": "$logs"},
+            "avg_mood": {"$ifNull": [{"$avg": "$logs.entries.mood"}, 5.0]},
+            "time_spent": {"$ifNull": [{"$sum": "$logs.entries.time_spent"}, 0]}
+        }}
+    ]))
+    
     cat_consistency = [
         {
-            "name": c["name"], "icon": c["icon"], "color": c["color"], "id": str(c["_id"]),
-            "count": cat_stats_map.get(str(c["_id"]), {}).get("count", 0),
-            "percentage": round((cat_stats_map.get(str(c["_id"]), {}).get("count", 0) / max(logs_count, 1)) * 100),
-            "avg_mood": round(cat_stats_map.get(str(c["_id"]), {}).get("avg_mood", 5) or 5, 1),
-            "time_spent": cat_stats_map.get(str(c["_id"]), {}).get("time_spent", 0)
+            "name": c.get("name", "Unknown"), "icon": c.get("icon", "📝"), "color": c.get("color", "#cccccc"), "id": str(c["_id"]),
+            "count": c.get("count", 0),
+            "percentage": round((c.get("count", 0) / max(logs_count, 1)) * 100),
+            "avg_mood": round(c.get("avg_mood", 5.0), 1),
+            "time_spent": c.get("time_spent", 0)
         }
-        for c in categories
+        for c in categories_agg
     ]
     
     weekly_summary = [

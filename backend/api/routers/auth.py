@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
+from core.rate_limit import limiter
 from bson import ObjectId, errors as bson_errors
 from datetime import timedelta, timezone
 import secrets
@@ -19,7 +20,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 public_router = APIRouter(prefix="/public", tags=["public"])
 
 @router.post("/register")
-def register(data: RegisterModel, background_tasks: BackgroundTasks):
+@limiter.limit("5/minute")
+def register(request: Request, data: RegisterModel, background_tasks: BackgroundTasks):
     if db.users.find_one({"email": data.email}):
         raise HTTPException(status_code=400, detail="Email already exists")
     result = db.users.insert_one({
@@ -105,7 +107,8 @@ def verify_email(token: str):
     return {"success": True}
 
 @router.post("/login")
-def login(data: LoginModel):
+@limiter.limit("5/minute")
+def login(request: Request, data: LoginModel):
     user = db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -152,18 +155,40 @@ def change_password(data: PasswordChangeModel, current_user=Depends(get_current_
     return {"success": True}
 
 @router.put("/email")
-def change_email(data: EmailChangeModel, current_user=Depends(get_current_user)):
+def change_email(data: EmailChangeModel, background_tasks: BackgroundTasks, current_user=Depends(get_current_user)):
     if not verify_password(data.password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Incorrect password")
     if db.users.find_one({"email": data.new_email}):
         raise HTTPException(status_code=400, detail="Email is already in use")
     
+    verify_token = secrets.token_urlsafe(32)
+    expires = utcnow() + timedelta(hours=24)
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {
         "email": data.new_email,
         "is_verified": False,
-        "verification_token": None,
-        "verification_token_expires": None
+        "verification_token": verify_token,
+        "verification_token_expires": expires,
+        "verification_sent_at": utcnow()
     }})
+    
+    base_url = ALLOWED_ORIGINS[0]
+    verification_link = f"{base_url}/verify/{verify_token}"
+    name = current_user.get("name", "there")
+    email_body = f"""
+    <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee; border-radius: 16px; color: #0d0d0d;">
+        <h2 style="font-family: serif; color: #6b8c6b; font-size: 24px;">Verify your new email for GrowthLog ✦</h2>
+        <p style="font-size: 15px; line-height: 1.6;">Hi {name}, you recently changed your email address on GrowthLog.</p>
+        <p style="font-size: 15px; line-height: 1.6;">Please verify your new email to keep your account secure:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{verification_link}" style="display: inline-block; background: #6b8c6b; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold;">Verify My Email ○</a>
+        </div>
+        <p style="font-size: 12px; color: #999; text-align: center;">If you didn't request this change, please contact support immediately.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 12px; color: #999; text-align: center;">GrowthLog</p>
+    </div>
+    """
+    background_tasks.add_task(send_email, data.new_email, "Verify your new email ✦", email_body)
+
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "update", "profile", uid, "Changed email")

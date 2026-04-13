@@ -61,7 +61,7 @@ def update_thought(thought_id: str, data: ThoughtUpdateModel, current_user=Depen
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Thought not found")
 
-    updated_thought = db.thoughts.find_one({"_id": ObjectId(thought_id)})
+    updated_thought = db.thoughts.find_one({"_id": ObjectId(thought_id), "user_id": uid})
     from utils.activity import log_activity
     log_activity(uid, "update", "thought", thought_id, "Updated a thought")
     return serialize(updated_thought)
@@ -75,10 +75,10 @@ def toggle_pin(thought_id: str, current_user=Depends(get_current_user)):
 
     new_val = not thought.get("is_bookmarked", False)
     db.thoughts.update_one(
-        {"_id": ObjectId(thought_id)},
+        {"_id": ObjectId(thought_id), "user_id": uid},
         {"$set": {"is_bookmarked": new_val}}
     )
-    updated = db.thoughts.find_one({"_id": ObjectId(thought_id)})
+    updated = db.thoughts.find_one({"_id": ObjectId(thought_id), "user_id": uid})
     return serialize(updated)
 
 @router.delete("/{thought_id}")

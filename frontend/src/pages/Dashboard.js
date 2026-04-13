@@ -102,12 +102,33 @@ export default function Dashboard() {
   if (loading) return (
     <div>
       <div className="page-header">
-        <div className="skeleton" style={{ height: 36, width: 200, marginBottom: 8 }} />
-        <div className="skeleton" style={{ height: 18, width: 300 }} />
+        <div className="skeleton" style={{ height: 36, width: 250, marginBottom: 8, borderRadius: 8 }} />
+        <div className="skeleton" style={{ height: 18, width: 200, borderRadius: 6 }} />
       </div>
       <div className="page-body">
-        <div className="grid-4" style={{ marginBottom: 24 }}>
-          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100 }} />)}
+        {/* Stats Grid Skeleton */}
+        <div className="grid-4" style={{ marginBottom: 28 }}>
+          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton" style={{ height: 100, borderRadius: 16 }} />)}
+        </div>
+        
+        {/* Heatmap Skeleton */}
+        <div className="card" style={{ marginBottom: 28, height: 240 }}>
+          <div className="skeleton" style={{ height: 24, width: 150, marginBottom: 24, borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: 140, width: '100%', borderRadius: 8 }} />
+        </div>
+
+        {/* Charts Grid Skeleton */}
+        <div className="grid-2" style={{ marginBottom: 28 }}>
+          <div className="card" style={{ height: 400 }}>
+            <div className="skeleton" style={{ height: 24, width: 140, marginBottom: 24, borderRadius: 6 }} />
+            <div className="skeleton" style={{ height: 310, width: '100%', borderRadius: 12 }} />
+          </div>
+          <div className="card" style={{ height: 400 }}>
+            <div className="skeleton" style={{ height: 24, width: 140, marginBottom: 24, borderRadius: 6 }} />
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 310 }}>
+              <div className="skeleton" style={{ height: 280, width: 280, borderRadius: '50%' }} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

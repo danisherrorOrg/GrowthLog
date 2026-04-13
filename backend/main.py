@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from bson import errors as bson_errors
 from datetime import datetime
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from core.rate_limit import limiter
 
 from core.database import create_indexes
 from core.config import ALLOWED_ORIGINS
@@ -30,6 +33,9 @@ from api.routers.health import router as health_router
 from api.routers.spirituality import router as spirituality_router
 
 app = FastAPI(title="GrowthLog API", version="2.2.0")
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -104,7 +110,7 @@ def nudge_silent_users(background_tasks: BackgroundTasks):
     silent_users = list(db.users.find({
         "_id": {"$nin": logged_user_ids}, 
         "is_verified": True,
-        "email_notifications": {"$ne": False}
+        "email_notifications": True
     }))
     
     for user in silent_users:

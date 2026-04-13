@@ -21,16 +21,16 @@ def _get_local_now(user: dict):
     return utcnow().astimezone(tz)
 
 def recalculate_user_streak(uid: str):
-    """Accurately calculates the current and longest streak based on all logs."""
-    logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING))
-    if not logs:
-        db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
-        return 0
-        
+    """Accurately calculates the current and longest streak based on recent logs."""
     user = db.users.find_one({"_id": ObjectId(uid)})
     if not user:
         return 0
 
+    logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING).limit(30))
+    if not logs:
+        db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
+        return 0
+        
     now_local = _get_local_now(user)
     today = now_local.strftime("%Y-%m-%d")
     yesterday = (now_local - timedelta(days=1)).strftime("%Y-%m-%d")
@@ -39,8 +39,7 @@ def recalculate_user_streak(uid: str):
     dates = sorted(list(set([l["date"] for l in logs])), reverse=True)
     
     current_streak = 0
-    longest_streak = 0
-    temp_streak = 0
+    longest_streak = user.get("longest_streak", 0)
     
     last_log = dates[0]
     # If the last log is older than yesterday local time, the streak is broken.
@@ -54,17 +53,14 @@ def recalculate_user_streak(uid: str):
                 check_date = (datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
             else:
                 break
-
-    for i, d in enumerate(dates):
-        if i == 0:
-            temp_streak = 1
-        else:
-            prev_day = (datetime.strptime(dates[i-1], "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-            if d == prev_day:
-                temp_streak += 1
+                
+        if current_streak == len(dates) and user.get("streak", 0) > current_streak:
+            if last_log == today and user.get("last_log_date") != today:
+                current_streak = user.get("streak", 0) + 1
             else:
-                temp_streak = 1
-        longest_streak = max(longest_streak, temp_streak)
+                current_streak = user.get("streak", 0)
+
+    longest_streak = max(longest_streak, current_streak)
 
     db.users.update_one({"_id": ObjectId(uid)}, {"$set": {
         "streak": current_streak,

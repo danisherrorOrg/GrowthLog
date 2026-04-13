@@ -32,6 +32,7 @@ export default function DailyLog() {
   const todayDateStr = format(targetDate, 'yyyy-MM-dd');
 
   useEffect(() => {
+    let hasLoadedLog = false;
     Promise.all([
       API.get('/categories'), 
       API.get(`/logs/${todayDateStr}`),
@@ -43,10 +44,11 @@ export default function DailyLog() {
         setSmartPrompts(promptsRes.data);
         const existing = logRes.data;
         if (existing) {
+          hasLoadedLog = true;
           setTodayLog(existing);
           setHighlight(existing.highlight || '');
           setOverallRating(existing.overall_rating || 5);
-          setGratitude(existing.gratitude && existing.gratitude.length === 3 ? existing.gratitude : ['', '', '']);
+          setGratitude(existing.gratitude && existing.gratitude.length > 0 ? [existing.gratitude[0] || '', existing.gratitude[1] || '', existing.gratitude[2] || ''] : ['', '', '']);
           setRegret(existing.regret || '');
           const map = {};
           existing.entries.forEach((e) => {
@@ -63,14 +65,12 @@ export default function DailyLog() {
         setError(true);
         toast.error(getErrorMessage(e, 'Failed to load log data'));
       })
-
-
       .finally(() => {
         setLoading(false);
         // Load draft from localStorage if available
         const draftKey = `growthlog_draft_${todayDateStr}`;
         const draft = localStorage.getItem(draftKey);
-        if (draft && !logRes.data) {
+        if (draft && !hasLoadedLog) {
           try {
             const parsed = JSON.parse(draft);
             setEntries(parsed.entries || entries);

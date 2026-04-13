@@ -95,3 +95,6 @@ def create_indexes():
     except Exception as e:
         print(f"WARNING: Could not create unique index on users.email: {e}")
     db.activity_logs.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
+
+    # ── Cache ─────────────────────────────────────────────────────────────────
+    db.server_cache.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)

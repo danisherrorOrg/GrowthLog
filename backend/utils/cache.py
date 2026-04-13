@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import re
 
 CACHE_TTL = 60
@@ -17,10 +17,11 @@ def cache_get(key):
 
 def cache_set(key, val, ttl=CACHE_TTL):
     from core.database import db
-    exp = utcnow().timestamp() + ttl
+    exp_dt = utcnow() + timedelta(seconds=ttl)
+    exp = exp_dt.timestamp()
     db.server_cache.update_one(
         {"_id": key},
-        {"$set": {"val": val, "exp": exp}},
+        {"$set": {"val": val, "exp": exp, "expire_at": exp_dt}},
         upsert=True
     )
 
