@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import API from '../utils/api';
 
 const AuthContext = createContext();
@@ -33,15 +33,34 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
+  const logout = async () => {
+    try {
+      if (localStorage.getItem('token')) {
+        await API.post('/auth/logout');
+      }
+    } catch (err) {
+      console.error("Logout error", err);
+    } finally {
+      localStorage.removeItem('token');
+      setUser(null);
+    }
   };
 
-  const refreshUser = async () => {
-    const res = await API.get('/auth/me');
-    setUser(res.data);
-    return res.data;
+  const lastFetch = useRef(0);
+
+  const refreshUser = async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastFetch.current < 3000 && user) return user;
+    
+    try {
+      lastFetch.current = now;
+      const res = await API.get('/auth/me');
+      setUser(res.data);
+      return res.data;
+    } catch (e) {
+      console.error("Failed to refresh user stats:", e);
+      throw e;
+    }
   };
 
   return (

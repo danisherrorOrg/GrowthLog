@@ -396,7 +396,7 @@ export default function GoalDetail() {
             <div className="card" style={{ padding: '8px' }}>
               {showMgInput && (
                 <div style={{ margin: '12px', padding: '16px', background: 'var(--cloud)', borderRadius: 12, border: '1px solid rgba(13,13,13,0.05)' }}>
-                  <input 
+                  <input maxLength={200} 
                     className="form-input" 
                     value={mgText} 
                     onChange={e => setMgText(e.target.value)}
@@ -407,7 +407,7 @@ export default function GoalDetail() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>⏱ Estimate:</span>
-                      <input type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
+                      <input maxLength={200} type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
                         style={{ width: 60, padding: '4px 8px', fontSize: 13 }} min="0" />
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>min</span>
                     </div>
@@ -436,9 +436,9 @@ export default function GoalDetail() {
                       <div style={{ flex: 1 }}>
                         {editMg === mg.id ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <input className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ padding: '4px 8px', fontSize: 14 }} />
+                            <input maxLength={200} className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ padding: '4px 8px', fontSize: 14 }} />
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <input type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)} style={{ width: 60, padding: '2px 6px', fontSize: 12 }} />
+                              <input maxLength={200} type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)} style={{ width: 60, padding: '2px 6px', fontSize: 12 }} />
                               <span style={{ fontSize: 11, opacity: 0.5 }}>min</span>
                               <div style={{ flex: 1 }} />
                               <button className="btn btn-ghost btn-sm" onClick={() => setEditMg(null)}>Cancel</button>
@@ -480,7 +480,7 @@ export default function GoalDetail() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {showReflectionInput && (
                 <div className="card" style={{ padding: '16px', background: 'var(--cloud)', border: '1px solid var(--sage-light)' }}>
-                  <textarea className="form-textarea" value={reflectionText} onChange={e => setReflectionText(e.target.value)}
+                  <textarea maxLength={2000} className="form-textarea" value={reflectionText} onChange={e => setReflectionText(e.target.value)}
                     placeholder="What are you learning about this journey?" style={{ minHeight: 100, marginBottom: 12, border: 'none', background: 'transparent', padding: 0 }} autoFocus />
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setShowReflectionInput(false)}>Cancel</button>
@@ -518,7 +518,7 @@ export default function GoalDetail() {
                   </div>
                   {editReflectionId === r.id ? (
                     <div style={{ marginTop: 8 }}>
-                      <textarea className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 80, fontSize: 13, marginBottom: 8 }} />
+                      <textarea maxLength={2000} className="form-textarea" value={editReflectionText} onChange={e => setEditReflectionText(e.target.value)} style={{ minHeight: 80, fontSize: 13, marginBottom: 8 }} />
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                         <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditReflectionId(null); }}>Cancel</button>
                         <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleUpdateReflection(r.id); }}>Update</button>
@@ -548,7 +548,7 @@ export default function GoalDetail() {
 
             {showNoteInput && (
               <div className="card" style={{ padding: '16px', marginBottom: 16, background: 'var(--cloud)' }}>
-                <textarea className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
+                <textarea maxLength={2000} className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
                   placeholder="Quick thought or reminder..." style={{ minHeight: 80, marginBottom: 12, border: 'none', background: 'transparent', padding: 0 }} autoFocus />
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                   <button className="btn btn-outline btn-sm" onClick={() => setShowNoteInput(false)}>Cancel</button>
@@ -579,7 +579,7 @@ export default function GoalDetail() {
                   </div>
                   {editNoteId === note.id ? (
                     <div style={{ marginTop: 8 }}>
-                      <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 12, marginBottom: 8 }} />
+                      <textarea maxLength={2000} className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 12, marginBottom: 8 }} />
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                         <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditNoteId(null); }}>Cancel</button>
                         <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleUpdateNote(note.id); }}>Save</button>
@@ -630,16 +630,16 @@ export default function GoalDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">Goal Title</label>
-              <input className="form-input" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="What do you want to achieve?" />
+              <input maxLength={200} className="form-input" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="What do you want to achieve?" />
             </div>
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
-              <textarea className="form-textarea" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 120 }} />
+              <textarea maxLength={2000} className="form-textarea" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 120 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Deadline</label>
-              <input type="date" className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
+              <input maxLength={200} type="date" className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowEditModal(false)} style={{ flex: 1 }}>Cancel</button>
@@ -674,14 +674,14 @@ export default function GoalDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">Your reflection</label>
-              <textarea className="form-textarea" value={reflectForm.reflection}
+              <textarea maxLength={2000} className="form-textarea" value={reflectForm.reflection}
                 onChange={e => setReflectForm({ ...reflectForm, reflection: e.target.value })}
                 placeholder="Be honest with yourself..." />
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">
                 <label className="form-label">New Deadline</label>
-                <input type="date" className="form-input" value={reflectForm.new_deadline}
+                <input maxLength={200} type="date" className="form-input" value={reflectForm.new_deadline}
                   onChange={e => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}

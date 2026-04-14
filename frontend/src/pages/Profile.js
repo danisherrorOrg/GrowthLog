@@ -105,7 +105,7 @@ export default function Profile() {
       if (r.data.log_dates && Array.isArray(r.data.log_dates)) {
         buildSparkline(r.data.log_dates);
       }
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Also try fetching dashboard data to get heatmap for sparkline
     API.get('/dashboard?days=84').then(r => {
@@ -113,7 +113,7 @@ export default function Profile() {
         const dates = Object.keys(r.data.heatmap);
         buildSparkline(dates);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, [user]);
 
   const buildSparkline = (dates) => {
@@ -244,28 +244,30 @@ export default function Profile() {
       </div>
 
       <div className="page-body">
-        {/* Email verification banner */}
-        {!user?.is_verified && (
+
+
+        {/* Pending email verification banner */}
+        {user?.pending_email && (
           <div style={{
             marginBottom: 24,
             padding: '16px 20px',
-            background: 'var(--rust)',
-            color: 'white',
+            background: 'var(--gold)',
+            color: 'var(--ink)',
             borderRadius: 12,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)'
+            boxShadow: '0 4px 12px rgba(201, 168, 76, 0.2)'
           }}>
             <div style={{ flex: 1, marginRight: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your email address ✦</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                We've sent a link to <strong>{user?.email}</strong>. Please verify your account to unlock all features and secure your growth data.
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your new email address ✦</div>
+              <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.8)', lineHeight: 1.4 }}>
+                We've sent a link to <strong>{user?.pending_email}</strong>. Once verified, this will become your primary address.
               </div>
             </div>
             <button
               className="btn btn-sm"
-              style={{ background: 'white', color: 'var(--rust)', border: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
+              style={{ background: 'var(--ink)', color: 'white', border: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
               onClick={handleVerifyEmail}
               disabled={verifying}
             >
@@ -343,8 +345,8 @@ export default function Profile() {
                             fill={entry.count === 0
                               ? 'var(--mist)'
                               : entry.count >= 5
-                              ? 'var(--sage)'
-                              : `rgba(107,140,107,${0.3 + (entry.count / maxBarCount) * 0.7})`}
+                                ? 'var(--sage)'
+                                : `rgba(107,140,107,${0.3 + (entry.count / maxBarCount) * 0.7})`}
                           />
                         ))}
                       </Bar>
@@ -570,14 +572,18 @@ export default function Profile() {
 
               <div className="form-group">
                 <label className="form-label">Display Name</label>
-                <input className="form-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" />
+                <input maxLength={200} className="form-input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Your name" maxLength={100} />
+                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textAlign: 'right', marginTop: 4 }}>{form.name.length}/100</div>
               </div>
 
               <div className="form-group">
                 <label className="form-label">Bio (optional)</label>
-                <textarea className="form-textarea" value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}
-                  placeholder="A short note about yourself or your growth intentions..." style={{ minHeight: 90 }} />
-                <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
+                <textarea maxLength={2000} className="form-textarea" value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}
+                  placeholder="A short note about yourself or your growth intentions..." style={{ minHeight: 90 }} maxLength={500} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>
+                  <span>Markdown supported</span>
+                  <span>{form.bio.length}/500</span>
+                </div>
               </div>
 
               <div className="form-group">
@@ -619,18 +625,18 @@ export default function Profile() {
             </div>
             <div className="form-group">
               <label className="form-label">Current Password</label>
-              <input type="password" className="form-input" value={pwForm.current_password}
-                onChange={e => setPwForm({ ...pwForm, current_password: e.target.value })} placeholder="••••••••" />
+              <input maxLength={200} type="password" className="form-input" value={pwForm.current_password}
+                onChange={e => setPwForm({ ...pwForm, current_password: e.target.value })} placeholder="••••••••" maxLength={128} />
             </div>
             <div className="form-group">
               <label className="form-label">New Password</label>
-              <input type="password" className="form-input" value={pwForm.new_password}
-                onChange={e => setPwForm({ ...pwForm, new_password: e.target.value })} placeholder="At least 6 characters" />
+              <input maxLength={200} type="password" className="form-input" value={pwForm.new_password}
+                onChange={e => setPwForm({ ...pwForm, new_password: e.target.value })} placeholder="At least 6 characters" maxLength={128} />
             </div>
             <div className="form-group">
               <label className="form-label">Confirm New Password</label>
-              <input type="password" className="form-input" value={pwForm.confirm}
-                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })} placeholder="Repeat new password" />
+              <input maxLength={200} type="password" className="form-input" value={pwForm.confirm}
+                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })} placeholder="Repeat new password" maxLength={128} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setPwMode(false)} style={{ flex: 1 }}>Cancel</button>
@@ -652,13 +658,13 @@ export default function Profile() {
             </div>
             <div className="form-group">
               <label className="form-label">New Email Address</label>
-              <input type="email" className="form-input" value={emailForm.new_email}
-                onChange={e => setEmailForm({ ...emailForm, new_email: e.target.value })} placeholder="new@example.com" />
+              <input maxLength={200} type="email" className="form-input" value={emailForm.new_email}
+                onChange={e => setEmailForm({ ...emailForm, new_email: e.target.value })} placeholder="new@example.com" maxLength={200} />
             </div>
             <div className="form-group">
               <label className="form-label">Current Password</label>
-              <input type="password" className="form-input" value={emailForm.password}
-                onChange={e => setEmailForm({ ...emailForm, password: e.target.value })} placeholder="••••••••" />
+              <input maxLength={200} type="password" className="form-input" value={emailForm.password}
+                onChange={e => setEmailForm({ ...emailForm, password: e.target.value })} placeholder="••••••••" maxLength={128} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setEmailMode(false)} style={{ flex: 1 }}>Cancel</button>

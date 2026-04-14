@@ -185,7 +185,7 @@ export default function CalendarTimeline() {
                 <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Filter by Growth</h4>
                 <div style={{ position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', opacity: 0.4 }}>🔍</span>
-                    <input 
+                    <input maxLength={200} 
                         type="text" 
                         placeholder="Search..." 
                         value={searchQuery}
@@ -266,7 +266,7 @@ export default function CalendarTimeline() {
             <div style={{ flexShrink: 0, borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '16px', marginTop: '8px' }}>
                 <h4 style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#aaa', marginBottom: '12px' }}>Jump to Date</h4>
                 <div style={{ position: 'relative', marginBottom: '16px' }}>
-                    <input 
+                    <input maxLength={200} 
                         type="date" 
                         value={format(period, 'yyyy-MM-dd')}
                         onChange={(e) => {

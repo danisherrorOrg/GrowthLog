@@ -131,7 +131,7 @@ export default function AllLogs() {
         <div className="card" style={{ marginBottom: 32, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
-              <input type="text" className="form-input" placeholder="Search entries, highlights..." 
+              <input maxLength={200} type="text" className="form-input" placeholder="Search entries, highlights..." 
                 value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
                 style={{ paddingLeft: 32 }} />
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', opacity: 0.4, fontSize: 13 }}>🔍</span>

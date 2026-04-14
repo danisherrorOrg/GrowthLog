@@ -15,18 +15,35 @@ def cache_get(key):
         db.server_cache.delete_one({"_id": key})
     return None
 
-def cache_set(key, val, ttl=CACHE_TTL):
+def cache_set(key, val, ttl=CACHE_TTL, prefix=None):
     from core.database import db
     exp_dt = utcnow() + timedelta(seconds=ttl)
     exp = exp_dt.timestamp()
+    
+    if not prefix:
+        parts = key.split(':')
+        if len(parts) >= 3:
+            prefix = f"{parts[0]}:{parts[1]}:"
+            
+    doc = {"val": val, "exp": exp, "expire_at": exp_dt}
+    if prefix:
+        doc["prefix"] = prefix
+        
     db.server_cache.update_one(
         {"_id": key},
-        {"$set": {"val": val, "exp": exp, "expire_at": exp_dt}},
+        {"$set": doc},
         upsert=True
     )
 
-def cache_invalidate(prefix):
+def cache_invalidate_exact(key):
     from core.database import db
-    # Use generic regex to match any _id starting with prefix
-    db.server_cache.delete_many({"_id": {"$regex": f"^{re.escape(prefix)}"}})
+    db.server_cache.delete_one({"_id": key})
 
+def cache_invalidate_prefix(prefix):
+    """
+    Invalidates all cache keys matching the given prefix field.
+    WARNING: Ensure you use a trailing colon in prefixes (e.g. `dashboard:{uid}:`) 
+    to prevent unintended partial matches of other ObjectIDs!
+    """
+    from core.database import db
+    db.server_cache.delete_many({"prefix": prefix})

@@ -326,11 +326,11 @@ export default function ManifestationDetail() {
                 onClick={() => setProgressForm({ ...progressForm, type: CUSTOM_TYPE_PLACEHOLDER })}>✏️ Custom</button>
             </div>
             {progressForm.type === CUSTOM_TYPE_PLACEHOLDER && (
-              <input className="form-input" value={progressForm.customType}
+              <input maxLength={200} className="form-input" value={progressForm.customType}
                 onChange={e => setProgressForm({ ...progressForm, customType: e.target.value })}
                 placeholder="Enter custom type..." style={{ marginBottom: 16 }} />
             )}
-            <textarea className="form-textarea" value={progressForm.text} autofill="off"
+            <textarea maxLength={2000} className="form-textarea" value={progressForm.text} autofill="off"
               onChange={e => setProgressForm({ ...progressForm, text: e.target.value })}
               placeholder="What did you manifest or learn today?" style={{ minHeight: 120, marginBottom: 20 }} />
             <div style={{ display: 'flex', gap: 12 }}>
@@ -408,11 +408,11 @@ export default function ManifestationDetail() {
                           </button>
                         </div>
                         {editProgressForm.type === CUSTOM_TYPE_PLACEHOLDER && (
-                          <input className="form-input" value={editProgressForm.customType}
+                          <input maxLength={200} className="form-input" value={editProgressForm.customType}
                             onChange={e => setEditProgressForm({ ...editProgressForm, customType: e.target.value })}
                             placeholder="Type..." style={{ marginBottom: 8, fontSize: 13 }} />
                         )}
-                        <textarea className="form-textarea" value={editProgressForm.text}
+                        <textarea maxLength={2000} className="form-textarea" value={editProgressForm.text}
                           onChange={e => setEditProgressForm({ ...editProgressForm, text: e.target.value })}
                           style={{ minHeight: 80, fontSize: 13, marginBottom: 8 }} />
                         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -447,7 +447,7 @@ export default function ManifestationDetail() {
 
             {showNoteInput && (
               <div className="card" style={{ marginBottom: 16, background: 'var(--cloud)' }}>
-                <textarea className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
+                <textarea maxLength={2000} className="form-textarea" value={noteText} onChange={e => setNoteText(e.target.value)}
                   placeholder="Capture a thought..." style={{ minHeight: 80, fontSize: 14, marginBottom: 12, border: 'none', background: 'transparent', padding: 0 }} autoFocus />
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => setShowNoteInput(false)}>Cancel</button>
@@ -471,7 +471,7 @@ export default function ManifestationDetail() {
                 >
                   {editNoteId === note.id ? (
                     <div>
-                      <textarea className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 13, marginBottom: 8 }} />
+                      <textarea maxLength={2000} className="form-textarea" value={editNoteText} onChange={e => setEditNoteText(e.target.value)} style={{ minHeight: 60, fontSize: 13, marginBottom: 8 }} />
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                         <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setEditNoteId(null); }}>Cancel</button>
                         <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); handleUpdateNote(note.id); }}>Save</button>
@@ -593,19 +593,19 @@ export default function ManifestationDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">The Central Vision (Present Tense)</label>
-              <textarea className="form-textarea" value={editVisionForm.vision}
+              <textarea maxLength={2000} className="form-textarea" value={editVisionForm.vision}
                 onChange={e => setEditVisionForm({ ...editVisionForm, vision: e.target.value })}
                 placeholder="I am so happy and grateful now that..." style={{ minHeight: 120 }} />
             </div>
             <div className="form-group">
               <label className="form-label">Supporting Details / Sensory Notes</label>
-              <textarea className="form-textarea" value={editVisionForm.notes}
+              <textarea maxLength={2000} className="form-textarea" value={editVisionForm.notes}
                 onChange={e => setEditVisionForm({ ...editVisionForm, notes: e.target.value })}
                 placeholder="What does it feel, look, and sound like?" style={{ minHeight: 100 }} />
             </div>
             <div className="form-group">
               <label className="form-label">Target Duration (Days)</label>
-              <input type="number" className="form-input" value={editVisionForm.target_days}
+              <input maxLength={200} type="number" className="form-input" value={editVisionForm.target_days}
                 onChange={e => setEditVisionForm({ ...editVisionForm, target_days: parseInt(e.target.value) || 30 })} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Note: Changing duration will recalculate the target date from start.</div>
             </div>
@@ -632,7 +632,7 @@ export default function ManifestationDetail() {
             </blockquote>
             <div className="form-group">
               <label className="form-label">How close did you get? What changed?</label>
-              <textarea className="form-textarea" value={reflection} onChange={e => setReflection(e.target.value)}
+              <textarea maxLength={2000} className="form-textarea" value={reflection} onChange={e => setReflection(e.target.value)}
                 placeholder="Looking back at who I said I'd become vs who I actually became..." style={{ minHeight: 140 }} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>

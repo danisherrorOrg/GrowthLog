@@ -208,7 +208,7 @@ function RatingSlider({ label, value, onChange }) {
       <label style={{ fontSize: 13, display: 'block', marginBottom: 8, color: 'var(--ink)', fontWeight: 500 }}>
         {label}: <span style={{ color: 'var(--sage)' }}>{value}</span>
       </label>
-      <input type="range" min="1" max="10"
+      <input maxLength={200} type="range" min="1" max="10"
         value={value} onChange={onChange}
         style={{ width: '100%', accentColor: 'var(--sage)' }} />
     </div>
@@ -355,7 +355,7 @@ export default function Reframes() {
           {/* Row 2: Search */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1, maxWidth: 380 }}>
-              <input className="form-input" value={search}
+              <input maxLength={200} className="form-input" value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by trigger, thought, or reframe…"
                 style={{ padding: '8px 12px 8px 32px', fontSize: 13, height: 'auto' }} />
@@ -383,7 +383,7 @@ export default function Reframes() {
             <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: 11 }}>The external trigger</label>
-                <input type="text" className="form-input"
+                <input maxLength={200} type="text" className="form-input"
                   value={newReframe.trigger}
                   onChange={e => setNewReframe({ ...newReframe, trigger: e.target.value })}
                   placeholder="What happened in reality? (e.g. 'Received a brief email')"
@@ -396,7 +396,7 @@ export default function Reframes() {
                   <label className="form-label" style={{ fontSize: 11, color: 'var(--rust)' }}>
                     Automatic Thought (The Lie)
                   </label>
-                  <textarea className="form-textarea"
+                  <textarea maxLength={2000} className="form-textarea"
                     value={newReframe.original_thought}
                     onChange={e => setNewReframe({ ...newReframe, original_thought: e.target.value })}
                     placeholder="What did your brain tell you?"
@@ -408,7 +408,7 @@ export default function Reframes() {
                   <label className="form-label" style={{ fontSize: 11, color: 'var(--sage)' }}>
                     Rational Perspective (The Truth)
                   </label>
-                  <textarea className="form-textarea"
+                  <textarea maxLength={2000} className="form-textarea"
                     value={newReframe.reframe}
                     onChange={e => setNewReframe({ ...newReframe, reframe: e.target.value })}
                     placeholder="How can you view this objectively?"
@@ -533,19 +533,19 @@ export default function Reframes() {
             <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div className="form-group">
                 <label className="form-label">The Trigger</label>
-                <input type="text" className="form-input" value={editForm.trigger}
+                <input maxLength={200} type="text" className="form-input" value={editForm.trigger}
                   onChange={e => setEditForm({ ...editForm, trigger: e.target.value })} />
               </div>
               <div className="grid-2" style={{ gap: 20 }}>
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--rust)' }}>Automatic Thought</label>
-                  <textarea className="form-textarea" value={editForm.original_thought}
+                  <textarea maxLength={2000} className="form-textarea" value={editForm.original_thought}
                     onChange={e => setEditForm({ ...editForm, original_thought: e.target.value })}
                     style={{ minHeight: 110 }} />
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--sage)' }}>Rational Reframe</label>
-                  <textarea className="form-textarea" value={editForm.reframe}
+                  <textarea maxLength={2000} className="form-textarea" value={editForm.reframe}
                     onChange={e => setEditForm({ ...editForm, reframe: e.target.value })}
                     style={{ minHeight: 110, fontFamily: 'Fraunces', fontStyle: 'italic' }} />
                 </div>

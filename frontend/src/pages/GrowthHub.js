@@ -482,20 +482,20 @@ export default function GrowthHub() {
       {skModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setSkModal(false)}><div className="modal">
         <div className="modal-header"><h3>{skEdit ? 'Edit Skill' : 'Add Skill'}</h3><button className="modal-close" onClick={() => setSkModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Skill name</label><input className="form-input" value={skForm.name} onChange={e => setSkForm({ ...skForm, name: e.target.value })} placeholder="e.g. TypeScript, Public Speaking…" /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Category</label><input className="form-input" value={skForm.category} onChange={e => setSkForm({ ...skForm, category: e.target.value })} placeholder="Technical / Soft / Creative…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Skill name</label><input maxLength={200} className="form-input" value={skForm.name} onChange={e => setSkForm({ ...skForm, name: e.target.value })} placeholder="e.g. TypeScript, Public Speaking…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Category</label><input maxLength={200} className="form-input" value={skForm.category} onChange={e => setSkForm({ ...skForm, category: e.target.value })} placeholder="Technical / Soft / Creative…" /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}>
           <label className="form-label">Level: {LEVEL_LABELS[skForm.level]}</label>
-          <input type="range" min="1" max="5" value={skForm.level} onChange={e => setSkForm({ ...skForm, level: +e.target.value })} style={{ width: '100%', accentColor: LEVEL_COLORS[skForm.level] }} />
+          <input maxLength={200} type="range" min="1" max="5" value={skForm.level} onChange={e => setSkForm({ ...skForm, level: +e.target.value })} style={{ width: '100%', accentColor: LEVEL_COLORS[skForm.level] }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 4 }}>
             {LEVEL_LABELS.slice(1).map(l => <span key={l}>{l}</span>)}
           </div>
         </div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input type="date" className="form-input" value={skForm.started_at} onChange={e => setSkForm({ ...skForm, started_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" className="form-input" value={skForm.started_at} onChange={e => setSkForm({ ...skForm, started_at: e.target.value })} /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><textarea className="form-textarea" value={skForm.notes} onChange={e => setSkForm({ ...skForm, notes: e.target.value })} placeholder="Resources, milestones, context…" style={{ minHeight: 75 }} /></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><textarea maxLength={2000} className="form-textarea" value={skForm.notes} onChange={e => setSkForm({ ...skForm, notes: e.target.value })} placeholder="Resources, milestones, context…" style={{ minHeight: 75 }} /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSkSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : skEdit ? 'Save Changes' : 'Add Skill'}</button></div>
       </div></div>)}
 
@@ -503,24 +503,24 @@ export default function GrowthHub() {
       {flModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFlModal(false)}><div className="modal">
         <div className="modal-header"><h3>{flEdit ? 'Edit Entry' : 'Log a Failure'}</h3><button className="modal-close" onClick={() => setFlModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={flForm.date} onChange={e => setFlForm({ ...flForm, date: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label><input className="form-input" value={flForm.domain} onChange={e => setFlForm({ ...flForm, domain: e.target.value })} placeholder="Work / Health / Relationships…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={flForm.date} onChange={e => setFlForm({ ...flForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label><input maxLength={200} className="form-input" value={flForm.domain} onChange={e => setFlForm({ ...flForm, domain: e.target.value })} placeholder="Work / Health / Relationships…" /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What happened?</label><textarea className="form-textarea" value={flForm.what_happened} onChange={e => setFlForm({ ...flForm, what_happened: e.target.value })} placeholder="Be specific and honest…" style={{ minHeight: 90 }} /></div>
-        <div className="form-group"><label className="form-label">What did you learn? (optional)</label><textarea className="form-textarea" value={flForm.lesson} onChange={e => setFlForm({ ...flForm, lesson: e.target.value })} placeholder="The real lesson, not just the surface one…" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What happened?</label><textarea maxLength={2000} className="form-textarea" value={flForm.what_happened} onChange={e => setFlForm({ ...flForm, what_happened: e.target.value })} placeholder="Be specific and honest…" style={{ minHeight: 90 }} /></div>
+        <div className="form-group"><label className="form-label">What did you learn? (optional)</label><textarea maxLength={2000} className="form-textarea" value={flForm.lesson} onChange={e => setFlForm({ ...flForm, lesson: e.target.value })} placeholder="The real lesson, not just the surface one…" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : flEdit ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
       {/* Skills Gap */}
       {sgModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setSgModal(false)}><div className="modal">
         <div className="modal-header"><h3>{sgEdit ? 'Edit Gap' : 'Add Skills Gap'}</h3><button className="modal-close" onClick={() => setSgModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Skill needed</label><input className="form-input" value={sgForm.skill} onChange={e => setSgForm({ ...sgForm, skill: e.target.value })} placeholder="e.g. System Design, Negotiation…" /></div>
+        <div className="form-group"><label className="form-label">Skill needed</label><input maxLength={200} className="form-input" value={sgForm.skill} onChange={e => setSgForm({ ...sgForm, skill: e.target.value })} placeholder="e.g. System Design, Negotiation…" /></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Current level</label><input className="form-input" value={sgForm.current_level} onChange={e => setSgForm({ ...sgForm, current_level: e.target.value })} placeholder="Beginner / None / Basic…" /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target level</label><input className="form-input" value={sgForm.target_level} onChange={e => setSgForm({ ...sgForm, target_level: e.target.value })} placeholder="Intermediate / Expert…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Current level</label><input maxLength={200} className="form-input" value={sgForm.current_level} onChange={e => setSgForm({ ...sgForm, current_level: e.target.value })} placeholder="Beginner / None / Basic…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target level</label><input maxLength={200} className="form-input" value={sgForm.target_level} onChange={e => setSgForm({ ...sgForm, target_level: e.target.value })} placeholder="Intermediate / Expert…" /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Why is this needed?</label><textarea className="form-textarea" value={sgForm.why_needed} onChange={e => setSgForm({ ...sgForm, why_needed: e.target.value })} placeholder="What role, project, or goal requires this skill?" style={{ minHeight: 80 }} /></div>
-        <div className="form-group"><label className="form-label">Resources to close the gap (optional)</label><textarea className="form-textarea" value={sgForm.resources} onChange={e => setSgForm({ ...sgForm, resources: e.target.value })} placeholder="Courses, books, mentors, projects…" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Why is this needed?</label><textarea maxLength={2000} className="form-textarea" value={sgForm.why_needed} onChange={e => setSgForm({ ...sgForm, why_needed: e.target.value })} placeholder="What role, project, or goal requires this skill?" style={{ minHeight: 80 }} /></div>
+        <div className="form-group"><label className="form-label">Resources to close the gap (optional)</label><textarea maxLength={2000} className="form-textarea" value={sgForm.resources} onChange={e => setSgForm({ ...sgForm, resources: e.target.value })} placeholder="Courses, books, mentors, projects…" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : sgEdit ? 'Save Changes' : 'Add Gap'}</button></div>
       </div></div>)}
 
@@ -528,8 +528,8 @@ export default function GrowthHub() {
       {fbModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFbModal(false)}><div className="modal" style={{ maxWidth: 560 }}>
         <div className="modal-header"><h3>{fbEdit ? 'Edit Feedback' : 'Log Feedback'}</h3><button className="modal-close" onClick={() => setFbModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={fbForm.date} onChange={e => setFbForm({ ...fbForm, date: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">From (optional)</label><input className="form-input" value={fbForm.from_person} onChange={e => setFbForm({ ...fbForm, from_person: e.target.value })} placeholder="Manager / Peer / Client…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={fbForm.date} onChange={e => setFbForm({ ...fbForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">From (optional)</label><input maxLength={200} className="form-input" value={fbForm.from_person} onChange={e => setFbForm({ ...fbForm, from_person: e.target.value })} placeholder="Manager / Peer / Client…" /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Type</label>
           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
@@ -541,8 +541,8 @@ export default function GrowthHub() {
             ))}
           </div>
         </div>
-        <div className="form-group"><label className="form-label">Feedback content</label><textarea className="form-textarea" value={fbForm.content} onChange={e => setFbForm({ ...fbForm, content: e.target.value })} placeholder="What was the feedback, verbatim or paraphrased?" style={{ minHeight: 100 }} /></div>
-        <div className="form-group"><label className="form-label">What did you do with it? (optional)</label><textarea className="form-textarea" value={fbForm.action_taken} onChange={e => setFbForm({ ...fbForm, action_taken: e.target.value })} placeholder="Did you act on it? How?" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Feedback content</label><textarea maxLength={2000} className="form-textarea" value={fbForm.content} onChange={e => setFbForm({ ...fbForm, content: e.target.value })} placeholder="What was the feedback, verbatim or paraphrased?" style={{ minHeight: 100 }} /></div>
+        <div className="form-group"><label className="form-label">What did you do with it? (optional)</label><textarea maxLength={2000} className="form-textarea" value={fbForm.action_taken} onChange={e => setFbForm({ ...fbForm, action_taken: e.target.value })} placeholder="Did you act on it? How?" style={{ minHeight: 70 }} /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFbModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFbSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : fbEdit ? 'Save Changes' : 'Log Feedback'}</button></div>
       </div></div>)}
 

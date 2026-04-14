@@ -281,7 +281,7 @@ export default function Quotes() {
           {/* Search + favorites row */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-              <input className="form-input" value={search}
+              <input maxLength={200} className="form-input" value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by quote, author, or source…"
                 style={{ padding: '8px 12px 8px 32px', fontSize: 13, height: 'auto' }} />
@@ -318,7 +318,7 @@ export default function Quotes() {
               <button className="btn btn-ghost" onClick={() => setShowAdd(false)}>✕</button>
             </div>
             <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <textarea className="form-textarea"
+              <textarea maxLength={2000} className="form-textarea"
                 placeholder="What words of wisdom will guide you?"
                 value={newQuote.content}
                 onChange={e => setNewQuote({ ...newQuote, content: e.target.value })}
@@ -333,17 +333,17 @@ export default function Quotes() {
               }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 10 }}>Author</label>
-                  <input type="text" className="form-input" placeholder="e.g. Marcus Aurelius"
+                  <input maxLength={200} type="text" className="form-input" placeholder="e.g. Marcus Aurelius"
                     value={newQuote.author} onChange={e => setNewQuote({ ...newQuote, author: e.target.value })} />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 10 }}>Source</label>
-                  <input type="text" className="form-input" placeholder="e.g. Meditations"
+                  <input maxLength={200} type="text" className="form-input" placeholder="e.g. Meditations"
                     value={newQuote.source} onChange={e => setNewQuote({ ...newQuote, source: e.target.value })} />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 10 }}>Tags (comma separated)</label>
-                  <input type="text" className="form-input" placeholder="patience, growth…"
+                  <input maxLength={200} type="text" className="form-input" placeholder="patience, growth…"
                     value={newQuote.tags} onChange={e => setNewQuote({ ...newQuote, tags: e.target.value })} />
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function Quotes() {
             <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">The Words</label>
-                <textarea className="form-textarea"
+                <textarea maxLength={2000} className="form-textarea"
                   value={editingQuote.content}
                   onChange={e => setEditingQuote({ ...editingQuote, content: e.target.value })}
                   required
@@ -441,18 +441,18 @@ export default function Quotes() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Author</label>
-                  <input type="text" className="form-input" value={editingQuote.author}
+                  <input maxLength={200} type="text" className="form-input" value={editingQuote.author}
                     onChange={e => setEditingQuote({ ...editingQuote, author: e.target.value })} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Source</label>
-                  <input type="text" className="form-input" value={editingQuote.source}
+                  <input maxLength={200} type="text" className="form-input" value={editingQuote.source}
                     onChange={e => setEditingQuote({ ...editingQuote, source: e.target.value })} />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Tags (comma separated)</label>
-                <input type="text" className="form-input" value={editingQuote.tags}
+                <input maxLength={200} type="text" className="form-input" value={editingQuote.tags}
                   onChange={e => setEditingQuote({ ...editingQuote, tags: e.target.value })} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>

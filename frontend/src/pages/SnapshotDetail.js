@@ -234,7 +234,7 @@ export default function SnapshotDetail() {
 
               <div className="form-group">
                 <label className="form-label">Narrative Detail</label>
-                <textarea className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                <textarea maxLength={2000} className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                   style={{ minHeight: 240, fontSize: 16, lineHeight: 1.6 }} />
                 <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported. Use this to expand on your thoughts from this day.</div>
               </div>
@@ -242,11 +242,11 @@ export default function SnapshotDetail() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
                  <div className="form-group">
                    <label className="form-label">Values (comma separated)</label>
-                   <input className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} placeholder="honesty, growth, grit..." />
+                   <input maxLength={200} className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} placeholder="honesty, growth, grit..." />
                  </div>
                  <div className="form-group">
                    <label className="form-label">Mood Score ({form.mood}/10)</label>
-                   <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
+                   <input maxLength={200} type="range" className="rating-slider" min={1} max={10} value={form.mood}
                      onChange={e => setForm({ ...form, mood: +e.target.value })}
                      style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
                  </div>

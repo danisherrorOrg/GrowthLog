@@ -11,6 +11,19 @@ from core.database import create_indexes
 from core.config import ALLOWED_ORIGINS
 from utils.email import send_email
 
+# ==============================================================================
+# Security Documentation: CSRF Protection
+# ==============================================================================
+# Authentication in this API exclusively uses JWT Bearer tokens passed in the
+# Authorization header. Because tokens are sent via headers and managed
+# explicitly by the client (localStorage/memory), classic Cross-Site Request
+# Forgery (CSRF) attacks are mitigated by default.
+#
+# WARNING: If this application ever migrates to using cookies for session
+# management or auth tokens, YOU MUST add CSRF protection middleware immediately
+# (e.g., using `fastapi-csrf-protect`) to prevent vulnerability.
+# ==============================================================================
+
 # Routers
 from api.routers.auth import router as auth_router, public_router
 from api.routers.categories import router as categories_router
@@ -31,8 +44,33 @@ from api.routers.passions import router as passions_router
 from api.routers.time_capsule import router as time_capsule_router
 from api.routers.health import router as health_router
 from api.routers.spirituality import router as spirituality_router
+from api.routers.timeline import router as timeline_router
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="GrowthLog API", version="2.2.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_indexes()
+    yield
+
+app = FastAPI(title="GrowthLog API", version="2.2.0", lifespan=lifespan)
+
+import uuid
+import logging
+from fastapi import Request
+
+logger = logging.getLogger("uvicorn.error")
+
+@app.middleware("http")
+async def add_request_id_middleware(request: Request, call_next):
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    try:
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+    except Exception as e:
+        logger.error(f"Request ID: {request_id} - UNHANDLED ERROR: {str(e)}", exc_info=True)
+        raise
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -49,9 +87,28 @@ app.add_middleware(
 async def invalid_id_handler(request, exc):
     return JSONResponse(status_code=400, content={"detail": "Invalid ID format"})
 
-@app.on_event("startup")
-def startup_event():
-    create_indexes()
+from pymongo.errors import ServerSelectionTimeoutError
+@app.exception_handler(ServerSelectionTimeoutError)
+async def server_timeout_handler(request, exc):
+    return JSONResponse(status_code=503, content={"detail": "Service unavailable: Database connection timeout. Please try again later."})
+
+from fastapi.exceptions import RequestValidationError
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    messages = []
+    for err in exc.errors():
+        field = err.get("loc", [""])[-1]
+        if err.get("type", "").startswith("string_too_long"):
+            limit = err.get("ctx", {}).get("max_length", "its limit")
+            field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
+            messages.append(f"'{field_name}' must be at most {limit} characters.")
+        elif err.get("msg"):
+            field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
+            messages.append(f"{field_name}: {err['msg']}")
+            
+    # Combine messages into a single cleanly formatted string for toast notifications
+    return JSONResponse(status_code=422, content={"detail": " ".join(messages)})
+
 
 # Mount routers
 app.include_router(auth_router)
@@ -75,14 +132,14 @@ app.include_router(passions_router)
 app.include_router(time_capsule_router)
 app.include_router(health_router, prefix="/health", tags=["Health"])
 app.include_router(spirituality_router)
-
-
-
-
-
-
-from api.routers.timeline import router as timeline_router
 app.include_router(timeline_router)
+
+
+
+
+
+
+
 
 @app.get("/")
 def root():
@@ -91,11 +148,12 @@ def root():
 # --- Automated Reminders (Nudge Feature) ---
 from fastapi import Header, HTTPException, Depends
 import os
+import hmac
 
 def verify_admin(x_admin_token: str = Header(...)):
     admin_token = os.getenv("ADMIN_TOKEN")
     # If ADMIN_TOKEN is not set in env, we refuse all requests securely
-    if not admin_token or x_admin_token != admin_token:
+    if not admin_token or not hmac.compare_digest(x_admin_token, admin_token):
         raise HTTPException(status_code=403, detail="Invalid admin credentials")
 
 @app.post("/admin/nudge-silent-users", dependencies=[Depends(verify_admin)])

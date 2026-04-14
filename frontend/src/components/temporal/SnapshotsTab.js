@@ -290,11 +290,11 @@ export default function Snapshots() {
             )}
             <div className="form-group">
               <label className="form-label">Date</label>
-              <input type="date" className="form-input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              <input maxLength={200} type="date" className="form-input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
             <div className="form-group">
               <label className="form-label">Who are you today?</label>
-              <textarea className="form-textarea"
+              <textarea maxLength={2000} className="form-textarea"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Right now I am someone who... I struggle with... I believe... I am working on..."
@@ -304,13 +304,13 @@ export default function Snapshots() {
             </div>
             <div className="form-group">
               <label className="form-label">Current Values / Beliefs (comma separated)</label>
-              <input className="form-input" value={form.values}
+              <input maxLength={200} className="form-input" value={form.values}
                 onChange={(e) => setForm({ ...form, values: e.target.value })}
                 placeholder="honesty, growth, patience, hard work..." />
             </div>
             <div className="form-group">
               <label className="form-label">Overall mood right now — {form.mood}/10</label>
-              <input type="range" className="rating-slider" min={1} max={10} value={form.mood}
+              <input maxLength={200} type="range" className="rating-slider" min={1} max={10} value={form.mood}
                 onChange={(e) => setForm({ ...form, mood: +e.target.value })}
                 style={{ '--val': `${(form.mood - 1) / 9 * 100}%`, width: '100%' }} />
             </div>

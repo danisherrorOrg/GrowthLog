@@ -4,7 +4,7 @@ from datetime import timedelta
 from pymongo.errors import DuplicateKeyError
 
 from core.database import db
-from utils.cache import utcnow, cache_get, cache_set, cache_invalidate
+from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
 from models.schemas import CategoryModel, CategoryTemplateModel, CategoryUpdateModel
@@ -39,7 +39,7 @@ def create_category(data: CategoryModel, current_user=Depends(get_current_user))
         from utils.activity import log_activity
         log_activity(uid, "create", "category", cat["id"], f"Created category: {data.name}")
         del cat["_id"]
-        cache_invalidate(f"categories:{uid}")
+        cache_invalidate_exact(f"categories:{uid}")
         return cat
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail=f"A category named '{data.name}' already exists.")
@@ -85,8 +85,8 @@ def update_category(category_id: str, data: CategoryUpdateModel, current_user=De
             raise HTTPException(status_code=404, detail="Category not found")
         from utils.activity import log_activity
         log_activity(uid, "update", "category", category_id, "Updated category details")
-        cache_invalidate(f"categories:{uid}")
-        cache_invalidate(f"dashboard:{uid}")
+        cache_invalidate_exact(f"categories:{uid}")
+        cache_invalidate_prefix(f"dashboard:{uid}:")
         return {"success": True}
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail=f"A category named '{fields.get('name', 'unknown')}' already exists.")
@@ -100,8 +100,8 @@ def restore_category(category_id: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Category not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "category", category_id, "Restored a category")
-    cache_invalidate(f"categories:{uid}")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_exact(f"categories:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 
@@ -120,8 +120,8 @@ def delete_category(category_id: str, permanent: bool = False, current_user=Depe
             raise HTTPException(status_code=404, detail="Category not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "category", category_id, "Deleted a category")
-    cache_invalidate(f"categories:{uid}")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_exact(f"categories:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 

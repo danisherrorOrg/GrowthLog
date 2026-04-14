@@ -242,7 +242,7 @@ export default function DailyLog() {
                       <label className="form-label">Mood — {entry.mood}/10</label>
                       <div className="rating-row">
                         <span style={{ fontSize: 16 }}>😔</span>
-                        <input type="range" className="rating-slider" min={1} max={10} value={entry.mood}
+                        <input maxLength={200} type="range" className="rating-slider" min={1} max={10} value={entry.mood}
                           onChange={(e) => updateEntry(cat.id, 'mood', +e.target.value)}
                           style={{ '--val': `${(entry.mood - 1) / 9 * 100}%` }} />
                         <span style={{ fontSize: 16 }}>😊</span>
@@ -252,7 +252,7 @@ export default function DailyLog() {
                       <label className="form-label">Energy — {entry.energy}/10</label>
                       <div className="rating-row">
                         <span style={{ fontSize: 16 }}>😴</span>
-                        <input type="range" className="rating-slider" min={1} max={10} value={entry.energy}
+                        <input maxLength={200} type="range" className="rating-slider" min={1} max={10} value={entry.energy}
                           onChange={(e) => updateEntry(cat.id, 'energy', +e.target.value)}
                           style={{ '--val': `${(entry.energy - 1) / 9 * 100}%`, '--color': 'var(--gold)' }} />
                         <span style={{ fontSize: 16 }}>⚡</span>
@@ -262,7 +262,7 @@ export default function DailyLog() {
                       <label className="form-label">Time Invested — {entry.time_spent} min</label>
                       <div className="rating-row">
                         <span style={{ fontSize: 16 }}>⏱</span>
-                        <input type="range" className="rating-slider" min={0} max={180} step={5} value={entry.time_spent}
+                        <input maxLength={200} type="range" className="rating-slider" min={0} max={180} step={5} value={entry.time_spent}
                           onChange={(e) => updateEntry(cat.id, 'time_spent', parseInt(e.target.value) || 0)}
                           style={{ '--val': `${(entry.time_spent / 180) * 100}%`, '--color': '#8b6bc4' }} />
                         <span style={{ fontSize: 16 }}>⏳</span>
@@ -343,7 +343,7 @@ export default function DailyLog() {
           <h3 style={{ fontSize: 18, marginBottom: 16 }}>Overall Day</h3>
           <div className="form-group">
             <label className="form-label">Highlight of the day</label>
-            <textarea 
+            <textarea maxLength={2000} 
               className="form-textarea" 
               value={highlight} 
               onChange={(e) => setHighlight(e.target.value)} 
@@ -354,7 +354,7 @@ export default function DailyLog() {
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Overall day rating — {overallRating}/10</label>
-            <input type="range" className="rating-slider" min={1} max={10} value={overallRating}
+            <input maxLength={200} type="range" className="rating-slider" min={1} max={10} value={overallRating}
               onChange={(e) => setOverallRating(+e.target.value)}
               style={{ '--val': `${(overallRating - 1) / 9 * 100}%`, width: '100%' }} />
           </div>
