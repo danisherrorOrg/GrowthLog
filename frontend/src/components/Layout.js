@@ -58,17 +58,41 @@ NAV.forEach(item => {
   if (item.shortcut) SHORTCUT_MAP[item.shortcut.toLowerCase()] = item.to;
 });
 
+const MOBILE_BREAKPOINT = 900;
+
 export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= MOBILE_BREAKPOINT;
+  });
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < MOBILE_BREAKPOINT;
+  });
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
 
   // Refresh user data (streak, etc.) on every page navigation
   useEffect(() => {
     refreshUser().catch(() => {});
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onResize = () => {
+      const nowMobile = window.innerWidth < MOBILE_BREAKPOINT;
+      setIsMobile(nowMobile);
+      if (!nowMobile) {
+        setIsSidebarVisible(true);
+      } else {
+        setIsSidebarVisible(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────
   useEffect(() => {
@@ -131,7 +155,15 @@ export default function Layout() {
         </button>
       )}
 
-      <aside className={`sidebar ${!isSidebarVisible ? 'hidden' : ''}`}>
+      {isMobile && isSidebarVisible && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsSidebarVisible(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside className={`sidebar ${isSidebarVisible ? 'visible' : 'hidden'}`}>
         <div className="sidebar-logo">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
