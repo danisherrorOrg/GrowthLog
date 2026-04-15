@@ -68,17 +68,17 @@ function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color }) {
     <div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rows.map((row, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color, minWidth: 18, textAlign: 'center' }}>{i + 1}</span>
-            <input maxLength={200} className="form-input" style={{ flex: 1 }} value={row[keyLabel]}
+          <div key={i} className="multi-row-editor-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color, minWidth: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
+            <input maxLength={200} className="form-input cat-input" style={{ flex: 1, minWidth: 0 }} value={row[keyLabel]}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], [keyLabel]: e.target.value }; setRows(r); }}
               placeholder={keyPlaceholder} />
-            <input maxLength={200} className="form-input" type="number" style={{ width: 90 }} value={row.hours}
+            <input maxLength={200} className="form-input hours-input" type="number" style={{ width: 90, flexShrink: 0 }} value={row.hours}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], hours: e.target.value }; setRows(r); }}
               placeholder="hrs" min="0.1" step="0.25" />
             {rows.length > 1 && (
               <button onClick={() => setRows(rows.filter((_, idx) => idx !== i))}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1 }}>✕</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
             )}
           </div>
         ))}
@@ -321,7 +321,7 @@ export default function Insights() {
   // ── Preview modal ──────────────────────────────────────────────────────
   const PreviewModal = ({ item, onClose, icon, iconBg, titleColor, title, subtitle, body }) => item && (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 560, padding: '32px 40px' }}>
+      <div className="modal modal-md">
         <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28, background: iconBg, width: 54, height: 54, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
@@ -348,7 +348,7 @@ export default function Insights() {
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: 5, marginBottom: 32, background: 'var(--mist)', padding: 4, borderRadius: 14, flexWrap: 'wrap' }}>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="insights-tab-btn" style={{
               padding: '9px 15px', borderRadius: 10, border: 'none', cursor: 'pointer',
               fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600,
               background: activeTab === tab.id ? 'white' : 'transparent',
@@ -356,7 +356,7 @@ export default function Insights() {
               boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              <span style={{ fontSize: 14 }}>{tab.icon}</span> {tab.label}
+              <span className="tab-icon" style={{ fontSize: 14 }}>{tab.icon}</span> {tab.label}
             </button>
           ))}
         </div>
@@ -366,7 +366,7 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'anti-goals' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🚫 Anti-Goals</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Things you actively want to avoid, stop, or never become.</p></div>
               <button className="btn btn-primary" onClick={openAgCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Add Anti-Goal</button>
             </div>
@@ -400,14 +400,14 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'graveyard' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🪦 Habit Graveyard</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Habits you tried and abandoned — with the lesson learned.</p></div>
               <button className="btn btn-primary" onClick={openHgCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Habit</button>
             </div>
             {hgLoad ? <Skeletons h={100} /> : habits.length === 0 ? (
               <Empty icon="🪦" title="Graveyard is empty" desc="Every abandoned habit holds a lesson. Bury it here so you can learn from it." onAdd={openHgCreate} label="+ Log First Habit" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {habits.map(item => (
                   <div key={item.id} onClick={() => setHgPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #8b6bc4', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -436,7 +436,7 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'time' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>⏱ Time Tracking</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>How did you spend your 24 hours today?</p></div>
               <button className="btn btn-primary" onClick={() => openTeAdd(TODAY)} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
             </div>
@@ -487,7 +487,7 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'screen' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>📱 Screen Time</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Log phone/computer usage by app category across your day.</p></div>
               <button className="btn btn-primary" onClick={() => openStAdd(TODAY)} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
             </div>
@@ -535,14 +535,14 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'procrastination' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>😬 Procrastination Log</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>What you avoided, why, and what actually happened.</p></div>
               <button className="btn btn-primary" onClick={openPrCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Entry</button>
             </div>
             {prLoad ? <Skeletons h={110} /> : procEntries.length === 0 ? (
               <Empty icon="😬" title="Nothing logged yet" desc="Naming procrastination breaks its power." onAdd={openPrCreate} label="+ Log First Entry" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {procEntries.map(item => (
                   <div key={item.id} onClick={() => setPrPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #c9a84c', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -568,7 +568,7 @@ export default function Insights() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'nottodo' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🚷 Not-to-do List</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Recurring time-wasters to consciously eliminate.</p></div>
               <button className="btn btn-primary" onClick={openNtCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Add Item</button>
             </div>
@@ -604,7 +604,7 @@ export default function Insights() {
         <div className="modal-header"><h3>{agEdit ? 'Edit Anti-Goal' : 'New Anti-Goal'}</h3><button className="modal-close" onClick={() => setAgModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">What do you want to avoid or stop?</label><input maxLength={200} className="form-input" value={agForm.text} onChange={e => setAgForm({ ...agForm, text: e.target.value })} placeholder="e.g. Mindless scrolling before bed…" /></div>
         <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={agForm.reason} onChange={e => setAgForm({ ...agForm, reason: e.target.value })} placeholder="What harm does it cause?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setAgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleAgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : agEdit ? 'Save Changes' : 'Add Anti-Goal'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setAgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleAgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : agEdit ? 'Save Changes' : 'Add Anti-Goal'}</button></div>
       </div></div>)}
 
       {/* Habit Graveyard */}
@@ -616,11 +616,11 @@ export default function Insights() {
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" className="form-input" value={hgForm.started_at} onChange={e => setHgForm({ ...hgForm, started_at: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Abandoned (optional)</label><input maxLength={200} type="date" className="form-input" value={hgForm.abandoned_at} onChange={e => setHgForm({ ...hgForm, abandoned_at: e.target.value })} /></div>
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setHgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleHgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : hgEdit ? 'Save Changes' : 'Bury the Habit'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setHgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleHgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : hgEdit ? 'Save Changes' : 'Bury the Habit'}</button></div>
       </div></div>)}
 
       {/* Time Tracking Modal */}
-      {teModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setTeModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
+      {teModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setTeModal(false)}><div className="modal modal-lg">
         <div className="modal-header">
           <h3>{teEditEntry ? 'Edit Entry' : `Log Time — ${dateLabel(teDate)}`}</h3>
           <button className="modal-close" onClick={() => setTeModal(false)}>✕</button>
@@ -645,14 +645,14 @@ export default function Insights() {
             <MultiRowEditor rows={teRows} setRows={setTeRows} keyLabel="category" keyPlaceholder="Work / Learning / Leisure…" color="var(--sage)" />
           </>
         )}
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button className="btn btn-outline" onClick={() => setTeModal(false)} style={{ flex: 1 }}>Cancel</button>
           <button className="btn btn-primary" onClick={handleTeSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : teEditEntry ? 'Save Changes' : 'Log Time'}</button>
         </div>
       </div></div>)}
 
       {/* Screen Time Modal */}
-      {stModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setStModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
+      {stModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setStModal(false)}><div className="modal modal-lg">
         <div className="modal-header">
           <h3>{stEditEntry ? 'Edit Entry' : `Log Screen Time — ${dateLabel(stDate)}`}</h3>
           <button className="modal-close" onClick={() => setStModal(false)}>✕</button>
@@ -685,7 +685,7 @@ export default function Insights() {
             <MultiRowEditor rows={stRows} setRows={setStRows} keyLabel="app_category" keyPlaceholder="Social / News / Work…" color="#5b8ba8" />
           </>
         )}
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button className="btn btn-outline" onClick={() => setStModal(false)} style={{ flex: 1 }}>Cancel</button>
           <button className="btn btn-primary" onClick={handleStSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : stEditEntry ? 'Save Changes' : 'Log Screen Time'}</button>
         </div>
@@ -698,7 +698,7 @@ export default function Insights() {
         <div className="form-group"><label className="form-label">What did you avoid?</label><input maxLength={200} className="form-input" value={prForm.what} onChange={e => setPrForm({ ...prForm, what: e.target.value })} placeholder="e.g. Writing that overdue report…" /></div>
         <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.why} onChange={e => setPrForm({ ...prForm, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /></div>
         <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.outcome} onChange={e => setPrForm({ ...prForm, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setPrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handlePrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : prEdit ? 'Save Changes' : 'Log Entry'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setPrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handlePrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : prEdit ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
       {/* Not-to-do */}
@@ -706,7 +706,7 @@ export default function Insights() {
         <div className="modal-header"><h3>{ntEdit ? 'Edit Item' : 'Add Not-to-do'}</h3><button className="modal-close" onClick={() => setNtModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">What's the time-waster?</label><input maxLength={200} className="form-input" value={ntForm.text} onChange={e => setNtForm({ ...ntForm, text: e.target.value })} placeholder="e.g. Checking email first thing in the morning…" /></div>
         <div className="form-group"><label className="form-label">Why avoid it? (optional)</label><textarea maxLength={2000} className="form-textarea" value={ntForm.reason} onChange={e => setNtForm({ ...ntForm, reason: e.target.value })} placeholder="Why is this a trap for you?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setNtModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleNtSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : ntEdit ? 'Save Changes' : 'Add to List'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setNtModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleNtSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : ntEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}
 
       {/* ═══ PREVIEW MODALS ═══ */}

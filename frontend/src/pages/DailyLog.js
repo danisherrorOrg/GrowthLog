@@ -174,13 +174,13 @@ export default function DailyLog() {
   return (
     <div>
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="daily-log-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2>Daily Log ✦</h2>
             <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
           </div>
           {categories.length > 0 && (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="daily-log-header-actions page-header-actions" style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-outline btn-sm" onClick={() => setExpandedCategories(categories.map(c => c.id))} style={{ fontSize: 11 }}>
                 Expand All
               </button>
@@ -237,7 +237,7 @@ export default function DailyLog() {
                     <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
                   </div>
 
-                  <div className="grid-2">
+                  <div className="grid-2 daily-log-sliders">
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label className="form-label">Mood — {entry.mood}/10</label>
                       <div className="rating-row">

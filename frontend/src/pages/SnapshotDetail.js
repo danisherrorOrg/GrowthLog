@@ -108,7 +108,7 @@ export default function SnapshotDetail() {
 
       <div className="page-body">
         {/* Tab Navigation */}
-        <div className="tabs" style={{ marginBottom: 24, borderBottom: '1px solid rgba(13,13,13,0.06)', display: 'flex', gap: 32 }}>
+        <div className="tabs goal-tabs-bar" style={{ marginBottom: 24, borderBottom: '1px solid rgba(13,13,13,0.06)', display: 'flex', gap: 24 }}>
           {[
             { id: 'reflections', label: 'Reflections', icon: '📝' },
             { id: 'contrast', label: 'Contrast Analysis', icon: '⇄' },
@@ -239,7 +239,7 @@ export default function SnapshotDetail() {
                 <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported. Use this to expand on your thoughts from this day.</div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
+              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
                  <div className="form-group">
                    <label className="form-label">Values (comma separated)</label>
                    <input maxLength={200} className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} placeholder="honesty, growth, grit..." />
@@ -252,7 +252,7 @@ export default function SnapshotDetail() {
                  </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 16, marginTop: 40, paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.06)' }}>
+              <div style={{ display: 'flex', gap: 16, marginTop: 40, paddingTop: 32, borderTop: '1px solid rgba(13,13,13,0.06)', flexWrap: 'wrap' }}>
                 <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ padding: '0 32px' }}>
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>

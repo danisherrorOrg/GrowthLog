@@ -248,7 +248,7 @@ export default function Profile() {
 
         {/* Pending email verification banner */}
         {user?.pending_email && (
-          <div style={{
+          <div className="profile-verify-banner" style={{
             marginBottom: 24,
             padding: '16px 20px',
             background: 'var(--gold)',
@@ -278,7 +278,7 @@ export default function Profile() {
 
         {/* Profile Identity Card */}
         <div className="card" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+          <div className="profile-identity-inner" style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
             <div style={{ fontSize: 64, lineHeight: 1, flexShrink: 0 }}>{user?.avatar_emoji || '🌱'}</div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
@@ -302,7 +302,7 @@ export default function Profile() {
                 <button className="btn btn-outline btn-sm" onClick={() => setEmailMode(true)}>✉️ Change Email</button>
               </div>
             </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div className="profile-streak-block" style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontFamily: 'Fraunces', fontSize: 36, color: 'var(--gold)', lineHeight: 1 }}>{user?.streak || 0}</div>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)' }}>Day Streak</div>
               <div style={{ fontFamily: 'Fraunces', fontSize: 20, color: 'var(--sage)', marginTop: 8, lineHeight: 1 }}>{user?.longest_streak || 0}</div>
@@ -319,7 +319,7 @@ export default function Profile() {
             {/* Sparkline activity chart */}
             {sparklineData.length > 0 && (
               <div className="card" style={{ marginBottom: 20, padding: '20px 24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div className="profile-sparkline-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   <div>
                     <div style={{ fontFamily: 'Fraunces', fontSize: 17, color: 'var(--ink)' }}>Log Consistency</div>
                     <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', marginTop: 2 }}>Days logged per week · last 12 weeks</div>
@@ -381,7 +381,7 @@ export default function Profile() {
 
             {/* Goal rate banner */}
             <div className="card" style={{ background: 'var(--ink)', color: 'var(--paper)', marginBottom: 32 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div className="profile-goal-banner-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
                   <h3 style={{ fontFamily: 'Fraunces', fontSize: 22, color: 'var(--gold)', marginBottom: 4 }}>
                     {completionRate}% Goal Completion Rate
@@ -462,7 +462,7 @@ export default function Profile() {
 
         {/* Public Profile Link */}
         <div className="card" style={{ marginBottom: 20, padding: 24, borderLeft: '4px solid var(--sage)', background: 'var(--mist)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div className="profile-public-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             <div>
               <h3 style={{ fontSize: 18, color: 'var(--sage)', marginBottom: 8 }}>Public Profile Link</h3>
               <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', maxWidth: 600 }}>
@@ -529,7 +529,7 @@ export default function Profile() {
             flexDirection: 'column',
           }}>
             {/* Panel header */}
-            <div style={{
+            <div className="profile-edit-panel-header" style={{
               padding: '28px 32px 20px',
               borderBottom: '1px solid rgba(13,13,13,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -551,7 +551,7 @@ export default function Profile() {
             </div>
 
             {/* Panel body */}
-            <div style={{ padding: '28px 32px', flex: 1 }}>
+            <div className="profile-edit-panel-body" style={{ padding: '28px 32px', flex: 1 }}>
               <div className="form-group">
                 <label className="form-label">Choose Avatar</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
@@ -600,7 +600,7 @@ export default function Profile() {
             </div>
 
             {/* Panel footer */}
-            <div style={{
+            <div className="profile-edit-panel-footer" style={{
               padding: '20px 32px',
               borderTop: '1px solid rgba(13,13,13,0.07)',
               display: 'flex', gap: 12,

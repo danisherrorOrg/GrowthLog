@@ -192,12 +192,12 @@ export default function Goals() {
       <div className="page-body">
         {overdue.length > 0 && (
           <div className="card" style={{ background: 'rgba(196,98,58,0.04)', border: '1px solid rgba(196,98,58,0.1)', marginBottom: 24, padding: '16px 20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="alert-banner-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: 15, color: 'var(--rust)', marginBottom: 2 }}>⚠️ {overdue.length} Action Required</h3>
                 <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>Goals past their target deadline need reflection.</p>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div className="overdue-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {overdue.map(g => (
                   <button key={g.id} className="btn btn-sm btn-danger" style={{ borderRadius: 20, fontSize: 11, padding: '4px 12px' }}
                     onClick={() => { setReflectGoal(g); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }}>
@@ -210,9 +210,9 @@ export default function Goals() {
         )}
 
         {/* Unified Toolbar */}
-        <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10, flexWrap: 'wrap', gap: 2 }}>
+        <div className="card toolbar-card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div className="toolbar-left" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10, flexWrap: 'wrap', gap: 2 }}>
               {['active', 'extended', 'completed', 'abandoned', 'all'].map(f => (
                 <button 
                   key={f} 
@@ -249,7 +249,7 @@ export default function Goals() {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={openCreate} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
+          <button className="btn btn-primary toolbar-primary-btn" onClick={openCreate} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
             + New Goal
           </button>
         </div>
@@ -455,7 +455,7 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label className="form-label">What happened?</label>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div className="reflect-status-btns" style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {[['completed', '✅ Achieved'], ['extended', '🔄 Need more time'], ['abandoned', '❌ Moving on']].map(([s, l]) => (
                   <button key={s} className={`btn btn-sm ${reflectForm.status === s ? 'btn-primary' : 'btn-outline'}`} onClick={() => setReflectForm({ ...reflectForm, status: s })}>
                     {l}

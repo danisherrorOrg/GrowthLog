@@ -256,7 +256,7 @@ export default function Thoughts() {
               </span>
             </div>
 
-            <div style={{
+            <div className="thoughts-capture-footer stack-on-mobile" style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               paddingTop: 14, borderTop: '1px solid rgba(13,13,13,0.05)',
             }}>
@@ -286,10 +286,10 @@ export default function Thoughts() {
         </div>
 
         {/* ── Toolbar ── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
+        <div className="thoughts-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Sentiment filter */}
-            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
               {['All', 'Positive', 'Neutral', 'Negative'].map(s => (
                 <button key={s}
                   className={`btn btn-sm ${filter === s ? 'btn-primary' : 'btn-ghost'}`}
@@ -310,10 +310,10 @@ export default function Thoughts() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="thoughts-toolbar-right" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Search */}
             <div style={{ position: 'relative' }}>
-              <input maxLength={200} className="form-input" value={search}
+              <input maxLength={200} className="form-input full-width-mobile" value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search thoughts…"
                 style={{ padding: '7px 12px 7px 30px', fontSize: 12, height: 'auto', minWidth: 190 }} />

@@ -119,7 +119,7 @@ export default function Growth() {
       </div>
 
       <div className="page-body">
-        <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+        <div className="wrap-on-mobile" style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
           {[7, 14, 30, 60, 90].map(d => (
             <button key={d} className={`btn btn-sm ${days === d ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDays(d)}>
               {d}d

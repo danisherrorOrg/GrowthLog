@@ -164,10 +164,10 @@ export default function Dashboard() {
               <span>Behavioral Insights ✦</span>
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>AI-generated patterns from your logs</span>
             </div>
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+            <div className="wrap-on-mobile" style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
               {data.insights.map((insight, i) => (
-                <div key={i} className="card" style={{
-                  minWidth: 300, flex: 1, padding: '16px 20px',
+                <div key={i} className="card stack-on-mobile" style={{
+                  minWidth: 'auto', flex: 1, padding: '16px 20px',
                   background: `linear-gradient(135deg, white 0%, ${insight.color}05 100%)`,
                   borderLeft: `4px solid ${insight.color}`,
                   display: 'flex', alignItems: 'center', gap: 14,
@@ -200,7 +200,7 @@ export default function Dashboard() {
               GrowthLog is built on the compound effect of small, daily reflections.
               The best way to start is by capturing who you are today.
             </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <div className="dashboard-onboarding-actions" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={() => navigate('/snapshots')}>Take a Snapshot ○</button>
               <button className="btn btn-outline" onClick={() => navigate('/log')}>Log your first day ✦</button>
             </div>
@@ -208,7 +208,7 @@ export default function Dashboard() {
         )}
 
         {/* Time filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <div className="time-filter-row" style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
           {[7, 30, 60, 90].map(d => (
             <button
               key={d}
@@ -269,7 +269,7 @@ export default function Dashboard() {
 
         {/* Quick log CTA — shown prominently before charts */}
         {!data?.heatmap?.[format(today, 'yyyy-MM-dd')] && (
-          <div className="card" style={{ marginBottom: 28, background: 'linear-gradient(135deg, var(--sage) 0%, #4a6b4a 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px' }}>
+          <div className="card dashboard-log-cta" style={{ marginBottom: 28, background: 'linear-gradient(135deg, var(--sage) 0%, #4a6b4a 100%)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px' }}>
             <div>
               <h3 style={{ color: 'white', marginBottom: 4 }}>Today's log is waiting ✦</h3>
               <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, margin: 0 }}>You haven't logged today yet. Keep your streak alive.</p>
@@ -289,7 +289,7 @@ export default function Dashboard() {
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Last {days} days</span>
             </div>
 
-            <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
+            <div className="heatmap-scroll-wrap" style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
               {weeks.map((week, wi) => (
                 <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {week.map((day, di) => {
@@ -394,7 +394,7 @@ export default function Dashboard() {
 
         {/* Growth Trends & Life Balance */}
         <div className="grid-2" style={{ marginBottom: 28 }}>
-          <div className="card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
+          <div className="card chart-card-fixed" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
             <div className="section-title" style={{ marginBottom: 20 }}>
               <span>Growth Trends</span>
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Mood vs Energy</span>
@@ -428,7 +428,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
+          <div className="card chart-card-fixed" style={{ height: 400, display: 'flex', flexDirection: 'column' }}>
             <div className="section-title" style={{ marginBottom: 20 }}>
               <span>Life Balance</span>
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Time & Mood Distribution</span>
@@ -498,7 +498,7 @@ export default function Dashboard() {
             </div>
             {/* Donut chart + legend */}
             {(data?.goals?.total || 0) > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div className="goals-overview-inner" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ width: 140, height: 140, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>

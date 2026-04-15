@@ -1,0 +1,1 @@
+check and update the responsive of pages: bookdeatil.js, categories.js, goalDetail.js, Growth.js, growthhub.js, healthhub.js, history.hub, insights.js, knowledgevault.js, lifecanvas.js, login.js, manifestationDetail.js, publicProfile.js, register.js, temporalhub.js, verifyEmail.js

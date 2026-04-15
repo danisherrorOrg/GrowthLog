@@ -833,35 +833,35 @@ export default function WorkoutLogTab() {
                             {isCardio ? (
                               <>
                                 <input
-                                  type="number" step="0.1" className="form-input"
+                                  type="number" step="0.1" className="form-input input-xs"
                                   placeholder="km" value={s.distance_km}
                                   // FIX #5: pass raw value string; coerce only on save
                                   onChange={ev => updateSet(exIdx, setIdx, 'distance_km', ev.target.value)}
-                                  style={{ width: 64, padding: '4px 8px', height: 30, fontSize: 13 }}
+                                  style={{ padding: '4px 8px', height: 30, fontSize: 13 }}
                                 />
                                 <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', flexShrink: 0 }}>km</span>
                                 <input
-                                  type="number" className="form-input"
+                                  type="number" className="form-input input-xs"
                                   placeholder="min" value={s.duration_min}
                                   onChange={ev => updateSet(exIdx, setIdx, 'duration_min', ev.target.value)}
-                                  style={{ width: 64, padding: '4px 8px', height: 30, fontSize: 13 }}
+                                  style={{ padding: '4px 8px', height: 30, fontSize: 13 }}
                                 />
                                 <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', flexShrink: 0 }}>min</span>
                               </>
                             ) : (
                               <>
                                 <input
-                                  type="number" className="form-input"
+                                  type="number" className="form-input input-xs"
                                   placeholder="Reps" value={s.reps}
                                   onChange={ev => updateSet(exIdx, setIdx, 'reps', ev.target.value)}
-                                  style={{ width: 60, padding: '4px 8px', height: 30, fontSize: 13 }}
+                                  style={{ padding: '4px 8px', height: 30, fontSize: 13 }}
                                 />
                                 <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', flexShrink: 0 }}>×</span>
                                 <input
-                                  type="number" step="0.5" className="form-input"
+                                  type="number" step="0.5" className="form-input input-xs"
                                   placeholder="kg" value={s.weight}
                                   onChange={ev => updateSet(exIdx, setIdx, 'weight', ev.target.value)}
-                                  style={{ width: 64, padding: '4px 8px', height: 30, fontSize: 13 }}
+                                  style={{ padding: '4px 8px', height: 30, fontSize: 13 }}
                                 />
                                 <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', flexShrink: 0 }}>kg</span>
                               </>

@@ -164,9 +164,9 @@ export default function Categories() {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontFamily: 'Fraunces', fontSize: 20 }}>Your Categories ({categories.length})</h3>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="wrap-on-mobile" style={{ display: 'flex', gap: 8 }}>
             {archived.length > 0 && (
               <button className={`btn btn-sm ${showArchived ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setShowArchived(!showArchived)}>
@@ -337,15 +337,15 @@ export default function Categories() {
                   />
                   <input
                     type="text"
-                    className="form-input"
+                    className="form-input input-sm"
                     value={form.color}
                     onChange={(e) => setForm({ ...form, color: e.target.value })}
-                    style={{ width: 80, height: 32, fontSize: 12, padding: '0 8px', fontFamily: 'monospace' }}
+                    style={{ height: 32, fontSize: 12, padding: '0 8px', fontFamily: 'monospace' }}
                   />
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 8 }}>
               <button className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSave} disabled={loading} style={{ flex: 1 }}>
                 {loading ? 'Saving...' : editCat ? 'Save Changes' : 'Create Category'}
