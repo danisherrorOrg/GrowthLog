@@ -284,7 +284,7 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
               color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 12 }}>
               ⏱ Time Tracking
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
+            <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 10, color: 'rgba(13,13,13,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>Estimated</div>
                 <div style={{ fontSize: 22, fontFamily: 'Fraunces', color: 'var(--sage)' }}>
@@ -310,7 +310,7 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
         </div>
 
         {/* Footer */}
-        <div style={{
+        <div className="todo-preview-footer" style={{
           display: 'flex', gap: 10, padding: '0 24px 20px',
           borderTop: '1px solid rgba(13,13,13,0.05)', paddingTop: 16,
         }}>
@@ -453,30 +453,31 @@ export default function Todos() {
           <div className="card" style={{
             marginBottom: 24, padding: '14px 20px',
             background: 'rgba(196,98,58,0.04)', border: '1px solid rgba(196,98,58,0.15)',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
-            <div>
-              <h3 style={{ fontSize: 14, color: 'var(--rust)', marginBottom: 2 }}>
-                ⚠️ {overdueCount} overdue task{overdueCount > 1 ? 's' : ''}
-              </h3>
-              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>These tasks have passed their due date.</p>
+            <div className="alert-banner-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: 14, color: 'var(--rust)', marginBottom: 2 }}>
+                  ⚠️ {overdueCount} overdue task{overdueCount > 1 ? 's' : ''}
+                </h3>
+                <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>These tasks have passed their due date.</p>
+              </div>
+              <button className="btn btn-sm btn-outline"
+                style={{ color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.3)' }}
+                onClick={() => setFilter('overdue')}>
+                View Overdue →
+              </button>
             </div>
-            <button className="btn btn-sm btn-outline"
-              style={{ color: 'var(--rust)', borderColor: 'rgba(196,98,58,0.3)' }}
-              onClick={() => setFilter('overdue')}>
-              View Overdue →
-            </button>
           </div>
         )}
 
         {/* Toolbar */}
-        <div className="card" style={{
+        <div className="card toolbar-card" style={{
           marginBottom: 32, padding: '12px 20px',
           display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', flexWrap: 'wrap', gap: 16,
         }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+          <div className="toolbar-left" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
               {[
                 { key: 'all',       label: 'All' },
                 { key: 'active',    label: 'Active' },
@@ -503,7 +504,7 @@ export default function Todos() {
 
             {/* Search */}
             <div style={{ position: 'relative' }}>
-              <input maxLength={200} className="form-input" value={search} onChange={e => setSearch(e.target.value)}
+              <input maxLength={200} className="form-input full-width-mobile" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search tasks..."
                 style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', minWidth: 180 }} />
               <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, opacity: 0.35 }}>🔍</span>
@@ -516,7 +517,7 @@ export default function Todos() {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={() => setShowAdd(s => !s)}
+          <button className="btn btn-primary toolbar-primary-btn" onClick={() => setShowAdd(s => !s)}
             style={{ borderRadius: 30, padding: '10px 24px' }}>
             {showAdd ? '✕ Close' : '+ New Task'}
           </button>
@@ -547,7 +548,7 @@ export default function Todos() {
                 onChange={e => setNewTodo({ ...newTodo, description: e.target.value })}
                 style={{ minHeight: 60, fontSize: 13 }}
               />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="todo-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label className="form-label" style={{ fontSize: 10 }}>Priority</label>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -641,7 +642,7 @@ export default function Todos() {
                   No completed tasks in current view.
                 </div>
               ) : (
-                <div style={{ opacity: 0.75 }}>
+                <div style={{ opacity: 0.75, display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {done.map(t => (
                     <TodoCard key={t.id} todo={t}
                       onComplete={() => setCompleteTarget(t)}
@@ -712,7 +713,7 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
             onChange={e => setEditForm({ ...editForm, description: e.target.value })}
             placeholder="Description (optional)..."
             style={{ minHeight: 52, fontSize: 13 }} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="todo-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="form-label" style={{ fontSize: 10 }}>Priority</label>
               <select className="form-select" value={editForm.priority}

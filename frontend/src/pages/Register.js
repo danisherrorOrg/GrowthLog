@@ -95,7 +95,7 @@ export default function Register() {
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(245,240,232,0.3)', marginBottom: 18 }}>
               The 5 Dimensions of Growth
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
+            <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
               {DIMENSIONS.map(({ icon, title, desc, color }) => (
                 <div key={title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{

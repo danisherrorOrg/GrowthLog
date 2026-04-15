@@ -55,11 +55,18 @@ const NAV_GROUPS = [
 
 const NAV = NAV_GROUPS.flatMap(g => g.items);
 
-// Shortcut map for keyboard navigation
 const SHORTCUT_MAP = {};
 NAV.forEach(item => {
   if (item.shortcut) SHORTCUT_MAP[item.shortcut.toLowerCase()] = item.to;
 });
+
+// Bottom nav items (the 4 most-used + a "More" drawer trigger)
+const BOTTOM_NAV = [
+  { to: '/dashboard', icon: '◈', label: 'Home' },
+  { to: '/log', icon: '✦', label: 'Log' },
+  { to: '/todos', icon: '☑', label: 'Todos' },
+  { to: '/thoughts', icon: '🪴', label: 'Mind' },
+];
 
 const MOBILE_BREAKPOINT = 900;
 
@@ -67,6 +74,7 @@ export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.innerWidth >= MOBILE_BREAKPOINT;
@@ -92,36 +100,32 @@ export default function Layout() {
 
   // Refresh user data (streak, etc.) on every page navigation
   useEffect(() => {
-    refreshUser().catch(() => {});
+    refreshUser().catch(() => { });
   }, [location.pathname]);
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    if (isMobile) setIsSidebarVisible(false);
+  }, [location.pathname, isMobile]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const onResize = () => {
       const nowMobile = window.innerWidth < MOBILE_BREAKPOINT;
       setIsMobile(nowMobile);
-      if (!nowMobile) {
-        setIsSidebarVisible(true);
-      } else {
-        setIsSidebarVisible(false);
-      }
+      setIsSidebarVisible(!nowMobile);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // ── Keyboard shortcuts ──────────────────────────────────────────────
+  // ── Keyboard shortcuts ──────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore shortcuts when typing in an input, textarea, or select
       const tag = e.target.tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
-      // Ignore if modifier keys are held (Ctrl/Cmd/Alt)
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-      const key = e.key.toLowerCase();
-
-      // Escape: close any open modal-overlay
       if (e.key === 'Escape') {
         const overlay = document.querySelector('.modal-overlay');
         if (overlay) {
@@ -132,41 +136,37 @@ export default function Layout() {
         return;
       }
 
-      // Check if any modal is open. Bail out early if so.
-      if (document.querySelector('.modal-overlay') || document.querySelector('[role="dialog"]')) {
-        return;
-      }
+      if (document.querySelector('.modal-overlay') || document.querySelector('[role="dialog"]')) return;
 
-      // ? — show shortcut help overlay
       if (e.key === '?') {
         setShowShortcutHelp(prev => !prev);
         return;
       }
 
-      // Nav shortcuts
+      const key = e.key.toLowerCase();
       if (SHORTCUT_MAP[key]) {
         e.preventDefault();
         navigate(SHORTCUT_MAP[key]);
-        return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
-  // ────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const toggleSidebar = () => setIsSidebarVisible(!isSidebarVisible);
+  const toggleSidebar = () => setIsSidebarVisible(v => !v);
 
   return (
     <div className={`app-shell ${!isSidebarVisible ? 'sidebar-hidden' : ''}`}>
-      {/* Floating Toggle Button (Only visible when sidebar is hidden) */}
-      {!isSidebarVisible && (
+
+      {/* Floating toggle — only when sidebar is hidden on desktop */}
+      {!isSidebarVisible && !isMobile && (
         <button
           className="sidebar-toggle-floating"
           onClick={toggleSidebar}
@@ -176,6 +176,7 @@ export default function Layout() {
         </button>
       )}
 
+      {/* Backdrop — mobile only */}
       {isMobile && isSidebarVisible && (
         <div
           className="sidebar-backdrop"
@@ -204,7 +205,11 @@ export default function Layout() {
         <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {NAV_GROUPS.map((group, gIdx) => (
             <div key={gIdx} className="nav-group">
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(245,240,232,0.4)', fontWeight: 700, padding: '0 16px', marginBottom: 8 }}>
+              <div style={{
+                fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5,
+                color: 'rgba(245,240,232,0.4)', fontWeight: 700,
+                padding: '0 16px', marginBottom: 8
+              }}>
                 {group.group}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -245,7 +250,12 @@ export default function Layout() {
           </div>
           <button
             onClick={() => navigate('/profile')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(245,240,232,0.6)', fontSize: 13, marginBottom: 10, padding: '6px 8px', borderRadius: 8, width: '100%' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'rgba(245,240,232,0.6)', fontSize: 13,
+              marginBottom: 10, padding: '6px 8px', borderRadius: 8, width: '100%'
+            }}
           >
             <span style={{ fontSize: 18 }}>{user?.avatar_emoji || '👤'}</span>
             {user?.name}
@@ -267,14 +277,9 @@ export default function Layout() {
                 borderRadius: 6,
                 cursor: 'pointer',
                 color: 'rgba(245,240,232,0.3)',
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 13,
-                fontFamily: 'monospace',
-                flexShrink: 0,
+                width: 32, height: 32,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 13, fontFamily: 'monospace', flexShrink: 0,
               }}
             >
               ?
@@ -286,7 +291,8 @@ export default function Layout() {
       <main className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
         {!user?.is_verified && (
           <div style={{
-            margin: '24px 32px 0 32px',
+            margin: 'clamp(16px, 4vw, 24px)',
+            marginBottom: 0,
             padding: '16px 20px',
             background: 'var(--rust)',
             color: 'white',
@@ -294,10 +300,14 @@ export default function Layout() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)'
+            gap: 12,
+            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)',
+            flexWrap: 'wrap',
           }}>
-            <div style={{ flex: 1, marginRight: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your email address ✦</div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>
+                Verify your email address ✦
+              </div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
                 We've sent a link to <strong>{user?.email}</strong>. Please verify your account to secure your growth data.
               </div>
@@ -315,7 +325,28 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Keyboard Shortcut Help Modal */}
+      {/* ── Mobile bottom nav ─────────────────────────────────── */}
+      <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+        {BOTTOM_NAV.map(({ to, icon, label }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => isActive ? 'active' : ''}
+          >
+            <span className="bn-icon">{icon}</span>
+            {label}
+          </NavLink>
+        ))}
+        <button
+          onClick={toggleSidebar}
+          className={isSidebarVisible ? 'active' : ''}
+        >
+          <span className="bn-icon">☰</span>
+          More
+        </button>
+      </nav>
+
+      {/* ── Keyboard shortcut help modal ──────────────────────── */}
       {showShortcutHelp && (
         <div
           className="modal-overlay"
@@ -330,9 +361,12 @@ export default function Layout() {
             <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', marginBottom: 20 }}>
               Press these keys from anywhere in the app (not while typing in a field).
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px 24px' }}>
               {NAV.filter(n => n.shortcut).map(({ label, shortcut, icon }) => (
-                <div key={shortcut} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
+                <div key={shortcut} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)'
+                }}>
                   <span style={{
                     fontFamily: 'monospace', fontSize: 13,
                     background: 'var(--mist)', borderRadius: 6,
@@ -342,12 +376,23 @@ export default function Layout() {
                   <span style={{ fontSize: 14 }}>{icon} {label}</span>
                 </div>
               ))}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)', borderRadius: 6, padding: '3px 8px', fontWeight: 700, color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)' }}>Esc</span>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)'
+              }}>
+                <span style={{
+                  fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)',
+                  borderRadius: 6, padding: '3px 8px', fontWeight: 700,
+                  color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
+                }}>Esc</span>
                 <span style={{ fontSize: 14 }}>Close modal / dialog</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)', borderRadius: 6, padding: '3px 8px', fontWeight: 700, color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)' }}>?</span>
+                <span style={{
+                  fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)',
+                  borderRadius: 6, padding: '3px 8px', fontWeight: 700,
+                  color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
+                }}>?</span>
                 <span style={{ fontSize: 14 }}>Toggle this help</span>
               </div>
             </div>

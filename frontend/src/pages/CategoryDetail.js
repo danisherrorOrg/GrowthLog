@@ -99,7 +99,7 @@ export default function CategoryDetail() {
       </div>
 
       <div className="page-body">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24 }}>
+        <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24 }}>
           {/* Goals Column */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

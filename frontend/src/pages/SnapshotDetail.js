@@ -239,7 +239,7 @@ export default function SnapshotDetail() {
                 <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported. Use this to expand on your thoughts from this day.</div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
+              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
                  <div className="form-group">
                    <label className="form-label">Values (comma separated)</label>
                    <input maxLength={200} className="form-input" value={form.values} onChange={e => setForm({ ...form, values: e.target.value })} placeholder="honesty, growth, grit..." />

@@ -159,9 +159,9 @@ export default function Manifestations() {
 
       <div className="page-body">
         {/* Unified Toolbar */}
-        <div className="card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+        <div className="card toolbar-card" style={{ marginBottom: 32, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div className="toolbar-left" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
               {[
                 { key: 'active', label: 'Active' },
                 { key: 'completed', label: 'Completed' },
@@ -180,7 +180,7 @@ export default function Manifestations() {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
+          <button className="btn btn-primary toolbar-primary-btn" onClick={() => setShowModal(true)} style={{ borderRadius: 30, padding: '10px 24px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}>
             + Create New Vision
           </button>
         </div>
@@ -319,7 +319,7 @@ export default function Manifestations() {
             </div>
             <div className="form-group">
               <label className="form-label">Target Date</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <div className="mfst-date-mode" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                 <button className={`btn btn-sm ${!form.use_custom_date ? 'btn-primary' : 'btn-outline'}`} onClick={() => setForm({ ...form, use_custom_date: false })}>
                   Choose days
                 </button>
@@ -331,7 +331,7 @@ export default function Manifestations() {
                 <input maxLength={200} type="date" className="form-input" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]} />
               ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="mfst-day-picker" style={{ display: 'flex', gap: 8 }}>
                   {[7, 14, 21, 30, 60, 90].map(d => (
                     <button key={d} className={`btn btn-sm ${form.target_days === d ? 'btn-primary' : 'btn-outline'}`} onClick={() => setForm({ ...form, target_days: d })}>
                       {d}d

@@ -94,3 +94,18 @@
 .md-body a:hover {
   border-bottom-color: var(--sage);
 }
+
+@media (max-width: 900px) {
+  .md-body h1 { font-size: 1.5rem; }
+  .md-body h2 { font-size: 1.3rem; }
+  .md-body h3 { font-size: 1.15rem; }
+  
+  .md-body blockquote {
+    padding-left: 0.75rem;
+    margin: 1.25em 0;
+  }
+
+  .md-body ul, .md-body ol {
+    padding-left: 1.25rem;
+  }
+}

@@ -419,7 +419,7 @@ export default function Reframes() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 11 }}>Identify the distortion</label>
                   <select className="form-select" value={newReframe.distortion}
@@ -550,7 +550,7 @@ export default function Reframes() {
                     style={{ minHeight: 110, fontFamily: 'Fraunces', fontStyle: 'italic' }} />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Update Distortion</label>
                   <select className="form-select" value={editForm.distortion}
