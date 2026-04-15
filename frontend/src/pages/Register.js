@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errors';
 
 const STEPS = [
   { num: '01', title: 'Create your account', desc: 'Takes 30 seconds. No credit card, no fluff.' },
@@ -55,7 +56,7 @@ export default function Register() {
       toast.success('Welcome to GrowthLog! 🌱');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Registration failed');
+      toast.error(getErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
@@ -142,9 +143,11 @@ export default function Register() {
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => setTouched(t => ({ ...t, name: true }))}
                 placeholder="What should we call you?"
+                maxLength={100}
                 style={{ borderColor: nameError ? 'var(--rust)' : undefined }}
                 required
               />
+              <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', textAlign: 'right', marginTop: 4 }}>{name.length}/100</div>
               {nameError && (
                 <div style={{ fontSize: 12, color: 'var(--rust)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span>⚠</span> {nameError}
@@ -162,6 +165,7 @@ export default function Register() {
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched(t => ({ ...t, email: true }))}
                 placeholder="you@example.com"
+                maxLength={200}
                 style={{ borderColor: emailError ? 'var(--rust)' : undefined }}
                 required
               />
@@ -188,6 +192,7 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => setTouched(t => ({ ...t, password: true }))}
                   placeholder="At least 8 characters"
+                  maxLength={128}
                   style={{ paddingRight: 44, borderColor: passwordError ? 'var(--rust)' : undefined }}
                   required
                 />

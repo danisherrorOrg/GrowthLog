@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from core.database import db
-from utils.cache import utcnow, cache_invalidate
+from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
 from models.schemas import (
@@ -56,8 +56,8 @@ def create_manifestation(data: ManifestationModel, current_user=Depends(get_curr
     from utils.activity import log_activity
     log_activity(uid, "create", "manifestation", item["id"], "Started a manifestation")
     del item["_id"]
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return item
 
 @router.put("/{m_id}")
@@ -86,8 +86,8 @@ def update_manifestation(m_id: str, data: ManifestationUpdateModel, current_user
         raise HTTPException(status_code=404, detail="Not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "manifestation", m_id, "Updated manifestation details")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 @router.delete("/{m_id}")
@@ -98,8 +98,8 @@ def delete_manifestation(m_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "delete", "manifestation", m_id, "Deleted a manifestation")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 @router.put("/{m_id}/archive")
@@ -111,8 +111,8 @@ def archive_manifestation(m_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "update", "manifestation", m_id, "Archived a manifestation")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 @router.post("/{m_id}/progress")
@@ -125,7 +125,7 @@ def add_manifestation_progress(m_id: str, data: ManifestationProgressModel, curr
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "create", "manifestation_progress", m_id, "Added progress to manifestation")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.put("/{m_id}/progress/{entry_id}")
@@ -145,7 +145,7 @@ def update_manifestation_progress(m_id: str, entry_id: str, data: ManifestationP
         
     from utils.activity import log_activity
     log_activity(uid, "update", "manifestation_progress", m_id, "Updated a progress entry")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.delete("/{m_id}/progress/{entry_id}")
@@ -159,7 +159,7 @@ def delete_manifestation_progress(m_id: str, entry_id: str, current_user=Depends
         raise HTTPException(status_code=404, detail="Manifestation not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "manifestation_progress", m_id, "Deleted a progress entry")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.post("/{m_id}/notes")
@@ -209,6 +209,6 @@ def complete_manifestation(m_id: str, data: ManifestationCompleteModel, current_
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "complete", "manifestation", m_id, "Completed a manifestation")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}

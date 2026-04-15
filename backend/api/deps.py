@@ -13,6 +13,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+            
+        if db.jwt_blocklist.find_one({"user_id": payload["user_id"]}):
+            raise HTTPException(status_code=401, detail="Account deleted. Session permanently invalidated.")
         
         # Security: Invalidate tokens if the password was changed (version mismatch)
         if payload.get("v") != user.get("token_version", 1):

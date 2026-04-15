@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from core.database import db
-from utils.cache import utcnow, cache_invalidate
+from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list
 from api.deps import get_current_user, validate_user_owns_category
 from models.schemas import DailyLogModel
@@ -21,44 +21,53 @@ def _get_local_now(user: dict):
     return utcnow().astimezone(tz)
 
 def recalculate_user_streak(uid: str):
-    """Accurately calculates the current and longest streak based on recent logs."""
+    """Accurately calculates the current and longest streak using a paginated query that stops on gaps."""
     user = db.users.find_one({"_id": ObjectId(uid)})
     if not user:
         return 0
 
-    logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING).limit(30))
-    if not logs:
-        db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
-        return 0
-        
     now_local = _get_local_now(user)
     today = now_local.strftime("%Y-%m-%d")
     yesterday = (now_local - timedelta(days=1)).strftime("%Y-%m-%d")
 
-    # Dedup dates in case of multi-log entries on same day (should be unique but just in case)
-    dates = sorted(list(set([l["date"] for l in logs])), reverse=True)
-    
     current_streak = 0
     longest_streak = user.get("longest_streak", 0)
     
-    last_log = dates[0]
-    # If the last log is older than yesterday local time, the streak is broken.
-    if last_log < yesterday:
-        current_streak = 0
-    else:
-        check_date = last_log
+    skip = 0
+    limit = 30
+    check_date = None
+    last_log = None
+    streak_broken = False
+    
+    while not streak_broken:
+        logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING).skip(skip).limit(limit))
+        if not logs:
+            if skip == 0:
+                db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
+                return 0
+            break
+            
+        dates = []
+        for l in logs:
+            if not dates or dates[-1] != l["date"]:
+                dates.append(l["date"])
+                
+        if skip == 0:
+            last_log = dates[0]
+            if last_log < yesterday:
+                streak_broken = True
+                break
+            check_date = last_log
+            
         for d in dates:
             if d == check_date:
                 current_streak += 1
                 check_date = (datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
             else:
+                streak_broken = True
                 break
                 
-        if current_streak == len(dates) and user.get("streak", 0) > current_streak:
-            if last_log == today and user.get("last_log_date") != today:
-                current_streak = user.get("streak", 0) + 1
-            else:
-                current_streak = user.get("streak", 0)
+        skip += limit
 
     longest_streak = max(longest_streak, current_streak)
 
@@ -93,7 +102,15 @@ def get_log_by_date(date: str, current_user=Depends(get_current_user)):
 
 @router.post("")
 def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
-    today = data.date if data.date else _get_local_now(current_user).strftime("%Y-%m-%d")
+    """
+    Creates or updates a daily log.
+    NOTE: 'date' is always stored as the user's local timezone string (e.g. '2026-04-15') 
+    to ensure streak continuity perfectly aligns with their physical days. 
+    We also store 'utc_date' for system cron evaluations.
+    """
+    local_now = _get_local_now(current_user)
+    today = data.date if data.date else local_now.strftime("%Y-%m-%d")
+    utc_today = utcnow().strftime("%Y-%m-%d")
     uid = str(current_user["_id"])
 
     for entry in data.entries:
@@ -104,15 +121,16 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     if existing:
         db.daily_logs.update_one({"_id": existing["_id"]},
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating,
-                      "gratitude": data.gratitude or [], "regret": data.regret or ""}})
-        cache_invalidate(f"dashboard:{uid}")
-        cache_invalidate(f"stats:{uid}")
+                      "gratitude": data.gratitude or [], "regret": data.regret or "",
+                      "utc_date": utc_today, "local_date": today}})
+        cache_invalidate_prefix(f"dashboard:{uid}:")
+        cache_invalidate_exact(f"stats:{uid}")
         from utils.activity import log_activity
         log_activity(uid, "update", "log", str(existing["_id"]), "Updated daily log")
         return {"id": str(existing["_id"]), "success": True, "updated": True}
 
     result = db.daily_logs.insert_one({
-        "user_id": uid, "date": today, "entries": entries,
+        "user_id": uid, "date": today, "local_date": today, "utc_date": utc_today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
         "gratitude": data.gratitude or [], "regret": data.regret or "",
         "created_at": utcnow(),
@@ -121,8 +139,8 @@ def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
     streak = recalculate_user_streak(uid)
     from utils.activity import log_activity
     log_activity(uid, "create", "log", str(result.inserted_id), "Created daily log")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"id": str(result.inserted_id), "success": True, "streak": streak}
 
 @router.delete("/{date}")
@@ -134,6 +152,6 @@ def delete_log(date: str, current_user=Depends(get_current_user)):
     recalculate_user_streak(uid)
     from utils.activity import log_activity
     log_activity(uid, "delete", "log", date, "Deleted daily log")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}

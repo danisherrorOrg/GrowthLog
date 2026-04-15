@@ -53,8 +53,12 @@ def log_sleep(payload: SleepLogModel, current_user=Depends(get_current_user)):
     return serialize(doc)
 
 @router.get("/sleep", response_model=List[dict])
-def get_sleep_logs(current_user=Depends(get_current_user)):
-    docs = db.sleep_logs.find({"user_id": user_id(current_user)}).sort("date", -1)
+def get_sleep_logs(limit: int = 50, skip: int = 0, days: int = 0, current_user=Depends(get_current_user)):
+    query = {"user_id": user_id(current_user)}
+    if days > 0:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["date"] = {"$gte": since}
+    docs = db.sleep_logs.find(query).sort("date", -1).skip(skip).limit(limit)
     return [serialize(d) for d in docs]
 
 @router.put("/sleep/{log_id}", response_model=dict)
@@ -90,8 +94,12 @@ def create_workout(payload: WorkoutSessionModel, current_user=Depends(get_curren
     return serialize(doc)
 
 @router.get("/workouts", response_model=List[dict])
-def get_workouts(current_user=Depends(get_current_user)):
-    return [serialize(d) for d in db.workouts.find({"user_id": user_id(current_user)}).sort("date", -1)]
+def get_workouts(limit: int = 50, skip: int = 0, days: int = 0, current_user=Depends(get_current_user)):
+    query = {"user_id": user_id(current_user)}
+    if days > 0:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["date"] = {"$gte": since}
+    return [serialize(d) for d in db.workouts.find(query).sort("date", -1).skip(skip).limit(limit)]
 
 @router.put("/workouts/{workout_id}", response_model=dict)
 def update_workout(workout_id: str, payload: WorkoutSessionModel, current_user=Depends(get_current_user)):
@@ -126,8 +134,12 @@ def create_exercise_goal(payload: ExerciseGoalModel, current_user=Depends(get_cu
     return serialize(doc)
 
 @router.get("/exercise-goals", response_model=List[dict])
-def get_exercise_goals(current_user=Depends(get_current_user)):
-    return [serialize(d) for d in db.exercise_goals.find({"user_id": user_id(current_user)}).sort("created_at", -1)]
+def get_exercise_goals(limit: int = 50, skip: int = 0, days: int = 0, current_user=Depends(get_current_user)):
+    query = {"user_id": user_id(current_user)}
+    if days > 0:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        query["created_at"] = {"$gte": since}
+    return [serialize(d) for d in db.exercise_goals.find(query).sort("created_at", -1).skip(skip).limit(limit)]
 
 @router.put("/exercise-goals/{goal_id}", response_model=dict)
 def update_exercise_goal(goal_id: str, payload: ExerciseGoalModel, current_user=Depends(get_current_user)):
@@ -181,8 +193,12 @@ def log_metrics(payload: HealthMetricsModel, current_user=Depends(get_current_us
     return serialize(db.health_metrics.find_one({"user_id": uid, "date": doc["date"]}))
 
 @router.get("/metrics", response_model=List[dict])
-def get_metrics(current_user=Depends(get_current_user)):
-    return [serialize(d) for d in db.health_metrics.find({"user_id": user_id(current_user)}).sort("date", -1)]
+def get_metrics(limit: int = 50, skip: int = 0, days: int = 0, current_user=Depends(get_current_user)):
+    query = {"user_id": user_id(current_user)}
+    if days > 0:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["date"] = {"$gte": since}
+    return [serialize(d) for d in db.health_metrics.find(query).sort("date", -1).skip(skip).limit(limit)]
 
 # FIX: dedicated today shortcut so the frontend doesn't load full history just for today's water
 @router.get("/metrics/today", response_model=dict)
@@ -204,8 +220,12 @@ def create_meal(payload: MealLogModel, current_user=Depends(get_current_user)):
     return serialize(doc)
 
 @router.get("/meals", response_model=List[dict])
-def get_meals(current_user=Depends(get_current_user)):
-    return [serialize(d) for d in db.meal_logs.find({"user_id": user_id(current_user)}).sort("date", -1)]
+def get_meals(limit: int = 50, skip: int = 0, days: int = 0, current_user=Depends(get_current_user)):
+    query = {"user_id": user_id(current_user)}
+    if days > 0:
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+        query["date"] = {"$gte": since}
+    return [serialize(d) for d in db.meal_logs.find(query).sort("date", -1).skip(skip).limit(limit)]
 
 @router.put("/meals/{meal_id}", response_model=dict)
 def update_meal(meal_id: str, payload: MealLogModel, current_user=Depends(get_current_user)):

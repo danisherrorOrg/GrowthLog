@@ -117,11 +117,11 @@ export default function Books() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Book Title</label>
-                  <input type="text" className="form-input" placeholder="e.g. Meditations" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} required />
+                  <input maxLength={200} type="text" className="form-input" placeholder="e.g. Meditations" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} required />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Author</label>
-                  <input type="text" className="form-input" placeholder="e.g. Marcus Aurelius" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} required />
+                  <input maxLength={200} type="text" className="form-input" placeholder="e.g. Marcus Aurelius" value={newBook.author} onChange={e => setNewBook({...newBook, author: e.target.value})} required />
                 </div>
               </div>
               <div className="grid-2">
@@ -135,7 +135,7 @@ export default function Books() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Cover Emoji</label>
-                  <input type="text" className="form-input" placeholder="e.g. 🏛️" value={newBook.cover_emoji} onChange={e => setNewBook({...newBook, cover_emoji: e.target.value})} />
+                  <input maxLength={200} type="text" className="form-input" placeholder="e.g. 🏛️" value={newBook.cover_emoji} onChange={e => setNewBook({...newBook, cover_emoji: e.target.value})} />
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>

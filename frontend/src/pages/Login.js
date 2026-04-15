@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errors';
 
 const DIMENSIONS = [
   { icon: '🧠', title: 'Mind', desc: 'Intellectual growth, learning, and mental clarity.', color: 'var(--sage)' },
@@ -44,7 +45,7 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Login failed');
+      toast.error(getErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }

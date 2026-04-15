@@ -186,11 +186,11 @@ export default function BookDetail() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">Title</label>
-                  <input className="form-input" value={basicForm.title} onChange={e => setBasicForm({...basicForm, title: e.target.value})} />
+                  <input maxLength={200} className="form-input" value={basicForm.title} onChange={e => setBasicForm({...basicForm, title: e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Author</label>
-                  <input className="form-input" value={basicForm.author} onChange={e => setBasicForm({...basicForm, author: e.target.value})} />
+                  <input maxLength={200} className="form-input" value={basicForm.author} onChange={e => setBasicForm({...basicForm, author: e.target.value})} />
                 </div>
               </div>
               <div className="grid-3">
@@ -204,22 +204,22 @@ export default function BookDetail() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Rating (1-10)</label>
-                  <input type="number" className="form-input" min={0} max={10} value={basicForm.rating} onChange={e => setBasicForm({...basicForm, rating: +e.target.value})} />
+                  <input maxLength={200} type="number" className="form-input" min={0} max={10} value={basicForm.rating} onChange={e => setBasicForm({...basicForm, rating: +e.target.value})} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Progress ({basicForm.progress_percentage}%)</label>
-                  <input type="range" className="rating-slider" min={0} max={100} value={basicForm.progress_percentage} 
+                  <input maxLength={200} type="range" className="rating-slider" min={0} max={100} value={basicForm.progress_percentage} 
                     onChange={e => setBasicForm({...basicForm, progress_percentage: +e.target.value})}
                     style={{ '--val': `${basicForm.progress_percentage}%`, width: '100%' }} />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Location / Link</label>
-                <input className="form-input" placeholder="Physical shelf or URL..." value={basicForm.location} onChange={e => setBasicForm({...basicForm, location: e.target.value})} />
+                <input maxLength={200} className="form-input" placeholder="Physical shelf or URL..." value={basicForm.location} onChange={e => setBasicForm({...basicForm, location: e.target.value})} />
               </div>
               <div className="form-group">
                 <label className="form-label">Description</label>
-                <textarea className="form-textarea" value={basicForm.description} onChange={e => setBasicForm({...basicForm, description: e.target.value})} placeholder="What is this book about?" style={{ minHeight: 120 }} />
+                <textarea maxLength={2000} className="form-textarea" value={basicForm.description} onChange={e => setBasicForm({...basicForm, description: e.target.value})} placeholder="What is this book about?" style={{ minHeight: 120 }} />
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
@@ -400,15 +400,15 @@ export default function BookDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">Chapter / Section</label>
-              <input className="form-input" value={wisdomForm.chapter} onChange={e => setWisdomForm({...wisdomForm, chapter: e.target.value})} placeholder="e.g. Chapter 1: The Beginning" />
+              <input maxLength={200} className="form-input" value={wisdomForm.chapter} onChange={e => setWisdomForm({...wisdomForm, chapter: e.target.value})} placeholder="e.g. Chapter 1: The Beginning" />
             </div>
             <div className="form-group">
               <label className="form-label">What did you learn?</label>
-              <textarea className="form-textarea" value={wisdomForm.content} onChange={e => setWisdomForm({...wisdomForm, content: e.target.value})} placeholder="Core insights from this section..." />
+              <textarea maxLength={2000} className="form-textarea" value={wisdomForm.content} onChange={e => setWisdomForm({...wisdomForm, content: e.target.value})} placeholder="Core insights from this section..." />
             </div>
             <div className="form-group">
               <label className="form-label">Personal Thoughts (Optional)</label>
-              <textarea className="form-textarea" value={wisdomForm.thoughts} onChange={e => setWisdomForm({...wisdomForm, thoughts: e.target.value})} placeholder="How does this apply to you?" style={{ minHeight: 80 }} />
+              <textarea maxLength={2000} className="form-textarea" value={wisdomForm.thoughts} onChange={e => setWisdomForm({...wisdomForm, thoughts: e.target.value})} placeholder="How does this apply to you?" style={{ minHeight: 80 }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setShowWisdomModal(false)} style={{ flex: 1 }}>Cancel</button>
@@ -428,11 +428,11 @@ export default function BookDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">Page Number / Reference</label>
-              <input className="form-input" value={bookmarkForm.page} onChange={e => setBookmarkForm({...bookmarkForm, page: e.target.value})} placeholder="e.g. 142" />
+              <input maxLength={200} className="form-input" value={bookmarkForm.page} onChange={e => setBookmarkForm({...bookmarkForm, page: e.target.value})} placeholder="e.g. 142" />
             </div>
             <div className="form-group">
               <label className="form-label">Quick Note</label>
-              <textarea className="form-textarea" value={bookmarkForm.note} onChange={e => setBookmarkForm({...bookmarkForm, note: e.target.value})} placeholder="What's on this page?" style={{ minHeight: 80 }} />
+              <textarea maxLength={2000} className="form-textarea" value={bookmarkForm.note} onChange={e => setBookmarkForm({...bookmarkForm, note: e.target.value})} placeholder="What's on this page?" style={{ minHeight: 80 }} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setShowBookmarkModal(false)} style={{ flex: 1 }}>Cancel</button>

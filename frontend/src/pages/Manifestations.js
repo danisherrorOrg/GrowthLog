@@ -306,14 +306,14 @@ export default function Manifestations() {
             </div>
             <div className="form-group">
               <label className="form-label">Your Vision</label>
-              <textarea className="form-textarea" value={form.vision} onChange={(e) => setForm({ ...form, vision: e.target.value })}
+              <textarea maxLength={2000} className="form-textarea" value={form.vision} onChange={(e) => setForm({ ...form, vision: e.target.value })}
                 placeholder="In 30 days, I am someone who shows up consistently, feels emotionally grounded..."
                 style={{ minHeight: 140 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Notes (optional)</label>
-              <input className="form-input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              <input maxLength={200} className="form-input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 placeholder="Why this vision matters to you..." />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
@@ -328,7 +328,7 @@ export default function Manifestations() {
                 </button>
               </div>
               {form.use_custom_date ? (
-                <input type="date" className="form-input" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })}
+                <input maxLength={200} type="date" className="form-input" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })}
                   min={new Date().toISOString().split('T')[0]} />
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -360,16 +360,16 @@ export default function Manifestations() {
             </div>
             <div className="form-group">
               <label className="form-label">Your Vision</label>
-              <textarea className="form-textarea" value={editForm.vision} onChange={(e) => setEditForm({ ...editForm, vision: e.target.value })} style={{ minHeight: 140 }} />
+              <textarea maxLength={2000} className="form-textarea" value={editForm.vision} onChange={(e) => setEditForm({ ...editForm, vision: e.target.value })} style={{ minHeight: 140 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Date</label>
-              <input type="date" className="form-input" value={editForm.target_date} onChange={(e) => setEditForm({ ...editForm, target_date: e.target.value })} />
+              <input maxLength={200} type="date" className="form-input" value={editForm.target_date} onChange={(e) => setEditForm({ ...editForm, target_date: e.target.value })} />
             </div>
             <div className="form-group">
               <label className="form-label">Notes</label>
-              <input className="form-input" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Why this vision matters..." />
+              <input maxLength={200} className="form-input" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Why this vision matters..." />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
@@ -408,14 +408,14 @@ export default function Manifestations() {
                 </button>
               </div>
               {progressForm.type === 'custom' && (
-                <input className="form-input" value={progressForm.customType}
+                <input maxLength={200} className="form-input" value={progressForm.customType}
                   onChange={e => setProgressForm({ ...progressForm, customType: e.target.value })}
                   placeholder="Name your custom type..." />
               )}
             </div>
             <div className="form-group">
               <label className="form-label">What happened?</label>
-              <textarea className="form-textarea" value={progressForm.text} onChange={(e) => setProgressForm({ ...progressForm, text: e.target.value })}
+              <textarea maxLength={2000} className="form-textarea" value={progressForm.text} onChange={(e) => setProgressForm({ ...progressForm, text: e.target.value })}
                 placeholder={progressForm.type === 'improvement' ? 'What got better or what did you improve...' : progressForm.type === 'learning' ? 'What insight or lesson did you discover...' : progressForm.type === 'milestone' ? 'What milestone did you hit...' : progressForm.type === 'challenge' ? 'What challenge are you facing...' : 'Describe what happened...'}
                 style={{ minHeight: 120 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
@@ -446,7 +446,7 @@ export default function Manifestations() {
             </div>
             <div className="form-group">
               <label className="form-label">How close did you get? What changed?</label>
-              <textarea className="form-textarea" value={reflection} onChange={(e) => setReflection(e.target.value)}
+              <textarea maxLength={2000} className="form-textarea" value={reflection} onChange={(e) => setReflection(e.target.value)}
                 placeholder="Looking back at who I said I'd become vs who I actually became..." style={{ minHeight: 140 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>

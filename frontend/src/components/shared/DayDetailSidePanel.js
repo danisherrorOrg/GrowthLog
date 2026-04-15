@@ -108,7 +108,7 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                         QUICK REFLECTION: {quickAdd.category?.name.toUpperCase() || 'GENERAL'}
                     </span>
                 </div>
-                <textarea 
+                <textarea maxLength={2000} 
                     placeholder={`What happened with this ${quickAdd.type.split('_')[0]}? Capture a reflection...`}
                     value={reflectionText}
                     onChange={(e) => setReflectionText(e.target.value)}

@@ -66,7 +66,7 @@ function TimeEstimateInput({ value, onChange, label = 'Estimated Time', compact 
           Custom
         </button>
         {useCustom && (
-          <input type="number" className="form-input" value={custom}
+          <input maxLength={200} type="number" className="form-input" value={custom}
             onChange={e => { setCustom(e.target.value); onChange(e.target.value ? parseInt(e.target.value) : null); }}
             placeholder="mins" min={1} max={9999}
             style={{ width: 72, fontSize: 12, padding: '4px 8px' }} />
@@ -503,7 +503,7 @@ export default function Todos() {
 
             {/* Search */}
             <div style={{ position: 'relative' }}>
-              <input className="form-input" value={search} onChange={e => setSearch(e.target.value)}
+              <input maxLength={200} className="form-input" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search tasks..."
                 style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', minWidth: 180 }} />
               <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, opacity: 0.35 }}>🔍</span>
@@ -563,7 +563,7 @@ export default function Todos() {
                 </div>
                 <div>
                   <label className="form-label" style={{ fontSize: 10 }}>Due Date (optional)</label>
-                  <input type="date" className="form-input" value={newTodo.due_date}
+                  <input maxLength={200} type="date" className="form-input" value={newTodo.due_date}
                     onChange={e => setNewTodo({ ...newTodo, due_date: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     style={{ fontSize: 13 }} />
@@ -703,11 +703,11 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
     return (
       <div className="card card-sm" style={{ border: `2px solid var(--sage)`, marginBottom: 8 }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <input type="text" className="form-input"
+          <input maxLength={200} type="text" className="form-input"
             value={editForm.title}
             onChange={e => setEditForm({ ...editForm, title: e.target.value })}
             autoFocus style={{ fontSize: 15, fontWeight: 500 }} />
-          <textarea className="form-textarea"
+          <textarea maxLength={2000} className="form-textarea"
             value={editForm.description}
             onChange={e => setEditForm({ ...editForm, description: e.target.value })}
             placeholder="Description (optional)..."
@@ -725,7 +725,7 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
             </div>
             <div>
               <label className="form-label" style={{ fontSize: 10 }}>Due Date</label>
-              <input type="date" className="form-input" value={editForm.due_date}
+              <input maxLength={200} type="date" className="form-input" value={editForm.due_date}
                 onChange={e => setEditForm({ ...editForm, due_date: e.target.value })}
                 style={{ fontSize: 12 }} />
             </div>

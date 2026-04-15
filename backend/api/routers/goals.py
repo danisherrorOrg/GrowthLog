@@ -4,7 +4,7 @@ from pymongo import ASCENDING, DESCENDING
 from typing import Optional
 
 from core.database import db
-from utils.cache import utcnow, cache_invalidate
+from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user, validate_user_owns_category
 from models.schemas import (
@@ -54,8 +54,8 @@ def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
     from utils.activity import log_activity
     log_activity(uid, "create", "goal", goal["id"], f"Created goal: {data.title}")
     del goal["_id"]
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return goal
 
 
@@ -74,8 +74,8 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "goal", goal_id, "Updated goal details")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 @router.delete("/{goal_id}")
@@ -86,8 +86,8 @@ def delete_goal(goal_id: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "goal", goal_id, "Deleted a goal")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 
@@ -111,8 +111,8 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "goal", goal_id, "Added goal reflection")
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True}
 
 
@@ -127,7 +127,7 @@ def add_goal_reflection(goal_id: str, data: GoalReflectionAddModel, current_user
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "create", "goal_reflection", goal_id, "Added a reflection to a goal")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.delete("/{goal_id}/reflections/{reflection_id}")
@@ -141,7 +141,7 @@ def delete_goal_reflection(goal_id: str, reflection_id: str, current_user=Depend
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "goal_reflection", goal_id, "Deleted a goal reflection")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.put("/{goal_id}/reflections/{reflection_id}")
@@ -155,7 +155,7 @@ def update_goal_reflection(goal_id: str, reflection_id: str, data: NoteModel, cu
         raise HTTPException(status_code=404, detail="Goal or reflection not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "goal_reflection", goal_id, "Updated a goal reflection")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 
@@ -208,7 +208,7 @@ def add_micro_goal(goal_id: str, data: MicroGoalModel, current_user=Depends(get_
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "create", "micro_goal", goal_id, "Added a micro-goal")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True, "id": mg_id}
 
 @router.put("/{goal_id}/micro-goals/{mg_id}")
@@ -222,7 +222,7 @@ def update_micro_goal(goal_id: str, mg_id: str, data: MicroGoalModel, current_us
         raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "micro_goal", goal_id, "Updated a micro-goal")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.put("/{goal_id}/micro-goals/{mg_id}/toggle")
@@ -250,7 +250,7 @@ def toggle_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
         raise HTTPException(status_code=404, detail="Goal or micro-goal not found")
     from utils.activity import log_activity
     log_activity(uid, "update", "micro_goal", goal_id, "Toggled micro-goal completion status")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.delete("/{goal_id}/micro-goals/{mg_id}")
@@ -264,5 +264,5 @@ def delete_micro_goal(goal_id: str, mg_id: str, current_user=Depends(get_current
         raise HTTPException(status_code=404, detail="Goal not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "micro_goal", goal_id, "Deleted a micro-goal")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}

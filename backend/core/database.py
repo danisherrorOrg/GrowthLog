@@ -1,7 +1,12 @@
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from core.config import MONGO_URL, DB_NAME
 
-client = MongoClient(MONGO_URL)
+client = MongoClient(
+    MONGO_URL,
+    maxPoolSize=20,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000
+)
 db = client[DB_NAME]
 
 def create_indexes():
@@ -96,5 +101,7 @@ def create_indexes():
         print(f"WARNING: Could not create unique index on users.email: {e}")
     db.activity_logs.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
 
-    # ── Cache ─────────────────────────────────────────────────────────────────
+    # ── Cache & Sessions ──────────────────────────────────────────────────────
     db.server_cache.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)
+    db.server_cache.create_index("prefix")
+    db.jwt_blocklist.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)

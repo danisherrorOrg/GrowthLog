@@ -366,7 +366,7 @@ export default function Goals() {
               </div>
               {showCreateCat ? (
                 <div style={{ padding: '12px', background: 'var(--mist)', borderRadius: 10, marginTop: 4 }}>
-                  <input className="form-input" value={newCatForm.name} onChange={e => setNewCatForm({ ...newCatForm, name: e.target.value })}
+                  <input maxLength={200} className="form-input" value={newCatForm.name} onChange={e => setNewCatForm({ ...newCatForm, name: e.target.value })}
                     placeholder="Category name" style={{ marginBottom: 8 }} />
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
                     {CAT_ICONS.map(ic => (
@@ -393,16 +393,16 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label className="form-label">Goal Title</label>
-              <input className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="What do you want to achieve?" />
+              <input maxLength={200} className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="What do you want to achieve?" />
             </div>
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
-              <textarea className="form-textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 80 }} />
+              <textarea maxLength={2000} className="form-textarea" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What does success look like?" style={{ minHeight: 80 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
               <label className="form-label">Target Deadline</label>
-              <input type="date" className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+              <input maxLength={200} type="date" className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancel</button>
@@ -427,7 +427,7 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label className="form-label">What's on your mind about this goal?</label>
-              <textarea className="form-textarea" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)}
+              <textarea maxLength={2000} className="form-textarea" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)}
                 placeholder="Progress made, obstacles, insights, next steps..." style={{ minHeight: 120 }} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
@@ -467,13 +467,13 @@ export default function Goals() {
               <label className="form-label">
                 {reflectForm.status === 'completed' ? 'What did you achieve or learn?' : reflectForm.status === 'extended' ? 'Why do you need more time?' : 'Why are you moving on?'}
               </label>
-              <textarea className="form-textarea" value={reflectForm.reflection} onChange={(e) => setReflectForm({ ...reflectForm, reflection: e.target.value })} placeholder="Be honest with yourself..." />
+              <textarea maxLength={2000} className="form-textarea" value={reflectForm.reflection} onChange={(e) => setReflectForm({ ...reflectForm, reflection: e.target.value })} placeholder="Be honest with yourself..." />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">
                 <label className="form-label">New Deadline</label>
-                <input type="date" className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
+                <input maxLength={200} type="date" className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}
             <div style={{ display: 'flex', gap: 12 }}>

@@ -229,24 +229,24 @@ export default function SleepTab() {
             </div>
 
             <div className="form-group"><label className="form-label">Date (Morning of)</label>
-              <input type="date" className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+              <input maxLength={200} type="date" className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
             </div>
 
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group"><label className="form-label">Bedtime</label>
-                <input type="time" className="form-input" value={form.bedtime} onChange={e => setForm({ ...form, bedtime: e.target.value })} />
+                <input maxLength={200} type="time" className="form-input" value={form.bedtime} onChange={e => setForm({ ...form, bedtime: e.target.value })} />
               </div>
               <div className="form-group"><label className="form-label">Wake Time</label>
-                <input type="time" className="form-input" value={form.wake_time} onChange={e => setForm({ ...form, wake_time: e.target.value })} />
+                <input maxLength={200} type="time" className="form-input" value={form.wake_time} onChange={e => setForm({ ...form, wake_time: e.target.value })} />
               </div>
             </div>
 
             <div className="form-group"><label className="form-label">Quality (1-10)</label>
-              <input type="number" min="1" max="10" className="form-input" value={form.quality} onChange={e => setForm({ ...form, quality: Number(e.target.value) })} />
+              <input maxLength={200} type="number" min="1" max="10" className="form-input" value={form.quality} onChange={e => setForm({ ...form, quality: Number(e.target.value) })} />
             </div>
 
             <div className="form-group"><label className="form-label">Notes</label>
-              <textarea className="form-textarea" placeholder="Dreams? Interruptions?" rows="2" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+              <textarea maxLength={2000} className="form-textarea" placeholder="Dreams? Interruptions?" rows="2" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
 
             <div style={{ display: 'flex', gap: 12, borderTop: '1px solid rgba(13,13,13,0.1)', paddingTop: 16, marginTop: 10 }}>

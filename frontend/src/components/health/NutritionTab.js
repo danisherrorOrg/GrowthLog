@@ -328,9 +328,9 @@ export default function NutritionTab() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowMetricsModal(false)}>
           <div className="modal" style={{ maxWidth: 400 }}>
             <div className="modal-header"><h3>Daily Overview</h3><button className="modal-close" onClick={() => setShowMetricsModal(false)}>✕</button></div>
-            <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={metricsForm.date} onChange={e => setMetricsForm({ ...metricsForm, date: e.target.value })} /></div>
-            <div className="form-group"><label className="form-label">Water Intake (ml)</label><input type="number" step="100" className="form-input" value={metricsForm.water_ml} onChange={e => setMetricsForm({ ...metricsForm, water_ml: Number(e.target.value) })} /></div>
-            <div className="form-group"><label className="form-label">Nutrition Quality (1-10)</label><input type="number" min="1" max="10" className="form-input" value={metricsForm.nutrition_quality} onChange={e => setMetricsForm({ ...metricsForm, nutrition_quality: Number(e.target.value) })} /></div>
+            <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={metricsForm.date} onChange={e => setMetricsForm({ ...metricsForm, date: e.target.value })} /></div>
+            <div className="form-group"><label className="form-label">Water Intake (ml)</label><input maxLength={200} type="number" step="100" className="form-input" value={metricsForm.water_ml} onChange={e => setMetricsForm({ ...metricsForm, water_ml: Number(e.target.value) })} /></div>
+            <div className="form-group"><label className="form-label">Nutrition Quality (1-10)</label><input maxLength={200} type="number" min="1" max="10" className="form-input" value={metricsForm.nutrition_quality} onChange={e => setMetricsForm({ ...metricsForm, nutrition_quality: Number(e.target.value) })} /></div>
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowMetricsModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex: 1 }} onClick={saveMetrics}>Save</button></div>
           </div>
         </div>
@@ -343,7 +343,7 @@ export default function NutritionTab() {
             <div className="modal-header"><h3>{editingMealId ? '✎ Edit Meal' : 'Log Meal'}</h3><button className="modal-close" onClick={() => setShowMealModal(false)}>✕</button></div>
 
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={mealForm.date} onChange={e => setMealForm({ ...mealForm, date: e.target.value })} /></div>
+              <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={mealForm.date} onChange={e => setMealForm({ ...mealForm, date: e.target.value })} /></div>
               <div className="form-group"><label className="form-label">Meal Type</label>
                 <select className="form-input" value={mealForm.meal_type} onChange={e => setMealForm({ ...mealForm, meal_type: e.target.value })}>
                   {MEAL_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -351,15 +351,15 @@ export default function NutritionTab() {
               </div>
             </div>
 
-            <div className="form-group"><label className="form-label">Total Calories</label><input type="number" className="form-input" value={mealForm.calories} onChange={e => setMealForm({ ...mealForm, calories: Number(e.target.value) })} /></div>
+            <div className="form-group"><label className="form-label">Total Calories</label><input maxLength={200} type="number" className="form-input" value={mealForm.calories} onChange={e => setMealForm({ ...mealForm, calories: Number(e.target.value) })} /></div>
 
             <div className="grid-3" style={{ gap: 12 }}>
-              <div className="form-group"><label className="form-label">Protein (g)</label><input type="number" className="form-input" value={mealForm.protein_g} onChange={e => setMealForm({ ...mealForm, protein_g: Number(e.target.value) })} /></div>
-              <div className="form-group"><label className="form-label">Carbs (g)</label><input type="number" className="form-input" value={mealForm.carbs_g} onChange={e => setMealForm({ ...mealForm, carbs_g: Number(e.target.value) })} /></div>
-              <div className="form-group"><label className="form-label">Fat (g)</label><input type="number" className="form-input" value={mealForm.fat_g} onChange={e => setMealForm({ ...mealForm, fat_g: Number(e.target.value) })} /></div>
+              <div className="form-group"><label className="form-label">Protein (g)</label><input maxLength={200} type="number" className="form-input" value={mealForm.protein_g} onChange={e => setMealForm({ ...mealForm, protein_g: Number(e.target.value) })} /></div>
+              <div className="form-group"><label className="form-label">Carbs (g)</label><input maxLength={200} type="number" className="form-input" value={mealForm.carbs_g} onChange={e => setMealForm({ ...mealForm, carbs_g: Number(e.target.value) })} /></div>
+              <div className="form-group"><label className="form-label">Fat (g)</label><input maxLength={200} type="number" className="form-input" value={mealForm.fat_g} onChange={e => setMealForm({ ...mealForm, fat_g: Number(e.target.value) })} /></div>
             </div>
 
-            <div className="form-group"><label className="form-label">What did you eat?</label><input type="text" className="form-input" value={mealForm.notes} onChange={e => setMealForm({ ...mealForm, notes: e.target.value })} placeholder="Chicken, Rice..." /></div>
+            <div className="form-group"><label className="form-label">What did you eat?</label><input maxLength={200} type="text" className="form-input" value={mealForm.notes} onChange={e => setMealForm({ ...mealForm, notes: e.target.value })} placeholder="Chicken, Rice..." /></div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setShowMealModal(false)}>Cancel</button><button className="btn btn-primary" style={{ flex: 1 }} onClick={saveMeal} disabled={saving}>{saving ? 'Saving...' : 'Save Meal'}</button></div>
           </div>

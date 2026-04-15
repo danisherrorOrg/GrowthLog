@@ -146,10 +146,10 @@ export default function CoursesTab() {
       {/* Courses Modal */}
       {crModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCrModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
         <div className="modal-header"><h3>{crEdit ? 'Edit Course' : 'Add Course'}</h3><button className="modal-close" onClick={() => setCrModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Course / Book title</label><input className="form-input" value={crForm.title} onChange={e => setCrForm({ ...crForm, title: e.target.value })} placeholder="e.g. The Psychology of Money…" /></div>
+        <div className="form-group"><label className="form-label">Course / Book title</label><input maxLength={200} className="form-input" value={crForm.title} onChange={e => setCrForm({ ...crForm, title: e.target.value })} placeholder="e.g. The Psychology of Money…" /></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Provider</label><input className="form-input" value={crForm.provider} onChange={e => setCrForm({ ...crForm, provider: e.target.value })} placeholder="Udemy / YouTube / Book…" /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours invested</label><input type="number" className="form-input" value={crForm.hours_spent} onChange={e => setCrForm({ ...crForm, hours_spent: e.target.value })} placeholder="e.g. 8" min="0" step="0.5" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Provider</label><input maxLength={200} className="form-input" value={crForm.provider} onChange={e => setCrForm({ ...crForm, provider: e.target.value })} placeholder="Udemy / YouTube / Book…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours invested</label><input maxLength={200} type="number" className="form-input" value={crForm.hours_spent} onChange={e => setCrForm({ ...crForm, hours_spent: e.target.value })} placeholder="e.g. 8" min="0" step="0.5" /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Status</label>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -162,10 +162,10 @@ export default function CoursesTab() {
           </div>
         </div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started</label><input type="date" className="form-input" value={crForm.started_at} onChange={e => setCrForm({ ...crForm, started_at: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed</label><input type="date" className="form-input" value={crForm.completed_at} onChange={e => setCrForm({ ...crForm, completed_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started</label><input maxLength={200} type="date" className="form-input" value={crForm.started_at} onChange={e => setCrForm({ ...crForm, started_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed</label><input maxLength={200} type="date" className="form-input" value={crForm.completed_at} onChange={e => setCrForm({ ...crForm, completed_at: e.target.value })} /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What did you learn?</label><textarea className="form-textarea" value={crForm.what_learned} onChange={e => setCrForm({ ...crForm, what_learned: e.target.value })} placeholder="Key insights, frameworks, skills gained…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What did you learn?</label><textarea maxLength={2000} className="form-textarea" value={crForm.what_learned} onChange={e => setCrForm({ ...crForm, what_learned: e.target.value })} placeholder="Key insights, frameworks, skills gained…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Add Course'}</button></div>
       </div></div>)}
 

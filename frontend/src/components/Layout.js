@@ -1,6 +1,9 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
+import API from '../utils/api';
+import toast from 'react-hot-toast';
+import { getErrorMessage } from '../utils/errors';
 
 const NAV_GROUPS = [
   {
@@ -73,6 +76,19 @@ export default function Layout() {
     return window.innerWidth < MOBILE_BREAKPOINT;
   });
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+
+  const handleVerifyEmail = async () => {
+    setVerifying(true);
+    try {
+      await API.post('/auth/verify/send');
+      toast.success('Verification link sent! Check your email.');
+    } catch (e) {
+      toast.error(getErrorMessage(e, 'Failed to send verification link.'));
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   // Refresh user data (streak, etc.) on every page navigation
   useEffect(() => {
@@ -113,6 +129,11 @@ export default function Layout() {
           if (closeBtn) closeBtn.click();
         }
         setShowShortcutHelp(false);
+        return;
+      }
+
+      // Check if any modal is open. Bail out early if so.
+      if (document.querySelector('.modal-overlay') || document.querySelector('[role="dialog"]')) {
         return;
       }
 
@@ -263,6 +284,34 @@ export default function Layout() {
       </aside>
 
       <main className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
+        {!user?.is_verified && (
+          <div style={{
+            margin: '24px 32px 0 32px',
+            padding: '16px 20px',
+            background: 'var(--rust)',
+            color: 'white',
+            borderRadius: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 12px rgba(181, 91, 57, 0.2)'
+          }}>
+            <div style={{ flex: 1, marginRight: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>Verify your email address ✦</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                We've sent a link to <strong>{user?.email}</strong>. Please verify your account to secure your growth data.
+              </div>
+            </div>
+            <button
+              className="btn btn-sm"
+              style={{ background: 'white', color: 'var(--rust)', border: 'none', fontWeight: 600, whiteSpace: 'nowrap' }}
+              onClick={handleVerifyEmail}
+              disabled={verifying}
+            >
+              {verifying ? 'Sending...' : 'Resend Link'}
+            </button>
+          </div>
+        )}
         <Outlet />
       </main>
 

@@ -428,8 +428,8 @@ export default function LifeCanvas() {
       {/* Project Ideas */}
       {idModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setIdModal(false)}><div className="modal">
         <div className="modal-header"><h3>{idEdit ? 'Edit Idea' : 'Add Project Idea'}</h3><button className="modal-close" onClick={() => setIdModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Title</label><input className="form-input" value={idForm.title} onChange={e => setIdForm({ ...idForm, title: e.target.value })} placeholder="e.g. Build an automatic plant waterer" /></div>
-        <div className="form-group"><label className="form-label">Description (optional)</label><textarea className="form-textarea" value={idForm.description} onChange={e => setIdForm({ ...idForm, description: e.target.value })} placeholder="What involves? Tech stack? Tools?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Title</label><input maxLength={200} className="form-input" value={idForm.title} onChange={e => setIdForm({ ...idForm, title: e.target.value })} placeholder="e.g. Build an automatic plant waterer" /></div>
+        <div className="form-group"><label className="form-label">Description (optional)</label><textarea maxLength={2000} className="form-textarea" value={idForm.description} onChange={e => setIdForm({ ...idForm, description: e.target.value })} placeholder="What involves? Tech stack? Tools?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">Status</label>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             {Object.entries(IDEA_STATUS).map(([key, cfg]) => (
@@ -440,7 +440,7 @@ export default function LifeCanvas() {
             ))}
           </div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Link (optional)</label><input className="form-input" value={idForm.link} onChange={e => setIdForm({ ...idForm, link: e.target.value })} placeholder="Repo, Pinterest board, etc." /></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Link (optional)</label><input maxLength={200} className="form-input" value={idForm.link} onChange={e => setIdForm({ ...idForm, link: e.target.value })} placeholder="Repo, Pinterest board, etc." /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setIdModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleIdSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : idEdit ? 'Save Changes' : 'Add Idea'}</button></div>
       </div></div>)}
 
@@ -448,20 +448,20 @@ export default function LifeCanvas() {
       {crModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCrModal(false)}><div className="modal">
         <div className="modal-header"><h3>{crEdit ? 'Edit Session' : 'Log Creative Session'}</h3><button className="modal-close" onClick={() => setCrModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={crForm.date} onChange={e => setCrForm({ ...crForm, date: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours spent</label><input type="number" className="form-input" value={crForm.hours} onChange={e => setCrForm({ ...crForm, hours: e.target.value })} min="0.1" step="0.25" placeholder="e.g. 2" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={crForm.date} onChange={e => setCrForm({ ...crForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours spent</label><input maxLength={200} type="number" className="form-input" value={crForm.hours} onChange={e => setCrForm({ ...crForm, hours: e.target.value })} min="0.1" step="0.25" placeholder="e.g. 2" /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Project / Focus</label><input className="form-input" value={crForm.project_name} onChange={e => setCrForm({ ...crForm, project_name: e.target.value })} placeholder="e.g. Painting, Coding, Writing…" /></div>
-        <div className="form-group"><label className="form-label">Output & Notes (optional)</label><textarea className="form-textarea" value={crForm.output_notes} onChange={e => setCrForm({ ...crForm, output_notes: e.target.value })} placeholder="What did you make or learn?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Project / Focus</label><input maxLength={200} className="form-input" value={crForm.project_name} onChange={e => setCrForm({ ...crForm, project_name: e.target.value })} placeholder="e.g. Painting, Coding, Writing…" /></div>
+        <div className="form-group"><label className="form-label">Output & Notes (optional)</label><textarea maxLength={2000} className="form-textarea" value={crForm.output_notes} onChange={e => setCrForm({ ...crForm, output_notes: e.target.value })} placeholder="What did you make or learn?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Log Session'}</button></div>
       </div></div>)}
 
       {/* Meaning Log */}
       {mnModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setMnModal(false)}><div className="modal">
         <div className="modal-header"><h3>{mnEdit ? 'Edit Event' : 'Log Meaningful Moment'}</h3><button className="modal-close" onClick={() => setMnModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={mnForm.date} onChange={e => setMnForm({ ...mnForm, date: e.target.value })} /></div>
-        <div className="form-group"><label className="form-label">The Experience</label><textarea className="form-textarea" value={mnForm.experience} onChange={e => setMnForm({ ...mnForm, experience: e.target.value })} placeholder="What happened that felt so deep?" style={{ minHeight: 90 }} /></div>
-        <div className="form-group"><label className="form-label">Why was it meaningful? (optional)</label><textarea className="form-textarea" value={mnForm.why_meaningful} onChange={e => setMnForm({ ...mnForm, why_meaningful: e.target.value })} placeholder="What struck you about it?" style={{ minHeight: 80 }} /></div>
+        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={mnForm.date} onChange={e => setMnForm({ ...mnForm, date: e.target.value })} /></div>
+        <div className="form-group"><label className="form-label">The Experience</label><textarea maxLength={2000} className="form-textarea" value={mnForm.experience} onChange={e => setMnForm({ ...mnForm, experience: e.target.value })} placeholder="What happened that felt so deep?" style={{ minHeight: 90 }} /></div>
+        <div className="form-group"><label className="form-label">Why was it meaningful? (optional)</label><textarea maxLength={2000} className="form-textarea" value={mnForm.why_meaningful} onChange={e => setMnForm({ ...mnForm, why_meaningful: e.target.value })} placeholder="What struck you about it?" style={{ minHeight: 80 }} /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setMnModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleMnSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : mnEdit ? 'Save Changes' : 'Log Moment'}</button></div>
       </div></div>)}
 
@@ -469,19 +469,19 @@ export default function LifeCanvas() {
       {trModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setTrModal(false)}><div className="modal">
         <div className="modal-header"><h3>{trEdit ? 'Edit Trip' : 'Log Travel'}</h3><button className="modal-close" onClick={() => setTrModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={trForm.date} onChange={e => setTrForm({ ...trForm, date: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Destination</label><input className="form-input" value={trForm.destination} onChange={e => setTrForm({ ...trForm, destination: e.target.value })} placeholder="Tokyo, Paris…" /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={trForm.date} onChange={e => setTrForm({ ...trForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Destination</label><input maxLength={200} className="form-input" value={trForm.destination} onChange={e => setTrForm({ ...trForm, destination: e.target.value })} placeholder="Tokyo, Paris…" /></div>
         </div>
-        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Core Memories (optional)</label><textarea className="form-textarea" value={trForm.memories} onChange={e => setTrForm({ ...trForm, memories: e.target.value })} placeholder="Highlight moments, food, people…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="form-group"><label className="form-label">Photos Link (optional)</label><input className="form-input" value={trForm.photos_link} onChange={e => setTrForm({ ...trForm, photos_link: e.target.value })} placeholder="Google Photos URL, etc." /></div>
+        <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Core Memories (optional)</label><textarea maxLength={2000} className="form-textarea" value={trForm.memories} onChange={e => setTrForm({ ...trForm, memories: e.target.value })} placeholder="Highlight moments, food, people…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Photos Link (optional)</label><input maxLength={200} className="form-input" value={trForm.photos_link} onChange={e => setTrForm({ ...trForm, photos_link: e.target.value })} placeholder="Google Photos URL, etc." /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setTrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleTrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : trEdit ? 'Save Changes' : 'Log Travel'}</button></div>
       </div></div>)}
 
       {/* Bucket List */}
       {blModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setBlModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
         <div className="modal-header"><h3>{blEdit ? 'Edit Goal' : 'Add to Bucket List'}</h3><button className="modal-close" onClick={() => setBlModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Goal / Dream</label><input className="form-input" value={blForm.title} onChange={e => setBlForm({ ...blForm, title: e.target.value })} placeholder="e.g. See the Northern Lights" /></div>
-        <div className="form-group"><label className="form-label">Why? / Details (optional)</label><textarea className="form-textarea" value={blForm.description} onChange={e => setBlForm({ ...blForm, description: e.target.value })} placeholder="What's the motivation? Who with?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Goal / Dream</label><input maxLength={200} className="form-input" value={blForm.title} onChange={e => setBlForm({ ...blForm, title: e.target.value })} placeholder="e.g. See the Northern Lights" /></div>
+        <div className="form-group"><label className="form-label">Why? / Details (optional)</label><textarea maxLength={2000} className="form-textarea" value={blForm.description} onChange={e => setBlForm({ ...blForm, description: e.target.value })} placeholder="What's the motivation? Who with?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">Status</label>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             {Object.entries(BUCKET_STATUS).map(([key, cfg]) => (
@@ -493,8 +493,8 @@ export default function LifeCanvas() {
           </div>
         </div>
         <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target Date (optional)</label><input type="date" className="form-input" value={blForm.target_date} onChange={e => setBlForm({ ...blForm, target_date: e.target.value })} /></div>
-          {blForm.status === 'done' && <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed On</label><input type="date" className="form-input" value={blForm.completed_date} onChange={e => setBlForm({ ...blForm, completed_date: e.target.value })} /></div>}
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target Date (optional)</label><input maxLength={200} type="date" className="form-input" value={blForm.target_date} onChange={e => setBlForm({ ...blForm, target_date: e.target.value })} /></div>
+          {blForm.status === 'done' && <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed On</label><input maxLength={200} type="date" className="form-input" value={blForm.completed_date} onChange={e => setBlForm({ ...blForm, completed_date: e.target.value })} /></div>}
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setBlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleBlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : blEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}

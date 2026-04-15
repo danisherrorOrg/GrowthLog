@@ -3,7 +3,7 @@ from bson import ObjectId
 from pymongo import DESCENDING
 
 from core.database import db
-from utils.cache import utcnow, cache_invalidate
+from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
 from models.schemas import SnapshotModel, SnapshotUpdateModel
@@ -43,7 +43,7 @@ def create_snapshot(data: SnapshotModel, current_user=Depends(get_current_user))
     from utils.activity import log_activity
     log_activity(str(current_user["_id"]), "create", "snapshot", item["id"], "Created a snapshot")
     del item["_id"]
-    cache_invalidate(f"stats:{str(current_user['_id'])}")
+    cache_invalidate_exact(f"stats:{str(current_user['_id'])}")
     return item
 
 @router.put("/{snap_id}")
@@ -57,8 +57,8 @@ def update_snapshot(snap_id: str, data: SnapshotUpdateModel, current_user=Depend
     uid = str(current_user["_id"])
     from utils.activity import log_activity
     log_activity(uid, "update", "snapshot", snap_id, "Updated a snapshot")
-    cache_invalidate(f"stats:{uid}")
-    cache_invalidate(f"dashboard:{uid}")
+    cache_invalidate_exact(f"stats:{uid}")
+    cache_invalidate_prefix(f"dashboard:{uid}:")
     return {"success": True}
 
 @router.delete("/{snap_id}")
@@ -68,5 +68,5 @@ def delete_snapshot(snap_id: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Not found")
     from utils.activity import log_activity
     log_activity(str(current_user["_id"]), "delete", "snapshot", snap_id, "Deleted a snapshot")
-    cache_invalidate(f"stats:{str(current_user['_id'])}")
+    cache_invalidate_exact(f"stats:{str(current_user['_id'])}")
     return {"success": True}

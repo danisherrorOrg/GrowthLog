@@ -70,10 +70,10 @@ function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color }) {
         {rows.map((row, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ fontSize: 13, fontWeight: 700, color, minWidth: 18, textAlign: 'center' }}>{i + 1}</span>
-            <input className="form-input" style={{ flex: 1 }} value={row[keyLabel]}
+            <input maxLength={200} className="form-input" style={{ flex: 1 }} value={row[keyLabel]}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], [keyLabel]: e.target.value }; setRows(r); }}
               placeholder={keyPlaceholder} />
-            <input className="form-input" type="number" style={{ width: 90 }} value={row.hours}
+            <input maxLength={200} className="form-input" type="number" style={{ width: 90 }} value={row.hours}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], hours: e.target.value }; setRows(r); }}
               placeholder="hrs" min="0.1" step="0.25" />
             {rows.length > 1 && (
@@ -602,19 +602,19 @@ export default function Insights() {
       {/* Anti-Goal */}
       {agModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setAgModal(false)}><div className="modal">
         <div className="modal-header"><h3>{agEdit ? 'Edit Anti-Goal' : 'New Anti-Goal'}</h3><button className="modal-close" onClick={() => setAgModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">What do you want to avoid or stop?</label><input className="form-input" value={agForm.text} onChange={e => setAgForm({ ...agForm, text: e.target.value })} placeholder="e.g. Mindless scrolling before bed…" /></div>
-        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea className="form-textarea" value={agForm.reason} onChange={e => setAgForm({ ...agForm, reason: e.target.value })} placeholder="What harm does it cause?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">What do you want to avoid or stop?</label><input maxLength={200} className="form-input" value={agForm.text} onChange={e => setAgForm({ ...agForm, text: e.target.value })} placeholder="e.g. Mindless scrolling before bed…" /></div>
+        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={agForm.reason} onChange={e => setAgForm({ ...agForm, reason: e.target.value })} placeholder="What harm does it cause?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setAgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleAgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : agEdit ? 'Save Changes' : 'Add Anti-Goal'}</button></div>
       </div></div>)}
 
       {/* Habit Graveyard */}
       {hgModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setHgModal(false)}><div className="modal">
         <div className="modal-header"><h3>{hgEdit ? 'Edit Entry' : 'Log to Graveyard'}</h3><button className="modal-close" onClick={() => setHgModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Habit name</label><input className="form-input" value={hgForm.habit} onChange={e => setHgForm({ ...hgForm, habit: e.target.value })} placeholder="e.g. Cold showers…" /></div>
-        <div className="form-group"><label className="form-label">Why did you abandon it?</label><textarea className="form-textarea" value={hgForm.reason} onChange={e => setHgForm({ ...hgForm, reason: e.target.value })} placeholder="What made it not stick?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Habit name</label><input maxLength={200} className="form-input" value={hgForm.habit} onChange={e => setHgForm({ ...hgForm, habit: e.target.value })} placeholder="e.g. Cold showers…" /></div>
+        <div className="form-group"><label className="form-label">Why did you abandon it?</label><textarea maxLength={2000} className="form-textarea" value={hgForm.reason} onChange={e => setHgForm({ ...hgForm, reason: e.target.value })} placeholder="What made it not stick?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input type="date" className="form-input" value={hgForm.started_at} onChange={e => setHgForm({ ...hgForm, started_at: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Abandoned (optional)</label><input type="date" className="form-input" value={hgForm.abandoned_at} onChange={e => setHgForm({ ...hgForm, abandoned_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" className="form-input" value={hgForm.started_at} onChange={e => setHgForm({ ...hgForm, started_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Abandoned (optional)</label><input maxLength={200} type="date" className="form-input" value={hgForm.abandoned_at} onChange={e => setHgForm({ ...hgForm, abandoned_at: e.target.value })} /></div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setHgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleHgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : hgEdit ? 'Save Changes' : 'Bury the Habit'}</button></div>
       </div></div>)}
@@ -628,16 +628,16 @@ export default function Insights() {
         {!teEditEntry && (
           <div className="form-group" style={{ marginBottom: 20 }}>
             <label className="form-label">Date</label>
-            <input type="date" className="form-input" value={teDate} onChange={e => setTeDate(e.target.value)} style={{ maxWidth: 200 }} />
+            <input maxLength={200} type="date" className="form-input" value={teDate} onChange={e => setTeDate(e.target.value)} style={{ maxWidth: 200 }} />
           </div>
         )}
         {teEditEntry ? (
           <>
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Category</label><input className="form-input" value={teEditForm.category} onChange={e => setTeEditForm({ ...teEditForm, category: e.target.value })} /></div>
-              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input type="number" className="form-input" value={teEditForm.hours} onChange={e => setTeEditForm({ ...teEditForm, hours: e.target.value })} min="0.1" step="0.25" /></div>
+              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Category</label><input maxLength={200} className="form-input" value={teEditForm.category} onChange={e => setTeEditForm({ ...teEditForm, category: e.target.value })} /></div>
+              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input maxLength={200} type="number" className="form-input" value={teEditForm.hours} onChange={e => setTeEditForm({ ...teEditForm, hours: e.target.value })} min="0.1" step="0.25" /></div>
             </div>
-            <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><input className="form-input" value={teEditForm.notes} onChange={e => setTeEditForm({ ...teEditForm, notes: e.target.value })} placeholder="Any detail?" /></div>
+            <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><input maxLength={200} className="form-input" value={teEditForm.notes} onChange={e => setTeEditForm({ ...teEditForm, notes: e.target.value })} placeholder="Any detail?" /></div>
           </>
         ) : (
           <>
@@ -660,16 +660,16 @@ export default function Insights() {
         {!stEditEntry && (
           <div className="form-group" style={{ marginBottom: 20 }}>
             <label className="form-label">Date</label>
-            <input type="date" className="form-input" value={stDate} onChange={e => setStDate(e.target.value)} style={{ maxWidth: 200 }} />
+            <input maxLength={200} type="date" className="form-input" value={stDate} onChange={e => setStDate(e.target.value)} style={{ maxWidth: 200 }} />
           </div>
         )}
         {stEditEntry ? (
           <>
             <div className="grid-2" style={{ gap: 12 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">App Category</label><input className="form-input" value={stEditForm.app_category} onChange={e => setStEditForm({ ...stEditForm, app_category: e.target.value })} /></div>
-              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input type="number" className="form-input" value={stEditForm.hours} onChange={e => setStEditForm({ ...stEditForm, hours: e.target.value })} min="0.1" step="0.25" /></div>
+              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">App Category</label><input maxLength={200} className="form-input" value={stEditForm.app_category} onChange={e => setStEditForm({ ...stEditForm, app_category: e.target.value })} /></div>
+              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input maxLength={200} type="number" className="form-input" value={stEditForm.hours} onChange={e => setStEditForm({ ...stEditForm, hours: e.target.value })} min="0.1" step="0.25" /></div>
             </div>
-            <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><input className="form-input" value={stEditForm.notes} onChange={e => setStEditForm({ ...stEditForm, notes: e.target.value })} placeholder="Any detail?" /></div>
+            <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><input maxLength={200} className="form-input" value={stEditForm.notes} onChange={e => setStEditForm({ ...stEditForm, notes: e.target.value })} placeholder="Any detail?" /></div>
           </>
         ) : (
           <>
@@ -694,18 +694,18 @@ export default function Insights() {
       {/* Procrastination */}
       {prModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPrModal(false)}><div className="modal">
         <div className="modal-header"><h3>{prEdit ? 'Edit Entry' : 'Log Procrastination'}</h3><button className="modal-close" onClick={() => setPrModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={prForm.date} onChange={e => setPrForm({ ...prForm, date: e.target.value })} /></div>
-        <div className="form-group"><label className="form-label">What did you avoid?</label><input className="form-input" value={prForm.what} onChange={e => setPrForm({ ...prForm, what: e.target.value })} placeholder="e.g. Writing that overdue report…" /></div>
-        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea className="form-textarea" value={prForm.why} onChange={e => setPrForm({ ...prForm, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /></div>
-        <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea className="form-textarea" value={prForm.outcome} onChange={e => setPrForm({ ...prForm, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={prForm.date} onChange={e => setPrForm({ ...prForm, date: e.target.value })} /></div>
+        <div className="form-group"><label className="form-label">What did you avoid?</label><input maxLength={200} className="form-input" value={prForm.what} onChange={e => setPrForm({ ...prForm, what: e.target.value })} placeholder="e.g. Writing that overdue report…" /></div>
+        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.why} onChange={e => setPrForm({ ...prForm, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.outcome} onChange={e => setPrForm({ ...prForm, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setPrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handlePrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : prEdit ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
       {/* Not-to-do */}
       {ntModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setNtModal(false)}><div className="modal">
         <div className="modal-header"><h3>{ntEdit ? 'Edit Item' : 'Add Not-to-do'}</h3><button className="modal-close" onClick={() => setNtModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">What's the time-waster?</label><input className="form-input" value={ntForm.text} onChange={e => setNtForm({ ...ntForm, text: e.target.value })} placeholder="e.g. Checking email first thing in the morning…" /></div>
-        <div className="form-group"><label className="form-label">Why avoid it? (optional)</label><textarea className="form-textarea" value={ntForm.reason} onChange={e => setNtForm({ ...ntForm, reason: e.target.value })} placeholder="Why is this a trap for you?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">What's the time-waster?</label><input maxLength={200} className="form-input" value={ntForm.text} onChange={e => setNtForm({ ...ntForm, text: e.target.value })} placeholder="e.g. Checking email first thing in the morning…" /></div>
+        <div className="form-group"><label className="form-label">Why avoid it? (optional)</label><textarea maxLength={2000} className="form-textarea" value={ntForm.reason} onChange={e => setNtForm({ ...ntForm, reason: e.target.value })} placeholder="Why is this a trap for you?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setNtModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleNtSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : ntEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}
 

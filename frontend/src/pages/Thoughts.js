@@ -313,7 +313,7 @@ export default function Thoughts() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {/* Search */}
             <div style={{ position: 'relative' }}>
-              <input className="form-input" value={search}
+              <input maxLength={200} className="form-input" value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search thoughts…"
                 style={{ padding: '7px 12px 7px 30px', fontSize: 12, height: 'auto', minWidth: 190 }} />
@@ -440,7 +440,7 @@ export default function Thoughts() {
             <form onSubmit={handleUpdate}>
               <div className="form-group">
                 <label className="form-label">Thought</label>
-                <textarea className="form-textarea" value={editContent}
+                <textarea maxLength={2000} className="form-textarea" value={editContent}
                   onChange={e => setEditContent(e.target.value)}
                   maxLength={MAX_CHARS}
                   style={{ minHeight: 140, fontFamily: 'Fraunces', fontStyle: 'italic', fontSize: 16 }}

@@ -7,7 +7,7 @@ import secrets
 from core.database import db
 from core.security import hash_password, verify_password, create_token
 from core.config import ALLOWED_ORIGINS
-from utils.cache import utcnow, cache_get, cache_set, cache_invalidate
+from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.email import send_email
 from utils.helpers import clean_update
 from api.deps import get_current_user
@@ -71,7 +71,8 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
             "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
 
 @router.post("/verify/send")
-def send_verification(current_user=Depends(get_current_user)):
+@limiter.limit("3/minute")
+def send_verification(request: Request, current_user=Depends(get_current_user)):
     if current_user.get("is_verified", False):
         raise HTTPException(status_code=400, detail="User is already verified")
     
@@ -103,7 +104,12 @@ def verify_email(token: str):
         if utcnow() > expires:
             raise HTTPException(status_code=400, detail="Verification link has expired")
     
-    db.users.update_one({"_id": user["_id"]}, {"$set": {"is_verified": True, "verification_token": None, "verification_token_expires": None}})
+    updates = {"is_verified": True, "verification_token": None, "verification_token_expires": None}
+    if user.get("pending_email"):
+        updates["email"] = user["pending_email"]
+        updates["pending_email"] = None
+        
+    db.users.update_one({"_id": user["_id"]}, {"$set": updates})
     return {"success": True}
 
 @router.post("/login")
@@ -114,6 +120,15 @@ def login(request: Request, data: LoginModel):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
             "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat()}}
+
+@router.post("/logout")
+def logout(current_user=Depends(get_current_user)):
+    new_version = current_user.get("token_version", 1) + 1
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": {"token_version": new_version}})
+    uid = str(current_user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Logged out")
+    return {"success": True}
 
 @router.get("/me")
 def me(current_user=Depends(get_current_user)):
@@ -126,6 +141,7 @@ def me(current_user=Depends(get_current_user)):
         "created_at": u.get("created_at", utcnow()).isoformat(),
         "is_public": u.get("is_public", False),
         "is_verified": u.get("is_verified", False),
+        "pending_email": u.get("pending_email")
     }
 
 @router.put("/profile")
@@ -164,8 +180,7 @@ def change_email(data: EmailChangeModel, background_tasks: BackgroundTasks, curr
     verify_token = secrets.token_urlsafe(32)
     expires = utcnow() + timedelta(hours=24)
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {
-        "email": data.new_email,
-        "is_verified": False,
+        "pending_email": data.new_email,
         "verification_token": verify_token,
         "verification_token_expires": expires,
         "verification_sent_at": utcnow()
@@ -208,10 +223,8 @@ def get_public_stats(user_id: str):
         user = db.users.find_one({"_id": ObjectId(user_id)})
     except bson_errors.InvalidId:
         raise HTTPException(status_code=404, detail="User not found")
-    if not user:
+    if not user or not user.get("is_public", False):
         raise HTTPException(status_code=404, detail="User not found")
-    if not user.get("is_public", False):
-        raise HTTPException(status_code=403, detail="Profile is private")
     created_at = user.get("created_at", utcnow())
     return {
         "name": user["name"],
@@ -246,10 +259,14 @@ def delete_account(current_user=Depends(get_current_user)):
         db[coll].delete_many({"user_id": uid})
         
     db.users.delete_one({"_id": current_user["_id"]})
-    cache_invalidate(f"dashboard:{uid}")
-    cache_invalidate(f"categories:{uid}")
-    cache_invalidate(f"stats:{uid}")
-    return {"success": True}
+    
+    # Invalidate token explicitly for its entire 30-day lifetime
+    from datetime import timedelta
+    db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + timedelta(days=30)})
+    cache_invalidate_prefix(f"dashboard:{uid}:")
+    cache_invalidate_exact(f"categories:{uid}")
+    cache_invalidate_exact(f"stats:{uid}")
+    return {"success": True, "action": "logout"}
 
 @router.get("/stats")
 def get_user_stats(current_user=Depends(get_current_user)):
