@@ -455,7 +455,7 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <label className="form-label">What happened?</label>
-              <div className="reflect-status-btns" style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div className="reflect-status-btns" style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {[['completed', '✅ Achieved'], ['extended', '🔄 Need more time'], ['abandoned', '❌ Moving on']].map(([s, l]) => (
                   <button key={s} className={`btn btn-sm ${reflectForm.status === s ? 'btn-primary' : 'btn-outline'}`} onClick={() => setReflectForm({ ...reflectForm, status: s })}>
                     {l}

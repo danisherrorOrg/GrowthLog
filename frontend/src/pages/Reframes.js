@@ -152,7 +152,7 @@ function ReframeViewModal({ reframe, onClose, onEdit, onDelete }) {
 
         {/* Body */}
         <div style={{ padding: '24px' }}>
-          <div className="grid-2" style={{ gap: 20, marginBottom: 24 }}>
+          <div className="grid-2 reframe-grid" style={{ gap: 20, marginBottom: 24 }}>
             {/* Automatic thought */}
             <div style={{ padding: 20, background: 'rgba(235,160,147,0.04)',
               borderRadius: 14, border: '1px solid rgba(235,160,147,0.1)' }}>
@@ -304,14 +304,16 @@ export default function Reframes() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2>Cognitive Reframing Studio 🧠</h2>
           <p>Challenge distortions. Rewire your perspective.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(s => !s)}>
-          {showAdd ? '✕ Close Studio' : '+ New Reframe'}
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => setShowAdd(s => !s)}>
+            {showAdd ? '✕ Close Studio' : '+ New Reframe'}
+          </button>
+        </div>
       </div>
 
       <div className="page-body">
@@ -391,7 +393,7 @@ export default function Reframes() {
                     background: 'transparent', borderRadius: 0, paddingLeft: 0 }} />
               </div>
 
-              <div className="grid-2" style={{ gap: 28 }}>
+              <div className="grid-2 reframe-grid" style={{ gap: 28 }}>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: 11, color: 'var(--rust)' }}>
                     Automatic Thought (The Lie)
@@ -419,7 +421,7 @@ export default function Reframes() {
                 </div>
               </div>
 
-              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div className="stack-grid-mobile reframe-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 11 }}>Identify the distortion</label>
                   <select className="form-select" value={newReframe.distortion}
@@ -550,7 +552,7 @@ export default function Reframes() {
                     style={{ minHeight: 110, fontFamily: 'Fraunces', fontStyle: 'italic' }} />
                 </div>
               </div>
-              <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
+              <div className="stack-grid-mobile reframe-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, alignItems: 'start' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Update Distortion</label>
                   <select className="form-select" value={editForm.distortion}
@@ -575,9 +577,9 @@ export default function Reframes() {
                 <IntensityBar before={editForm.feeling_before} after={editForm.feeling_after} />
               </div>
 
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setEditingReframe(null)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Update Perspective</button>
+              <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-outline full-width-mobile" onClick={() => setEditingReframe(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary full-width-mobile">Update Perspective</button>
               </div>
             </form>
           </div>
@@ -621,7 +623,7 @@ function ReframeCard({ reframe: r, search, onClick, onEdit, onDelete }) {
       </div>
 
       {/* Two panels */}
-      <div className="grid-2" style={{ gap: 20 }}>
+      <div className="grid-2 reframe-grid" style={{ gap: 20 }}>
         <div style={{ padding: 20, background: 'rgba(235,160,147,0.03)',
           borderRadius: 14, border: '1px solid rgba(235,160,147,0.08)' }}>
           <div style={{ fontSize: 9, textTransform: 'uppercase', color: 'var(--rust)',

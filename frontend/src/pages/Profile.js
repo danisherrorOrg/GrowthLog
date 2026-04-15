@@ -248,7 +248,7 @@ export default function Profile() {
 
         {/* Pending email verification banner */}
         {user?.pending_email && (
-          <div style={{
+          <div className="profile-verify-banner" style={{
             marginBottom: 24,
             padding: '16px 20px',
             background: 'var(--gold)',
@@ -529,7 +529,7 @@ export default function Profile() {
             flexDirection: 'column',
           }}>
             {/* Panel header */}
-            <div style={{
+            <div className="profile-edit-panel-header" style={{
               padding: '28px 32px 20px',
               borderBottom: '1px solid rgba(13,13,13,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -551,7 +551,7 @@ export default function Profile() {
             </div>
 
             {/* Panel body */}
-            <div style={{ padding: '28px 32px', flex: 1 }}>
+            <div className="profile-edit-panel-body" style={{ padding: '28px 32px', flex: 1 }}>
               <div className="form-group">
                 <label className="form-label">Choose Avatar</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
@@ -600,7 +600,7 @@ export default function Profile() {
             </div>
 
             {/* Panel footer */}
-            <div style={{
+            <div className="profile-edit-panel-footer" style={{
               padding: '20px 32px',
               borderTop: '1px solid rgba(13,13,13,0.07)',
               display: 'flex', gap: 12,

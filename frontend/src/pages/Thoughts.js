@@ -256,7 +256,7 @@ export default function Thoughts() {
               </span>
             </div>
 
-            <div className="thoughts-capture-footer" style={{
+            <div className="thoughts-capture-footer stack-on-mobile" style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               paddingTop: 14, borderTop: '1px solid rgba(13,13,13,0.05)',
             }}>

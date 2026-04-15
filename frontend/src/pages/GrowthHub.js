@@ -249,7 +249,7 @@ export default function GrowthHub() {
             {skLoad ? <Skeletons /> : skills.length === 0 ? (
               <Empty icon="📈" title="No skills tracked yet" desc="Start logging the skills you're actively developing." onAdd={openSkCreate} label="+ Add First Skill" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {skills.map(item => (
                   <div key={item.id} onClick={() => setSkPreview(item)} className="card"
                     style={{ borderLeft: `4px solid ${LEVEL_COLORS[item.level] || 'var(--sage)'}`, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -350,7 +350,7 @@ export default function GrowthHub() {
             {flLoad ? <Skeletons h={110} /> : failures.length === 0 ? (
               <Empty icon="💥" title="No failures logged" desc="Failures are data points. Logging them builds pattern recognition." onAdd={openFlCreate} label="+ Log First Failure" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {failures.map(item => (
                   <div key={item.id} onClick={() => setFlPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #c9a84c', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}

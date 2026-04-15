@@ -200,7 +200,7 @@ export default function Dashboard() {
               GrowthLog is built on the compound effect of small, daily reflections.
               The best way to start is by capturing who you are today.
             </p>
-            <div className="dashboard-onboarding-actions" style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <div className="dashboard-onboarding-actions" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="btn btn-primary" onClick={() => navigate('/snapshots')}>Take a Snapshot ○</button>
               <button className="btn btn-outline" onClick={() => navigate('/log')}>Log your first day ✦</button>
             </div>
@@ -289,7 +289,7 @@ export default function Dashboard() {
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Last {days} days</span>
             </div>
 
-            <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
+            <div className="heatmap-scroll-wrap" style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 16 }}>
               {weeks.map((week, wi) => (
                 <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {week.map((day, di) => {
@@ -498,7 +498,7 @@ export default function Dashboard() {
             </div>
             {/* Donut chart + legend */}
             {(data?.goals?.total || 0) > 0 ? (
-              <div className="goals-overview-inner" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div className="goals-overview-inner" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ width: 140, height: 140, flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>

@@ -174,13 +174,13 @@ export default function DailyLog() {
   return (
     <div>
       <div className="page-header">
-        <div className="daily-log-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="daily-log-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h2>Daily Log ✦</h2>
             <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
           </div>
           {categories.length > 0 && (
-            <div className="daily-log-header-actions" style={{ display: 'flex', gap: 8 }}>
+            <div className="daily-log-header-actions page-header-actions" style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-outline btn-sm" onClick={() => setExpandedCategories(categories.map(c => c.id))} style={{ fontSize: 11 }}>
                 Expand All
               </button>

@@ -38,9 +38,9 @@ export default function PublicProfile() {
       </div>
 
       <div className="card" style={{ padding: 40, background: 'white', borderRadius: 24, boxShadow: '0 20px 40px rgba(13,13,13,0.05)' }}>
-        <div style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 32, paddingBottom: 32, borderBottom: '1px solid rgba(13,13,13,0.05)' }}>
-          <div style={{ fontSize: 80, lineHeight: 1 }}>{stats.avatar_emoji}</div>
-          <div>
+        <div className="public-profile-header" style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 32, paddingBottom: 32, borderBottom: '1px solid rgba(13,13,13,0.05)', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 80, lineHeight: 1, flexShrink: 0 }}>{stats.avatar_emoji}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ fontSize: 28, marginBottom: 4 }}>{stats.name}</h2>
             <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', marginBottom: 12 }}>Member since {format(parseISO(stats.created_at), 'MMM d, yyyy')}</p>
             {stats.bio && <p style={{ fontSize: 15, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic' }}>"{stats.bio}"</p>}
@@ -71,7 +71,7 @@ export default function PublicProfile() {
         {b.length === 0 ? (
           <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', fontStyle: 'italic' }}>Journey just beginning...</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 100px), 1fr))', gap: 12 }}>
             {b.map((badge, i) => (
               <div key={i} style={{ padding: '16px 8px', background: 'white', border: '1px solid rgba(13,13,13,0.08)', borderRadius: 12, textAlign: 'center', boxShadow: '0 2px 8px rgba(13,13,13,0.02)' }}>
                 <div style={{ fontSize: 24, marginBottom: 8 }}>{badge.icon}</div>

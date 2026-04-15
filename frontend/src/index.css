@@ -1529,6 +1529,98 @@ h4 {
   .show-on-mobile {
     display: flex !important;
   }
+
+  /* ══ SCROLLABLE TAB BARS ══════════════════════════════════════════ */
+
+  .tabs-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ══ REFRAMES TWO-PANEL ═══════════════════════════════════════════ */
+
+  .reframe-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* ══ PROFILE EDIT PANEL ═══════════════════════════════════════════ */
+
+  .profile-edit-panel-header {
+    padding: 20px 20px 16px !important;
+  }
+
+  .profile-edit-panel-body {
+    padding: 20px !important;
+  }
+
+  .profile-edit-panel-footer {
+    padding: 16px 20px !important;
+  }
+
+  /* ══ VERIFY BANNER ════════════════════════════════════════════════ */
+
+  .profile-verify-banner {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .profile-verify-banner > button {
+    width: 100% !important;
+  }
+
+  /* ══ INSIGHTS TAB BAR ════════════════════════════════════════════ */
+
+  .insights-tab-btn {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .insights-tab-btn .tab-icon {
+    display: none;
+  }
+
+  /* ══ GOAL DETAIL TAB BAR ════════════════════════════════════════ */
+
+  .goal-tabs-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 2px !important;
+    scrollbar-width: none !important;
+  }
+
+  .goal-tabs-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .goal-tabs-bar button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ══ MULTI-ROW EDITOR (Insights time/screen) ═══════════════════ */
+
+  .multi-row-editor-row {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .multi-row-editor-row > .hours-input {
+    width: 70px !important;
+    min-width: 60px !important;
+    flex: 0 0 70px !important;
+  }
+
+  .multi-row-editor-row > .cat-input {
+    flex: 1 1 140px !important;
+    min-width: 100px !important;
+  }
 }
 
 /* Very small phones — 400px */
@@ -1572,5 +1664,82 @@ h4 {
 
   .card {
     padding: 14px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REFRAME TWO-PANEL — stack below 600px
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .reframe-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SMALL PHONE EXTRAS — 480px
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  /* grid-4 collapses fully to single column */
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Insights tab icons shown, text hidden for space */
+  .insights-tab-btn {
+    padding: 7px 8px !important;
+    font-size: 0 !important; /* hide text */
+    width: auto !important;
+  }
+
+  .insights-tab-btn .tab-icon {
+    display: inline !important;
+    font-size: 16px !important;
+  }
+
+  /* GoalDetail: micro-goal add row col layout */
+  .mg-add-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .mg-add-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Heatmap scroll — touch friendly */
+  .heatmap-scroll-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+
+  .heatmap-scroll-wrap::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* PublicProfile header: avatar + name stacked */
+  .public-profile-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+
+  /* Reflect status buttons: 1 per row */
+  .reflect-status-btns {
+    flex-direction: column !important;
+  }
+  .reflect-status-btns > .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Todo preview footer: stack all 3 */
+  .todo-preview-footer > .btn {
+    min-width: 100% !important;
   }
 }

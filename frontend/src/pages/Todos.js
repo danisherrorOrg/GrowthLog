@@ -477,7 +477,7 @@ export default function Todos() {
           alignItems: 'center', flexWrap: 'wrap', gap: 16,
         }}>
           <div className="toolbar-left" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
+            <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10, flexWrap: 'wrap' }}>
               {[
                 { key: 'all',       label: 'All' },
                 { key: 'active',    label: 'Active' },
@@ -506,7 +506,7 @@ export default function Todos() {
             <div style={{ position: 'relative' }}>
               <input maxLength={200} className="form-input full-width-mobile" value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search tasks..."
-                style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', minWidth: 180 }} />
+                style={{ padding: '7px 12px 7px 32px', fontSize: 12, height: 'auto', width: '100%', minWidth: 180 }} />
               <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, opacity: 0.35 }}>🔍</span>
               {search && (
                 <button onClick={() => setSearch('')} style={{

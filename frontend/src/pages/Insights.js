@@ -68,17 +68,17 @@ function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color }) {
     <div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rows.map((row, i) => (
-          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color, minWidth: 18, textAlign: 'center' }}>{i + 1}</span>
-            <input maxLength={200} className="form-input" style={{ flex: 1 }} value={row[keyLabel]}
+          <div key={i} className="multi-row-editor-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color, minWidth: 18, textAlign: 'center', flexShrink: 0 }}>{i + 1}</span>
+            <input maxLength={200} className="form-input cat-input" style={{ flex: 1, minWidth: 0 }} value={row[keyLabel]}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], [keyLabel]: e.target.value }; setRows(r); }}
               placeholder={keyPlaceholder} />
-            <input maxLength={200} className="form-input" type="number" style={{ width: 90 }} value={row.hours}
+            <input maxLength={200} className="form-input hours-input" type="number" style={{ width: 90, flexShrink: 0 }} value={row.hours}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], hours: e.target.value }; setRows(r); }}
               placeholder="hrs" min="0.1" step="0.25" />
             {rows.length > 1 && (
               <button onClick={() => setRows(rows.filter((_, idx) => idx !== i))}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1 }}>✕</button>
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
             )}
           </div>
         ))}
@@ -348,7 +348,7 @@ export default function Insights() {
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: 5, marginBottom: 32, background: 'var(--mist)', padding: 4, borderRadius: 14, flexWrap: 'wrap' }}>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="insights-tab-btn" style={{
               padding: '9px 15px', borderRadius: 10, border: 'none', cursor: 'pointer',
               fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600,
               background: activeTab === tab.id ? 'white' : 'transparent',
@@ -356,7 +356,7 @@ export default function Insights() {
               boxShadow: activeTab === tab.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 6,
             }}>
-              <span style={{ fontSize: 14 }}>{tab.icon}</span> {tab.label}
+              <span className="tab-icon" style={{ fontSize: 14 }}>{tab.icon}</span> {tab.label}
             </button>
           ))}
         </div>
@@ -407,7 +407,7 @@ export default function Insights() {
             {hgLoad ? <Skeletons h={100} /> : habits.length === 0 ? (
               <Empty icon="🪦" title="Graveyard is empty" desc="Every abandoned habit holds a lesson. Bury it here so you can learn from it." onAdd={openHgCreate} label="+ Log First Habit" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {habits.map(item => (
                   <div key={item.id} onClick={() => setHgPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #8b6bc4', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -542,7 +542,7 @@ export default function Insights() {
             {prLoad ? <Skeletons h={110} /> : procEntries.length === 0 ? (
               <Empty icon="😬" title="Nothing logged yet" desc="Naming procrastination breaks its power." onAdd={openPrCreate} label="+ Log First Entry" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
                 {procEntries.map(item => (
                   <div key={item.id} onClick={() => setPrPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #c9a84c', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}

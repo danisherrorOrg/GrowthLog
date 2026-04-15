@@ -280,7 +280,7 @@ export default function GoalDetail() {
           </button>
           {cat && <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>{cat.icon} {cat.name}</span>}
         </div>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {goal.title}
           <span className={`tag ${goal.status === 'completed' ? 'tag-green' : goal.status === 'extended' ? 'tag-gold' : goal.status === 'abandoned' ? 'tag-rust' : 'tag-mist'}`} style={{ fontSize: 13 }}>
             {goal.status}
@@ -361,7 +361,7 @@ export default function GoalDetail() {
 
         {/* Tab Bar */}
         <div className="tabs-container" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', gap: 32, borderBottom: '1px solid rgba(13,13,13,0.1)' }}>
+          <div className="goal-tabs-bar" style={{ display: 'flex', gap: 24, borderBottom: '1px solid rgba(13,13,13,0.1)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
             {[
               { key: 'steps', label: '🎯 Implementation Steps', count: (goal.micro_goals || []).length },
               { key: 'evolution', label: '💭 Evolution Track', count: (goal.reflections || []).length },
@@ -404,11 +404,11 @@ export default function GoalDetail() {
                     style={{ marginBottom: 12, fontSize: 15, border: 'none', background: 'transparent', padding: 0 }} 
                     autoFocus
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="mg-add-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>⏱ Estimate:</span>
-                      <input maxLength={200} type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
-                        className="form-input input-xs" style={{ padding: '4px 8px', fontSize: 13 }} min="0" />
+                      <input maxLength={200} type="number" className="form-input input-xs" value={mgTime} onChange={e => setMgTime(e.target.value)}
+                        style={{ padding: '4px 8px', fontSize: 13 }} min="0" />
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>min</span>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving} style={{ borderRadius: 20 }}>Add to Path</button>
@@ -665,7 +665,7 @@ export default function GoalDetail() {
             </div>
             <div className="form-group">
               <label className="form-label">What happened?</label>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div className="reflect-status-btns" style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {[['completed', '✅ Achieved'], ['extended', '🔄 Need more time'], ['abandoned', '❌ Moving on']].map(([s, l]) => (
                   <button key={s} className={`btn btn-sm ${reflectForm.status === s ? 'btn-primary' : 'btn-outline'}`}
                     onClick={() => setReflectForm({ ...reflectForm, status: s })}>{l}</button>
