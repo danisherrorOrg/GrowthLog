@@ -152,8 +152,8 @@ export default function BookDetail() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', gap: 20, flex: 1, minWidth: 300 }}>
+      <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div className="full-width-mobile" style={{ display: 'flex', gap: 20, flex: 1, minWidth: 250 }}>
           <div style={{ fontSize: 48, background: 'var(--cloud)', width: 80, height: 80, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {book.cover_emoji}
           </div>
@@ -161,14 +161,14 @@ export default function BookDetail() {
             <h2 style={{ fontSize: 28, marginBottom: 4 }}>{book.title}</h2>
             <p style={{ color: 'rgba(13,13,13,0.5)', margin: 0, fontSize: 16 }}>by {book.author}</p>
             {!editMode && (
-              <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-                <button className="btn btn-sm btn-primary" onClick={() => { setWisdomForm({ chapter: '', content: '', thoughts: '' }); setEditingWisdomIdx(null); setShowWisdomModal(true); }}>+ Add Lesson</button>
-                <button className="btn btn-sm btn-outline" onClick={() => { setBookmarkForm({ page: '', note: '' }); setEditingBookmarkIdx(null); setShowBookmarkModal(true); }}>+ Add Bookmark</button>
+              <div className="wrap-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+                <button className="btn btn-sm btn-primary full-width-mobile" onClick={() => { setWisdomForm({ chapter: '', content: '', thoughts: '' }); setEditingWisdomIdx(null); setShowWisdomModal(true); }}>+ Add Lesson</button>
+                <button className="btn btn-sm btn-outline full-width-mobile" onClick={() => { setBookmarkForm({ page: '', note: '' }); setEditingBookmarkIdx(null); setShowBookmarkModal(true); }}>+ Add Bookmark</button>
               </div>
             )}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="page-header-actions" style={{ display: 'flex', gap: 10 }}>
           <button className="btn btn-outline" onClick={() => navigate('/books')}>← Library</button>
           {!editMode && <button className="btn btn-primary" onClick={() => setEditMode(true)}>Edit Details</button>}
         </div>
@@ -221,7 +221,7 @@ export default function BookDetail() {
                 <label className="form-label">Description</label>
                 <textarea maxLength={2000} className="form-textarea" value={basicForm.description} onChange={e => setBasicForm({...basicForm, description: e.target.value})} placeholder="What is this book about?" style={{ minHeight: 120 }} />
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
                 <button className="btn btn-outline" onClick={() => setEditMode(false)} style={{ flex: 1 }}>Cancel</button>
                 <button className="btn btn-primary" onClick={handleSaveBasic} style={{ flex: 1 }}>Save Changes</button>
               </div>
@@ -358,7 +358,7 @@ export default function BookDetail() {
         )}
 
         {!editMode && activeTab === 'bookmarks' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+          <div className="auto-grid">
             {(book.bookmarks || []).length === 0 && (
               <div className="card" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', opacity: 0.4 }}>
                 <p style={{ fontSize: 15, fontStyle: 'italic', margin: 0 }}>No bookmarks yet.</p>
@@ -410,7 +410,7 @@ export default function BookDetail() {
               <label className="form-label">Personal Thoughts (Optional)</label>
               <textarea maxLength={2000} className="form-textarea" value={wisdomForm.thoughts} onChange={e => setWisdomForm({...wisdomForm, thoughts: e.target.value})} placeholder="How does this apply to you?" style={{ minHeight: 80 }} />
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setShowWisdomModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleUpdateWisdom(editingWisdomIdx, wisdomForm)}>Save Entry</button>
             </div>
@@ -434,7 +434,7 @@ export default function BookDetail() {
               <label className="form-label">Quick Note</label>
               <textarea maxLength={2000} className="form-textarea" value={bookmarkForm.note} onChange={e => setBookmarkForm({...bookmarkForm, note: e.target.value})} placeholder="What's on this page?" style={{ minHeight: 80 }} />
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-outline" onClick={() => setShowBookmarkModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleUpdateBookmark(editingBookmarkIdx, bookmarkForm)}>Save Bookmark</button>
             </div>

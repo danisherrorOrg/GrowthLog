@@ -37,7 +37,7 @@ export default function VerifyEmail() {
 
   return (
     <div className="auth-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-      <div className="card" style={{ maxWidth: 400, width: '100%', textAlign: 'center', padding: '40px 32px' }}>
+      <div className="card modal-sm" style={{ width: '100%', textAlign: 'center', padding: 'var(--spacing-md, 32px) var(--spacing-sm, 24px)' }}>
         {status === 'verifying' && (
           <>
             <div className="skeleton" style={{ width: 60, height: 60, borderRadius: '50%', margin: '0 auto 24px' }} />

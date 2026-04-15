@@ -31,7 +31,7 @@ export default function PublicProfile() {
   if (stats.total_snapshots >= 2) b.push({ icon: '📷', label: 'Reflective' });
 
   return (
-    <div style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px', fontFamily: '"Inter", sans-serif' }}>
+    <div className="container-main" style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px', fontFamily: '"Inter", sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <h1 style={{ fontFamily: 'Fraunces', fontSize: 32, marginBottom: 8, color: 'var(--ink)' }}>GrowthLog</h1>
         <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 2 }}>Public Profile</p>

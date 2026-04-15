@@ -30,6 +30,7 @@ const NAV_GROUPS = [
       { to: '/growth-hub', icon: '🚀', label: 'Growth Hub', shortcut: 'W' },
       { to: '/goals', icon: '◇', label: 'Goals', shortcut: 'G' },
       { to: '/manifestations', icon: '✧', label: 'Manifestations', shortcut: 'F' },
+      { to: '/categories', icon: '🏷️', label: 'Categories', shortcut: 'C' },
     ]
   },
   {

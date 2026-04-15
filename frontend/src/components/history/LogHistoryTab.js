@@ -393,7 +393,7 @@ export default function AllLogs() {
 
       {previewEntry && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewEntry(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 600, padding: '32px 40px' }}>
+          <div className="modal modal-lg">
             <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: 32, background: 'var(--mist)', width: 64, height: 64, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -433,7 +433,7 @@ export default function AllLogs() {
 
       {previewPeak && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewPeak(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 600, padding: '32px 40px' }}>
+          <div className="modal modal-lg">
             <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
               <div>
                 <h3 style={{ margin: 0, fontFamily: 'Fraunces', fontSize: 24, color: 'var(--sage)' }}>The Day's Peak</h3>
@@ -456,7 +456,7 @@ export default function AllLogs() {
       {/* Gratitude Preview Modal */}
       {previewGratitude && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewGratitude(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 560, padding: '32px 40px' }}>
+          <div className="modal modal-md">
             <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ fontSize: 32, background: 'linear-gradient(135deg, #fff8e7, #fdefc2)', width: 60, height: 60, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--gold)' }}>🌿</span>
@@ -491,7 +491,7 @@ export default function AllLogs() {
       {/* Regret Preview Modal */}
       {previewRegret && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPreviewRegret(null)} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-          <div className="modal" style={{ maxWidth: 560, padding: '32px 40px' }}>
+          <div className="modal modal-md">
             <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ fontSize: 32, background: 'linear-gradient(135deg, #f3eeff, #e8dcff)', width: 60, height: 60, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #8b6bc4' }}>🔍</span>

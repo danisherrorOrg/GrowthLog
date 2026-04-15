@@ -32,7 +32,7 @@ export default function JourneyFeed({ events, onEventClick }) {
   };
 
   return (
-    <div className="journey-feed" style={{ maxWidth: '640px', margin: '0 auto', position: 'relative', paddingTop: 20 }}>
+    <div className="journey-feed container-fluid" style={{ maxWidth: 640, position: 'relative', paddingTop: 20 }}>
         <style dangerouslySetInnerHTML={{__html: `
             @keyframes fadeInUp {
                 from { opacity: 0; transform: translateY(20px); }

@@ -27,7 +27,7 @@ function PreviewModal({ item, onClose, icon, iconBg, titleColor, title, subtitle
   if (!item) return null;
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 580, padding: '32px 40px' }}>
+      <div className="modal modal-lg">
         <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28, background: iconBg, width: 54, height: 54, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
@@ -144,7 +144,7 @@ export default function CoursesTab() {
       )}
 
       {/* Courses Modal */}
-      {crModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCrModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
+      {crModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setCrModal(false)}><div className="modal modal-lg">
         <div className="modal-header"><h3>{crEdit ? 'Edit Course' : 'Add Course'}</h3><button className="modal-close" onClick={() => setCrModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">Course / Book title</label><input maxLength={200} className="form-input" value={crForm.title} onChange={e => setCrForm({ ...crForm, title: e.target.value })} placeholder="e.g. The Psychology of Money…" /></div>
         <div className="grid-2" style={{ gap: 12 }}>

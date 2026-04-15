@@ -297,7 +297,7 @@ export default function GoalDetail() {
         <div className="card" style={{ padding: '32px', position: 'relative', overflow: 'hidden', marginBottom: 32 }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: cat?.color || 'var(--sage)' }} />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: '16px' }}>
             <div>
               <h3 style={{ fontSize: 24, marginBottom: 8 }}>{goal.title}</h3>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -309,7 +309,7 @@ export default function GoalDetail() {
                 </span>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="wrap-on-mobile" style={{ display: 'flex', gap: 8 }}>
               {isActive && (
                 <button className="btn btn-primary" onClick={() => { setShowReflectModal(true); setReflectForm({ status: 'completed', reflection: '', new_deadline: '' }); }} style={{ borderRadius: 30 }}>
                   Complete Goal ✦
@@ -408,7 +408,7 @@ export default function GoalDetail() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>⏱ Estimate:</span>
                       <input maxLength={200} type="number" className="form-input" value={mgTime} onChange={e => setMgTime(e.target.value)}
-                        style={{ width: 60, padding: '4px 8px', fontSize: 13 }} min="0" />
+                        className="form-input input-xs" style={{ padding: '4px 8px', fontSize: 13 }} min="0" />
                       <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>min</span>
                     </div>
                     <button className="btn btn-primary btn-sm" onClick={handleAddMg} disabled={saving} style={{ borderRadius: 20 }}>Add to Path</button>
@@ -438,7 +438,7 @@ export default function GoalDetail() {
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <input maxLength={200} className="form-input" value={editMgText} onChange={e => setEditMgText(e.target.value)} style={{ padding: '4px 8px', fontSize: 14 }} />
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                              <input maxLength={200} type="number" className="form-input" value={editMgTime} onChange={e => setEditMgTime(e.target.value)} style={{ width: 60, padding: '2px 6px', fontSize: 12 }} />
+                              <input maxLength={200} type="number" className="form-input input-xs" value={editMgTime} onChange={e => setEditMgTime(e.target.value)} style={{ padding: '2px 6px', fontSize: 12 }} />
                               <span style={{ fontSize: 11, opacity: 0.5 }}>min</span>
                               <div style={{ flex: 1 }} />
                               <button className="btn btn-ghost btn-sm" onClick={() => setEditMg(null)}>Cancel</button>
@@ -641,7 +641,7 @@ export default function GoalDetail() {
               <label className="form-label">Target Deadline</label>
               <input maxLength={200} type="date" className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowEditModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleUpdateGoal} disabled={saving} style={{ flex: 1 }}>
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -685,7 +685,7 @@ export default function GoalDetail() {
                   onChange={e => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowReflectModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleReflect} disabled={saving} style={{ flex: 1 }}>
                 {saving ? 'Saving...' : 'Save Reflection'}

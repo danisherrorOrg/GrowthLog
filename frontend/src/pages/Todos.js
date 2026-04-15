@@ -69,7 +69,7 @@ function TimeEstimateInput({ value, onChange, label = 'Estimated Time', compact 
           <input maxLength={200} type="number" className="form-input" value={custom}
             onChange={e => { setCustom(e.target.value); onChange(e.target.value ? parseInt(e.target.value) : null); }}
             placeholder="mins" min={1} max={9999}
-            style={{ width: 72, fontSize: 12, padding: '4px 8px' }} />
+            className="form-input input-sm" style={{ fontSize: 12, padding: '4px 8px' }} />
         )}
         {value && (
           <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', fontStyle: 'italic' }}>

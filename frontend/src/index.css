@@ -319,25 +319,25 @@ h4 {
 /* ─── Grids ─────────────────────────────────────────────────── */
 .grid-2 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 20px;
 }
 
 .grid-3 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   gap: 20px;
 }
 
 .grid-4 {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 16px;
 }
 
 .auto-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 24px;
 }
 
@@ -534,12 +534,32 @@ h4 {
 .modal {
   background: white;
   border-radius: 20px;
-  padding: 32px;
+  padding: clamp(24px, 5vw, 40px);
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.25s ease;
+}
+
+.modal-sm { max-width: 400px; }
+.modal-md { max-width: 520px; }
+.modal-lg { max-width: 640px; }
+.modal-xl { max-width: 800px; }
+
+.input-sm { width: 100%; max-width: 80px; }
+.input-xs { width: 100%; max-width: 64px; }
+
+.container-fluid {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.container-main {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .sidebar-backdrop {
@@ -1166,7 +1186,8 @@ h4 {
   }
 
   .auth-left {
-    display: none;
+    display: flex;
+    padding: 40px 24px 20px;
   }
 
   .auth-right {

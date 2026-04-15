@@ -27,7 +27,7 @@ function PreviewModal({ item, onClose, icon, iconBg, titleColor, title, subtitle
   if (!item) return null;
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 580, padding: '32px 40px' }}>
+      <div className="modal modal-lg">
         <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28, background: iconBg, width: 54, height: 54, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
@@ -329,7 +329,7 @@ export default function TimeCapsule() {
       {/* ════════════ CREATE / EDIT MODALS ════════════ */}
 
       {/* Life Lessons */}
-      {lsModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setLsModal(false)}><div className="modal" style={{ maxWidth: 500 }}>
+      {lsModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setLsModal(false)}><div className="modal modal-md">
         <div className="modal-header"><h3>{lsEdit ? 'Edit Lesson' : 'Extract a Life Lesson'}</h3><button className="modal-close" onClick={() => setLsModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">The Principle</label><input maxLength={200} className="form-input" value={lsForm.principle} onChange={e => setLsForm({ ...lsForm, principle: e.target.value })} placeholder="State the truth clearly…" /></div>
         <div className="form-group"><label className="form-label">Context / Backstory (optional)</label><textarea maxLength={2000} className="form-textarea" value={lsForm.context} onChange={e => setLsForm({ ...lsForm, context: e.target.value })} placeholder="How did you learn this hard truth?" style={{ minHeight: 90 }} /></div>
@@ -341,7 +341,7 @@ export default function TimeCapsule() {
       </div></div>)}
 
       {/* Future Advice */}
-      {faModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFaModal(false)}><div className="modal" style={{ maxWidth: 520 }}>
+      {faModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFaModal(false)}><div className="modal modal-md">
         <div className="modal-header"><h3>{faEdit ? 'Edit Message' : 'Send to Future Self'}</h3><button className="modal-close" onClick={() => setFaModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">The Message</label><textarea maxLength={2000} className="form-textarea" value={faForm.content} onChange={e => setFaForm({ ...faForm, content: e.target.value })} placeholder="Write your letter, warning, or reminder…" style={{ minHeight: 120 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="grid-2" style={{ gap: 12 }}>
@@ -352,7 +352,7 @@ export default function TimeCapsule() {
       </div></div>)}
 
       {/* Past Advice */}
-      {paModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPaModal(false)}><div className="modal" style={{ maxWidth: 520 }}>
+      {paModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPaModal(false)}><div className="modal modal-md">
         <div className="modal-header"><h3>{paEdit ? 'Edit Advice' : 'Advice from Past Self'}</h3><button className="modal-close" onClick={() => setPaModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">From what age? (optional)</label><input maxLength={200} type="number" className="form-input" style={{ width: 100 }} value={paForm.from_age} onChange={e => setPaForm({ ...paForm, from_age: e.target.value })} placeholder="e.g. 21" /></div>
         <div className="form-group"><label className="form-label">What would they say to you now?</label><textarea maxLength={2000} className="form-textarea" value={paForm.content} onChange={e => setPaForm({ ...paForm, content: e.target.value })} placeholder="What did you want back then? Are you honoring them?" style={{ minHeight: 100 }} /></div>
@@ -361,7 +361,7 @@ export default function TimeCapsule() {
       </div></div>)}
 
       {/* Regrets Tracker */}
-      {reModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setReModal(false)}><div className="modal" style={{ maxWidth: 500 }}>
+      {reModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setReModal(false)}><div className="modal modal-md">
         <div className="modal-header"><h3>{reEdit ? 'Edit Regret' : 'Log a Regret'}</h3><button className="modal-close" onClick={() => setReModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">The Regret</label><textarea maxLength={2000} className="form-textarea" value={reForm.text} onChange={e => setReForm({ ...reForm, text: e.target.value })} placeholder="I regret not..." style={{ minHeight: 80 }} /></div>
         <div className="form-group"><label className="form-label">The Strategy</label><textarea maxLength={2000} className="form-textarea" value={reForm.action_to_avoid} onChange={e => setReForm({ ...reForm, action_to_avoid: e.target.value })} placeholder="What is the precise action you will take to NEVER feel this way again?" style={{ minHeight: 80 }} /></div>

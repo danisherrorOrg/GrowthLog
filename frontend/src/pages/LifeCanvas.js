@@ -61,7 +61,7 @@ function PreviewModal({ item, onClose, icon, iconBg, titleColor, title, subtitle
   if (!item) return null;
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 580, padding: '32px 40px' }}>
+      <div className="modal modal-lg">
         <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28, background: iconBg, width: 54, height: 54, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
@@ -219,7 +219,7 @@ export default function LifeCanvas() {
           {SECTIONS.map(section => (
             <div key={section.label}>
               <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: 'rgba(13,13,13,0.3)', marginBottom: 8 }}>{section.label}</div>
-              <div style={{ display: 'flex', gap: 5, background: 'var(--mist)', padding: 4, borderRadius: 12 }}>
+              <div className="wrap-on-mobile" style={{ display: 'flex', gap: 5, background: 'var(--mist)', padding: 4, borderRadius: 12 }}>
                 {section.tabs.map(tab => (
                   <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
                     padding: '8px 16px', borderRadius: 9, border: 'none', cursor: 'pointer',
@@ -242,7 +242,7 @@ export default function LifeCanvas() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'project-ideas' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>💡 Project Ideas</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Backlog of things you want to make, build, or explore.</p></div>
               <button className="btn btn-primary" onClick={openIdCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ New Idea</button>
             </div>
@@ -250,7 +250,7 @@ export default function LifeCanvas() {
             {idLoad ? <Skeletons /> : ideas.length === 0 ? (
               <Empty icon="💡" title="Idea backlog empty" desc="Every great project starts as a fleeting thought. Capture them here." onAdd={openIdCreate} label="+ Add Idea" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              <div className="auto-grid" style={{ gap: 16 }}>
                 {ideas.map(item => (
                   <div key={item.id} onClick={() => setIdPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #c9a84c', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -279,7 +279,7 @@ export default function LifeCanvas() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'creative-sessions' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🎨 Creative Time</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Time spent on creative work and what you achieved.</p></div>
               <button className="btn btn-primary" onClick={openCrCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Session</button>
             </div>
@@ -316,7 +316,7 @@ export default function LifeCanvas() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'meaning-log' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>✨ Meaning Log</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Moments that felt deeply meaningful, purposeful, or connected.</p></div>
               <button className="btn btn-primary" onClick={openMnCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Moment</button>
             </div>
@@ -324,7 +324,7 @@ export default function LifeCanvas() {
             {mnLoad ? <Skeletons h={110} /> : meanings.length === 0 ? (
               <Empty icon="✨" title="No meaningful moments logged" desc="Capture the small things that make life feel rich and purposeful." onAdd={openMnCreate} label="+ Log First Moment" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+              <div className="auto-grid" style={{ gap: 16 }}>
                 {meanings.map(item => (
                   <div key={item.id} onClick={() => setMnPreview(item)} className="card"
                     style={{ borderLeft: '4px solid #5b8ba8', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
@@ -350,7 +350,7 @@ export default function LifeCanvas() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'travel-log' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>✈️ Travel Log</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Places visited, core memories, and photo archives.</p></div>
               <button className="btn btn-primary" onClick={openTrCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Trip</button>
             </div>
@@ -388,7 +388,7 @@ export default function LifeCanvas() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'bucket-list' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🪣 Bucket List</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Experiences and dreams to pursue in this lifetime.</p></div>
               <button className="btn btn-primary" onClick={openBlCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Add Goal</button>
             </div>
@@ -396,7 +396,7 @@ export default function LifeCanvas() {
             {blLoad ? <Skeletons /> : buckets.length === 0 ? (
               <Empty icon="🪣" title="Bucket list is empty" desc="What are the big things you want to do before you die?" onAdd={openBlCreate} label="+ Add First Item" />
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <div className="auto-grid" style={{ gap: 16 }}>
                 {buckets.map(item => (
                   <div key={item.id} onClick={() => setBlPreview(item)} className="card"
                     style={{ borderLeft: `4px solid ${item.status === 'done' ? 'var(--sage)' : '#c4623a'}`, cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s', opacity: item.status === 'done' ? 0.75 : 1 }}
@@ -441,7 +441,7 @@ export default function LifeCanvas() {
           </div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Link (optional)</label><input maxLength={200} className="form-input" value={idForm.link} onChange={e => setIdForm({ ...idForm, link: e.target.value })} placeholder="Repo, Pinterest board, etc." /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setIdModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleIdSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : idEdit ? 'Save Changes' : 'Add Idea'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setIdModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleIdSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : idEdit ? 'Save Changes' : 'Add Idea'}</button></div>
       </div></div>)}
 
       {/* Creative Sessions */}
@@ -453,7 +453,7 @@ export default function LifeCanvas() {
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Project / Focus</label><input maxLength={200} className="form-input" value={crForm.project_name} onChange={e => setCrForm({ ...crForm, project_name: e.target.value })} placeholder="e.g. Painting, Coding, Writing…" /></div>
         <div className="form-group"><label className="form-label">Output & Notes (optional)</label><textarea maxLength={2000} className="form-textarea" value={crForm.output_notes} onChange={e => setCrForm({ ...crForm, output_notes: e.target.value })} placeholder="What did you make or learn?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Log Session'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Log Session'}</button></div>
       </div></div>)}
 
       {/* Meaning Log */}
@@ -462,7 +462,7 @@ export default function LifeCanvas() {
         <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={mnForm.date} onChange={e => setMnForm({ ...mnForm, date: e.target.value })} /></div>
         <div className="form-group"><label className="form-label">The Experience</label><textarea maxLength={2000} className="form-textarea" value={mnForm.experience} onChange={e => setMnForm({ ...mnForm, experience: e.target.value })} placeholder="What happened that felt so deep?" style={{ minHeight: 90 }} /></div>
         <div className="form-group"><label className="form-label">Why was it meaningful? (optional)</label><textarea maxLength={2000} className="form-textarea" value={mnForm.why_meaningful} onChange={e => setMnForm({ ...mnForm, why_meaningful: e.target.value })} placeholder="What struck you about it?" style={{ minHeight: 80 }} /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setMnModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleMnSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : mnEdit ? 'Save Changes' : 'Log Moment'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setMnModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleMnSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : mnEdit ? 'Save Changes' : 'Log Moment'}</button></div>
       </div></div>)}
 
       {/* Travel Log */}
@@ -474,11 +474,11 @@ export default function LifeCanvas() {
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Core Memories (optional)</label><textarea maxLength={2000} className="form-textarea" value={trForm.memories} onChange={e => setTrForm({ ...trForm, memories: e.target.value })} placeholder="Highlight moments, food, people…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">Photos Link (optional)</label><input maxLength={200} className="form-input" value={trForm.photos_link} onChange={e => setTrForm({ ...trForm, photos_link: e.target.value })} placeholder="Google Photos URL, etc." /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setTrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleTrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : trEdit ? 'Save Changes' : 'Log Travel'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setTrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleTrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : trEdit ? 'Save Changes' : 'Log Travel'}</button></div>
       </div></div>)}
 
       {/* Bucket List */}
-      {blModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setBlModal(false)}><div className="modal" style={{ maxWidth: 580 }}>
+      {blModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setBlModal(false)}><div className="modal modal-lg">
         <div className="modal-header"><h3>{blEdit ? 'Edit Goal' : 'Add to Bucket List'}</h3><button className="modal-close" onClick={() => setBlModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">Goal / Dream</label><input maxLength={200} className="form-input" value={blForm.title} onChange={e => setBlForm({ ...blForm, title: e.target.value })} placeholder="e.g. See the Northern Lights" /></div>
         <div className="form-group"><label className="form-label">Why? / Details (optional)</label><textarea maxLength={2000} className="form-textarea" value={blForm.description} onChange={e => setBlForm({ ...blForm, description: e.target.value })} placeholder="What's the motivation? Who with?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
@@ -496,7 +496,7 @@ export default function LifeCanvas() {
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target Date (optional)</label><input maxLength={200} type="date" className="form-input" value={blForm.target_date} onChange={e => setBlForm({ ...blForm, target_date: e.target.value })} /></div>
           {blForm.status === 'done' && <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed On</label><input maxLength={200} type="date" className="form-input" value={blForm.completed_date} onChange={e => setBlForm({ ...blForm, completed_date: e.target.value })} /></div>}
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setBlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleBlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : blEdit ? 'Save Changes' : 'Add to List'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setBlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleBlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : blEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}
 
       {/* ════════════ PREVIEW MODALS ════════════ */}

@@ -238,7 +238,7 @@ export default function ManifestationDetail() {
       <div className="page-body">
         {/* Vision Context Card */}
         <div className="card" style={{ background: isReady ? 'var(--ink)' : 'white', marginBottom: 32 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
             <h3 style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 2, color: isReady ? 'var(--gold)' : 'rgba(13,13,13,0.4)', margin: 0 }}>
               {isReady ? '✧ Ready for Reflection' : 'The Vision'}
             </h3>
@@ -313,7 +313,7 @@ export default function ManifestationDetail() {
 
         {showProgressForm && (
           <div className="card" style={{ border: '2px solid var(--sage)', marginBottom: 32 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, margin: 0 }}>Log Progress</h3>
               <button className="btn btn-ghost" onClick={() => setShowProgressForm(false)}>✕</button>
             </div>
@@ -333,7 +333,7 @@ export default function ManifestationDetail() {
             <textarea maxLength={2000} className="form-textarea" value={progressForm.text} autofill="off"
               onChange={e => setProgressForm({ ...progressForm, text: e.target.value })}
               placeholder="What did you manifest or learn today?" style={{ minHeight: 120, marginBottom: 20 }} />
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-empty" onClick={() => setShowProgressForm(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleAddProgress} disabled={saving} style={{ flex: 1 }}>Save Entry</button>
             </div>
@@ -342,7 +342,7 @@ export default function ManifestationDetail() {
 
         {/* Tab Bar */}
         <div className="tabs-container" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', gap: 32, borderBottom: '1px solid rgba(13,13,13,0.1)' }}>
+          <div className="wrap-on-mobile" style={{ display: 'flex', gap: 32, borderBottom: '1px solid rgba(13,13,13,0.1)' }}>
             {[
               { key: 'progress', label: '📊 Progress Feed', count: progressEntries.length },
               { key: 'notes', label: '💬 Sync Notes', count: notes.length },
@@ -609,7 +609,7 @@ export default function ManifestationDetail() {
                 onChange={e => setEditVisionForm({ ...editVisionForm, target_days: parseInt(e.target.value) || 30 })} />
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Note: Changing duration will recalculate the target date from start.</div>
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowEditModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-primary" onClick={handleUpdateVision} disabled={saving} style={{ flex: 1 }}>
                 {saving ? 'Saving...' : 'Update Vision ✧'}
@@ -635,7 +635,7 @@ export default function ManifestationDetail() {
               <textarea maxLength={2000} className="form-textarea" value={reflection} onChange={e => setReflection(e.target.value)}
                 placeholder="Looking back at who I said I'd become vs who I actually became..." style={{ minHeight: 140 }} />
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowCompleteModal(false)} style={{ flex: 1 }}>Cancel</button>
               <button className="btn btn-gold" onClick={handleComplete} disabled={saving} style={{ flex: 1 }}>
                 {saving ? 'Saving...' : 'Complete Cycle ✧'}

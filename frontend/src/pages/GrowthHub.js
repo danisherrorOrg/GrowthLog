@@ -66,7 +66,7 @@ function PreviewModal({ item, onClose, icon, iconBg, titleColor, title, subtitle
   if (!item) return null;
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
-      <div className="modal" style={{ maxWidth: 580, padding: '32px 40px' }}>
+      <div className="modal modal-lg">
         <div className="modal-header" style={{ marginBottom: 24, alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28, background: iconBg, width: 54, height: 54, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
@@ -241,7 +241,7 @@ export default function GrowthHub() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'skills' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>📈 Skills Tracker</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Track skills you're developing and your current proficiency level.</p></div>
               <button className="btn btn-primary" onClick={openSkCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Add Skill</button>
             </div>
@@ -278,7 +278,7 @@ export default function GrowthHub() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'courses' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div>
                 <h3 style={{ fontSize: 20, marginBottom: 4 }}>📚 Courses & Learning</h3>
                 <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Courses taken, hours invested, and what you actually learned.</p>
@@ -342,7 +342,7 @@ export default function GrowthHub() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'failures' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>💥 Failure Log</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Every mistake is tuition. Record what happened and what you extracted from it.</p></div>
               <button className="btn btn-primary" onClick={openFlCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Failure</button>
             </div>
@@ -383,7 +383,7 @@ export default function GrowthHub() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'skillsgap' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>🎯 Skills Gap Tracker</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Skills you need for your next career move — and your plan to close the gap.</p></div>
               <button className="btn btn-primary" onClick={openSgCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Add Gap</button>
             </div>
@@ -424,7 +424,7 @@ export default function GrowthHub() {
         ══════════════════════════════════════════════════════════════ */}
         {activeTab === 'feedback' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>💬 Feedback Received</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Positive and critical feedback from peers and managers — and what you did with it.</p></div>
               <button className="btn btn-primary" onClick={openFbCreate} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Feedback</button>
             </div>
@@ -496,7 +496,7 @@ export default function GrowthHub() {
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" className="form-input" value={skForm.started_at} onChange={e => setSkForm({ ...skForm, started_at: e.target.value })} /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><textarea maxLength={2000} className="form-textarea" value={skForm.notes} onChange={e => setSkForm({ ...skForm, notes: e.target.value })} placeholder="Resources, milestones, context…" style={{ minHeight: 75 }} /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSkSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : skEdit ? 'Save Changes' : 'Add Skill'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSkSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : skEdit ? 'Save Changes' : 'Add Skill'}</button></div>
       </div></div>)}
 
       {/* Failure Log */}
@@ -508,7 +508,7 @@ export default function GrowthHub() {
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What happened?</label><textarea maxLength={2000} className="form-textarea" value={flForm.what_happened} onChange={e => setFlForm({ ...flForm, what_happened: e.target.value })} placeholder="Be specific and honest…" style={{ minHeight: 90 }} /></div>
         <div className="form-group"><label className="form-label">What did you learn? (optional)</label><textarea maxLength={2000} className="form-textarea" value={flForm.lesson} onChange={e => setFlForm({ ...flForm, lesson: e.target.value })} placeholder="The real lesson, not just the surface one…" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : flEdit ? 'Save Changes' : 'Log Entry'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : flEdit ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
       {/* Skills Gap */}
@@ -521,11 +521,11 @@ export default function GrowthHub() {
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Why is this needed?</label><textarea maxLength={2000} className="form-textarea" value={sgForm.why_needed} onChange={e => setSgForm({ ...sgForm, why_needed: e.target.value })} placeholder="What role, project, or goal requires this skill?" style={{ minHeight: 80 }} /></div>
         <div className="form-group"><label className="form-label">Resources to close the gap (optional)</label><textarea maxLength={2000} className="form-textarea" value={sgForm.resources} onChange={e => setSgForm({ ...sgForm, resources: e.target.value })} placeholder="Courses, books, mentors, projects…" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : sgEdit ? 'Save Changes' : 'Add Gap'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setSgModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSgSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : sgEdit ? 'Save Changes' : 'Add Gap'}</button></div>
       </div></div>)}
 
       {/* Feedback */}
-      {fbModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFbModal(false)}><div className="modal" style={{ maxWidth: 560 }}>
+      {fbModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFbModal(false)}><div className="modal modal-md">
         <div className="modal-header"><h3>{fbEdit ? 'Edit Feedback' : 'Log Feedback'}</h3><button className="modal-close" onClick={() => setFbModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={fbForm.date} onChange={e => setFbForm({ ...fbForm, date: e.target.value })} /></div>
@@ -543,7 +543,7 @@ export default function GrowthHub() {
         </div>
         <div className="form-group"><label className="form-label">Feedback content</label><textarea maxLength={2000} className="form-textarea" value={fbForm.content} onChange={e => setFbForm({ ...fbForm, content: e.target.value })} placeholder="What was the feedback, verbatim or paraphrased?" style={{ minHeight: 100 }} /></div>
         <div className="form-group"><label className="form-label">What did you do with it? (optional)</label><textarea maxLength={2000} className="form-textarea" value={fbForm.action_taken} onChange={e => setFbForm({ ...fbForm, action_taken: e.target.value })} placeholder="Did you act on it? How?" style={{ minHeight: 70 }} /></div>
-        <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFbModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFbSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : fbEdit ? 'Save Changes' : 'Log Feedback'}</button></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setFbModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleFbSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : fbEdit ? 'Save Changes' : 'Log Feedback'}</button></div>
       </div></div>)}
 
       {/* ════════════ PREVIEW MODALS ════════════ */}
