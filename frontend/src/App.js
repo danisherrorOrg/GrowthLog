@@ -31,6 +31,8 @@ import Thoughts from './pages/Thoughts';
 import Insights from './pages/Insights';
 import GrowthHub from './pages/GrowthHub';
 import LifeCanvas from './pages/LifeCanvas';
+import LotusBlossom from './pages/LotusBlossom';
+import LotusList from './pages/LotusList';
 
 
 function PrivateRoute({ children }) {
@@ -83,7 +85,10 @@ export default function App() {
             <Route path="insights" element={<Insights />} />
             <Route path="growth-hub" element={<GrowthHub />} />
             <Route path="life-canvas" element={<LifeCanvas />} />
+            <Route path="lotus" element={<LotusList />} />
+            <Route path="lotus/:id" element={<LotusBlossom />} />
             <Route path="growth" element={<Growth />} />
+
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />
 

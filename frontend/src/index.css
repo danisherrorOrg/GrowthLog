@@ -1743,3 +1743,212 @@ h4 {
     min-width: 100% !important;
   }
 }
+
+/* ─── Lotus Blossom ─────────────────────────────────────────── */
+.lotus-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60vh;
+  padding: 24px;
+}
+
+.lotus-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.lotus-header h2 {
+  font-size: 28px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.lotus-header p {
+  color: rgba(13, 13, 13, 0.5);
+  font-size: 14px;
+}
+
+.lotus-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.lotus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lotus-cell {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid rgba(13, 13, 13, 0.08);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.lotus-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 13, 13, 0.15);
+}
+
+.lotus-cell.is-center {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+  box-shadow: 0 8px 24px rgba(13, 13, 13, 0.2);
+  transform: scale(1.02);
+  z-index: 2;
+}
+
+.lotus-cell.is-center:hover {
+  transform: scale(1.02) translateY(-2px);
+}
+
+.lotus-cell-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+}
+
+.lotus-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  text-align: center;
+  resize: none;
+  outline: none;
+  color: inherit;
+  overflow-y: auto;
+}
+
+.lotus-input::placeholder {
+  color: rgba(13, 13, 13, 0.3);
+}
+
+.is-center .lotus-input::placeholder {
+  color: rgba(245, 240, 232, 0.5);
+}
+
+.lotus-expand-btn {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--mist);
+  color: var(--ink);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.2s ease;
+}
+
+.lotus-cell:hover .lotus-expand-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lotus-expand-btn:hover {
+  background: var(--sage);
+  color: white;
+}
+
+.lotus-controls {
+  margin-top: 32px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.lotus-zoom-out {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(13, 13, 13, 0.6);
+  background: white;
+  border: 1px solid rgba(13, 13, 13, 0.1);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.lotus-zoom-out:hover {
+  background: var(--mist);
+  color: var(--ink);
+}
+
+.lotus-zoom-out:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.lotus-path {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lotus-path-item {
+  color: var(--sage);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .lotus-grid {
+    gap: 8px;
+    padding: 0 16px;
+  }
+  .lotus-cell {
+    padding: 8px;
+  }
+  .lotus-input {
+    font-size: 13px;
+  }
+  .lotus-expand-btn {
+    opacity: 1;
+    transform: scale(1);
+    bottom: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+  }
+}
