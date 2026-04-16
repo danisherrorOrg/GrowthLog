@@ -523,3 +523,28 @@ class CustomExerciseIn(BaseModel):
 
 class ExerciseGoalStatusPatch(BaseModel):
     status: Literal["pending", "achieved", "failed"]
+
+# --- Lotus Blossom ---
+from typing import Dict
+
+class LotusNodeModel(BaseModel):
+    id: str = Field(..., max_length=100)
+    text: str = Field("", max_length=2000)
+    description: Optional[str] = Field("", max_length=5000)
+    parentId: Optional[str] = Field(None, max_length=100)
+    childrenIds: List[Optional[str]]
+    color: Optional[str] = Field(None, max_length=50)
+    status: Optional[str] = Field(None, max_length=50)
+
+
+class LotusBlossomModel(BaseModel):
+    title: str = Field("Untitled Blossom", max_length=200)
+    nodes: Dict[str, LotusNodeModel]
+    activeNodeId: str = Field(..., max_length=100)
+    created_at: Optional[str] = Field(None, max_length=30)
+    updated_at: Optional[str] = Field(None, max_length=30)
+
+class LotusBlossomUpdateModel(BaseModel):
+    title: Optional[str] = Field(None, max_length=200)
+    nodes: Optional[Dict[str, LotusNodeModel]] = None
+    activeNodeId: Optional[str] = Field(None, max_length=100)
