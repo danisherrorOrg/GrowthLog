@@ -1749,80 +1749,256 @@ h4 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   width: 100%;
-  min-height: 60vh;
-  padding: 24px;
+  min-height: 80vh;
+  padding: 40px 24px;
 }
 
 .lotus-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 48px;
+  width: 100%;
+  max-width: 800px;
 }
 
 .lotus-header h2 {
-  font-size: 28px;
+  font-size: 32px;
   color: var(--ink);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.lotus-header p {
-  color: rgba(13, 13, 13, 0.5);
+.lotus-breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
   font-size: 14px;
 }
+
+.breadcrumb-item {
+  color: rgba(13, 13, 13, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.breadcrumb-item:hover {
+  color: var(--sage);
+  background: var(--mist);
+}
+
+.breadcrumb-item.active {
+  color: var(--ink);
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  color: rgba(13, 13, 13, 0.2);
+}
+
 
 .lotus-wrapper {
   position: relative;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 40px 0;
+}
+
+/* Fix: SVG Connections should be exactly over the grid */
+.lotus-grid-container {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  aspect-ratio: 1;
+}
+
+.lotus-connections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lotus-connections path {
+  fill: none;
+  stroke: rgba(13, 13, 13, 0.08);
+  stroke-width: 2;
+  stroke-dasharray: 4 4;
+  transition: all 0.3s;
 }
 
 .lotus-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 16px;
+  gap: clamp(20px, 4vw, 40px);
   width: 100%;
-  max-width: 600px;
-  aspect-ratio: 1;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  z-index: 1;
+}
+
+/* ─── Graph View ────────────────────────────────────────────── */
+.lotus-graph-view {
+  width: 100%;
+  min-height: 700px;
+  background: var(--ink); /* Dark background like the user screenshot */
+  border-radius: 32px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  color: var(--paper);
+}
+
+.graph-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.graph-edge {
+  stroke: rgba(245, 240, 232, 0.1);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.graph-node {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.graph-node:hover {
+  transform: scale(1.2);
+}
+
+.graph-node circle {
+  fill: var(--sage);
+  stroke: var(--paper);
+  stroke-width: 2;
+  transition: all 0.2s;
+}
+
+.graph-node.is-active circle {
+  fill: var(--gold);
+  r: 10;
+}
+
+.graph-node text {
+  font-size: 11px;
+  fill: rgba(245, 240, 232, 0.7);
+  font-family: 'DM Sans', sans-serif;
+  pointer-events: none;
+  text-anchor: middle;
+}
+
+.graph-node:hover text {
+  fill: white;
+  font-weight: 500;
+}
+
+/* Controls */
+.view-toggle {
+  display: flex;
+  background: var(--mist);
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.view-toggle-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(13, 13, 13, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-toggle-btn.active {
+  background: white;
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 768px) {
+  .lotus-graph-view {
+    min-height: 500px;
+  }
 }
 
 .lotus-cell {
   background: white;
-  border-radius: var(--radius);
-  border: 1px solid rgba(13, 13, 13, 0.08);
+  border-radius: 24px; /* More rounded for mind-map look */
+  border: 2px solid rgba(13, 13, 13, 0.05); /* Slightly thicker border */
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
-  transition: all 0.2s ease;
-  padding: 12px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 16px;
   cursor: pointer;
+  min-height: 100px;
 }
 
 .lotus-cell:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.02);
   box-shadow: var(--shadow-md);
-  border-color: rgba(13, 13, 13, 0.15);
+  border-color: rgba(13, 13, 13, 0.1);
 }
 
 .lotus-cell.is-center {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
-  box-shadow: 0 8px 24px rgba(13, 13, 13, 0.2);
-  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(13, 13, 13, 0.15);
+  transform: scale(1.05);
   z-index: 2;
+  border-radius: 32px;
 }
 
 .lotus-cell.is-center:hover {
-  transform: scale(1.02) translateY(-2px);
+  transform: scale(1.08) translateY(-4px);
 }
+
+/* Status Colors */
+.lotus-cell.status-validated { border-color: var(--sage); box-shadow: 0 0 15px rgba(107, 140, 107, 0.2); }
+.lotus-cell.status-promising { border-color: var(--gold); box-shadow: 0 0 15px rgba(201, 168, 76, 0.2); }
+.lotus-cell.status-blocked { border-color: var(--rust); box-shadow: 0 0 15px rgba(196, 98, 58, 0.2); }
+
+.status-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 5;
+}
+
+.status-validated .status-badge { background: var(--sage); color: white; }
+.status-promising .status-badge { background: var(--gold); color: var(--ink); }
+.status-blocked .status-badge { background: var(--rust); color: white; }
 
 .lotus-cell-inner {
   flex: 1;
@@ -1834,121 +2010,74 @@ h4 {
   height: 100%;
 }
 
-.lotus-input {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: transparent;
-  font-family: 'DM Sans', sans-serif;
+.cell-text {
   font-size: 14px;
-  text-align: center;
-  resize: none;
-  outline: none;
-  color: inherit;
-  overflow-y: auto;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
-.lotus-input::placeholder {
-  color: rgba(13, 13, 13, 0.3);
+.is-center .cell-text {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
 }
 
-.is-center .lotus-input::placeholder {
-  color: rgba(245, 240, 232, 0.5);
-}
-
-.lotus-expand-btn {
+.lotus-expand-indicator {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
+  bottom: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--mist);
-  color: var(--ink);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all 0.2s ease;
-}
-
-.lotus-cell:hover .lotus-expand-btn {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.lotus-expand-btn:hover {
   background: var(--sage);
-  color: white;
+  opacity: 0.6;
 }
 
-.lotus-controls {
-  margin-top: 32px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.lotus-zoom-out {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(13, 13, 13, 0.6);
-  background: white;
-  border: 1px solid rgba(13, 13, 13, 0.1);
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.lotus-zoom-out:hover {
-  background: var(--mist);
-  color: var(--ink);
-}
-
-.lotus-zoom-out:disabled {
+/* Drag and Drop styles */
+.lotus-cell.is-dragging {
   opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+  transform: scale(0.95);
+  border: 2px dashed var(--gold);
 }
 
-.lotus-path {
-  font-size: 13px;
-  color: rgba(13, 13, 13, 0.5);
+.lotus-cell.is-over {
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.05);
+}
+
+/* Modal Picker */
+.status-picker {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.lotus-path-item {
-  color: var(--sage);
-  font-weight: 500;
+.status-option {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(13,13,13,0.1);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
 }
+
+.status-option:hover { background: var(--mist); }
+.status-option.selected { border-width: 2px; }
+
+.status-option.validated.selected { background: rgba(107, 140, 107, 0.1); border-color: var(--sage); color: var(--sage); font-weight: 600; }
+.status-option.promising.selected { background: rgba(201, 168, 76, 0.1); border-color: var(--gold); color: #9c7d2a; font-weight: 600; }
+.status-option.blocked.selected { background: rgba(196, 98, 58, 0.1); border-color: var(--rust); color: var(--rust); font-weight: 600; }
 
 @media (max-width: 768px) {
   .lotus-grid {
-    gap: 8px;
-    padding: 0 16px;
+    gap: 12px;
   }
   .lotus-cell {
-    padding: 8px;
+    padding: 12px;
+    border-radius: 16px;
   }
-  .lotus-input {
-    font-size: 13px;
-  }
-  .lotus-expand-btn {
-    opacity: 1;
-    transform: scale(1);
-    bottom: 4px;
-    right: 4px;
-    width: 20px;
-    height: 20px;
+  .lotus-wrapper {
+    padding: 20px;
   }
 }

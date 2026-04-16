@@ -14,11 +14,16 @@ export default function LotusBlossom() {
   const [nodes, setNodes] = useState({});
   const [activeNodeId, setActiveNodeId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'graph'
 
   // Modal State
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [selectedChildIndex, setSelectedChildIndex] = useState(null); // To know what to focus
-  const [modalMode, setModalMode] = useState('view'); // 'view' or 'edit'
+  const [selectedChildIndex, setSelectedChildIndex] = useState(null);
+  const [modalMode, setModalMode] = useState('view');
+
+  // Drag and Drop state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [isOverIndex, setIsOverIndex] = useState(null);
 
   // Debounce saving
   const timerRef = useRef(null);
@@ -75,6 +80,17 @@ export default function LotusBlossom() {
 
   const activeNode = nodes[activeNodeId];
 
+  // Breadcrumbs Logic
+  const getBreadcrumbs = () => {
+    const crumbs = [];
+    let currId = activeNodeId;
+    while (currId && nodes[currId]) {
+      crumbs.unshift({ id: currId, text: nodes[currId].text || 'Unnamed Idea' });
+      currId = nodes[currId].parentId;
+    }
+    return crumbs;
+  };
+
   const gridCells = [
     { type: 'child', childIndex: 0, gridIndex: 0 },
     { type: 'child', childIndex: 1, gridIndex: 1 },
@@ -102,7 +118,14 @@ export default function LotusBlossom() {
       for (let i = 0; i < 8; i++) {
         const nid = generateId();
         childrenIds.push(nid);
-        newNodes[nid] = { id: nid, text: '', description: '', parentId: childId, childrenIds: Array(8).fill(null) };
+        newNodes[nid] = { 
+          id: nid, 
+          text: '', 
+          description: '', 
+          parentId: childId, 
+          childrenIds: Array(8).fill(null),
+          status: null
+        };
       }
       childNode = { ...childNode, childrenIds };
       newNodes[childId] = childNode;
@@ -111,9 +134,9 @@ export default function LotusBlossom() {
     autoSave(newNodes, childId);
   };
 
-  const navigateUp = () => {
-    if (activeNode.parentId && nodes[activeNode.parentId]) {
-      autoSave(nodes, activeNode.parentId);
+  const navigateTo = (nodeId) => {
+    if (nodes[nodeId]) {
+      autoSave(nodes, nodeId);
     }
   };
 
@@ -134,7 +157,6 @@ export default function LotusBlossom() {
   const openSelectionModal = (nodeId, childIndex) => {
     setSelectedNodeId(nodeId);
     setSelectedChildIndex(childIndex);
-    // Auto-open in edit mode if it's completely empty, otherwise view mode
     const textEmpty = !nodes[nodeId]?.text?.trim();
     const descEmpty = !nodes[nodeId]?.description?.trim();
     if (textEmpty && descEmpty) {
@@ -144,91 +166,261 @@ export default function LotusBlossom() {
     }
   };
 
+  // Drag and Drop handlers
+  const onDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+      e.target.classList.add('is-dragging');
+    }, 0);
+  };
+
+  const onDragOver = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex === index) return;
+    setIsOverIndex(index);
+  };
+
+  const onDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const newChildrenIds = [...activeNode.childrenIds];
+    const draggedId = newChildrenIds[draggedIndex];
+    const targetId = newChildrenIds[targetIndex];
+
+    newChildrenIds[draggedIndex] = targetId;
+    newChildrenIds[targetIndex] = draggedId;
+
+    const newNodes = {
+      ...nodes,
+      [activeNodeId]: { ...activeNode, childrenIds: newChildrenIds }
+    };
+
+    autoSave(newNodes, activeNodeId);
+    setDraggedIndex(null);
+    setIsOverIndex(null);
+    toast.success('Position updated');
+  };
+
+  const onDragEnd = (e) => {
+    setDraggedIndex(null);
+    setIsOverIndex(null);
+    e.target.classList.remove('is-dragging');
+  };
+
+  // SVG Connections Component for Grid
+  const LotusConnections = () => {
+    return (
+      <svg className="lotus-connections" viewBox="0 0 100 100" preserveAspectRatio="none">
+        {gridCells.filter(c => c.type === 'child').map((cell) => {
+          const coords = [
+            { x: 16.6, y: 16.6 }, { x: 50, y: 16.6 }, { x: 83.4, y: 16.6 },
+            { x: 16.6, y: 50 },   { x: 50, y: 50 },   { x: 83.4, y: 50 },
+            { x: 16.6, y: 83.4 }, { x: 50, y: 83.4 }, { x: 83.4, y: 83.4 }
+          ];
+          const start = coords[4];
+          const end = coords[cell.gridIndex];
+          
+          return (
+            <path 
+              key={cell.gridIndex}
+              d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
+              style={{ stroke: isOverIndex === cell.childIndex ? 'var(--gold)' : 'rgba(13,13,13,0.08)' }}
+            />
+          );
+        })}
+      </svg>
+    );
+  };
+
+  // Graph View Logic
+  const renderGraph = () => {
+    const rootNodeId = Object.keys(nodes).find(nid => !nodes[nid].parentId);
+    if (!rootNodeId) return null;
+
+    const nodesToRender = [];
+    const edgesToRender = [];
+    const visited = new Set();
+
+    const calculateLayout = (nodeId, x, y, angle, depth, spread) => {
+      if (visited.has(nodeId)) return;
+      visited.add(nodeId);
+
+      const node = nodes[nodeId];
+      nodesToRender.push({ id: nodeId, x, y, text: node.text });
+
+      const children = node.childrenIds.filter(id => id && nodes[id]);
+      const childCount = children.length;
+      if (childCount === 0) return;
+
+      const angleStep = spread / Math.max(1, childCount - (depth === 0 ? 0 : 1));
+      let startAngle = angle - spread / 2;
+
+      children.forEach((childId, i) => {
+        const childAngle = startAngle + i * angleStep;
+        const dist = 140 / (depth + 1);
+        const nextX = x + Math.cos(childAngle) * dist;
+        const nextY = y + Math.sin(childAngle) * dist;
+
+        edgesToRender.push({ x1: x, y1: y, x2: nextX, y2: nextY });
+        calculateLayout(childId, nextX, nextY, childAngle, depth + 1, spread * 0.8);
+      });
+    };
+
+    calculateLayout(rootNodeId, 500, 350, 0, 0, Math.PI * 2);
+
+    return (
+      <div className="lotus-graph-view">
+        <svg className="graph-svg" viewBox="0 0 1000 700">
+          {edgesToRender.map((edge, i) => (
+            <line key={i} x1={edge.x1} y1={edge.y1} x2={edge.x2} y2={edge.y2} className="graph-edge" />
+          ))}
+          {nodesToRender.map((node) => (
+            <g 
+              key={node.id} 
+              className={`graph-node ${node.id === activeNodeId ? 'is-active' : ''}`}
+              onClick={() => openSelectionModal(node.id, null)}
+              onDoubleClick={() => {
+                navigateTo(node.id);
+                setViewMode('grid');
+              }}
+            >
+              <circle cx={node.x} cy={node.y} r={6} />
+              <text x={node.x} y={node.y + 18}>{node.text || '...'}</text>
+            </g>
+          ))}
+        </svg>
+        <div style={{ position: 'absolute', bottom: 20, right: 20, fontSize: 12, opacity: 0.5 }}>
+          Double-click to Focus • Drag not supported in Graph View
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="page-header" style={{ paddingBottom: 16 }}>
-        <button 
-          className="btn btn-ghost" 
-          onClick={() => navigate('/lotus')} 
-          style={{ padding: 0, marginBottom: 16, color: 'rgba(13,13,13,0.5)' }}
-        >
-          ← Back to List
-        </button>
-        <input 
-          type="text" 
-          value={blossomData?.title || ''}
-          onChange={handleTitleChange}
-          placeholder="Untitled Blossom"
-          style={{ 
-            fontSize: 28, 
-            fontFamily: 'Fraunces, serif',
-            border: 'none',
-            background: 'transparent',
-            outline: 'none',
-            width: '100%',
-            color: 'var(--ink)'
-          }}
-        />
-      </div>
-
-      <div className="lotus-container">
-        <div className="lotus-header" style={{ marginBottom: 24 }}>
-          <div className="lotus-controls" style={{ justifyContent: 'center', marginTop: 0 }}>
-            {activeNode.parentId ? (
-              <button className="lotus-zoom-out" onClick={navigateUp}>
-                <span>↑</span> Move Up to Parent
-              </button>
-            ) : (
-              <div className="lotus-path" style={{ background: 'var(--mist)', padding: '6px 12px', borderRadius: '100px' }}>
-                Currently at the root idea
-              </div>
-            )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => navigate('/lotus')} 
+              style={{ padding: 0, marginBottom: 16, color: 'rgba(13,13,13,0.5)' }}
+            >
+              ← Back to List
+            </button>
+            <input 
+              type="text" 
+              value={blossomData?.title || ''}
+              onChange={handleTitleChange}
+              placeholder="Untitled Blossom"
+              style={{ 
+                fontSize: 28, 
+                fontFamily: 'Fraunces, serif',
+                border: 'none',
+                background: 'transparent',
+                outline: 'none',
+                width: '100%',
+                maxWidth: 500,
+                color: 'var(--ink)'
+              }}
+            />
+          </div>
+          <div className="view-toggle">
+            <button 
+              className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+              onClick={() => setViewMode('grid')}
+            >
+              Grid View
+            </button>
+            <button 
+              className={`view-toggle-btn ${viewMode === 'graph' ? 'active' : ''}`}
+              onClick={() => setViewMode('graph')}
+            >
+              Graph View 🕸️
+            </button>
           </div>
         </div>
+      </div>
+
+      <div className="lotus-container" style={{ minHeight: viewMode === 'graph' ? 'auto' : '80vh' }}>
+        {viewMode === 'grid' && (
+          <div className="lotus-header">
+            <nav className="lotus-breadcrumb-nav">
+              {getBreadcrumbs().map((crumb, idx, arr) => (
+                <React.Fragment key={crumb.id}>
+                  <span 
+                    className={`breadcrumb-item ${idx === arr.length - 1 ? 'active' : ''}`}
+                    onClick={() => idx < arr.length - 1 && navigateTo(crumb.id)}
+                  >
+                    {crumb.text}
+                  </span>
+                  {idx < arr.length - 1 && <span className="breadcrumb-separator">➔</span>}
+                </React.Fragment>
+              ))}
+            </nav>
+          </div>
+        )}
 
         <div className="lotus-wrapper">
-          <div className="lotus-grid">
-            {gridCells.map((cell) => {
-              if (cell.type === 'center') {
-                return (
-                  <div 
-                    key="center" 
-                    className="lotus-cell is-center" 
-                    onClick={() => openSelectionModal(activeNodeId, null)} 
-                    title="Click to view/edit this idea"
-                  >
-                    <div className="lotus-cell-inner" style={{ padding: '8px', wordBreak: 'break-word' }}>
-                      <div style={{ fontWeight: 600, fontSize: '16px', color: 'var(--paper)', opacity: activeNode.text ? 1 : 0.6 }}>
-                        {activeNode.text || "Core Idea..."}
+          {viewMode === 'grid' ? (
+            <div className="lotus-grid-container">
+              <LotusConnections />
+              <div className="lotus-grid">
+                {gridCells.map((cell) => {
+                  if (cell.type === 'center') {
+                    return (
+                      <div 
+                        key="center" 
+                        className="lotus-cell is-center" 
+                        onClick={() => openSelectionModal(activeNodeId, null)} 
+                        title="Click to view/edit this idea"
+                      >
+                        <div className="lotus-cell-inner">
+                          <div className="cell-text" style={{ opacity: activeNode.text ? 1 : 0.6 }}>
+                            {activeNode.text || "Core Idea..."}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              }
+                    );
+                  }
 
-              const childId = activeNode.childrenIds[cell.childIndex];
-              const childNode = nodes[childId];
-              const hasExpanded = childNode && childNode.childrenIds && childNode.childrenIds[0] !== null;
+                  const childId = activeNode.childrenIds[cell.childIndex];
+                  const childNode = nodes[childId];
+                  const hasExpanded = childNode && childNode.childrenIds && childNode.childrenIds[0] !== null;
+                  const status = childNode?.status;
 
-              return (
-                <div 
-                  key={cell.gridIndex} 
-                  className="lotus-cell"
-                  onClick={() => openSelectionModal(childId, cell.childIndex)}
-                  title="Click to view/edit this idea"
-                >
-                  <div className="lotus-cell-inner" style={{ padding: '8px', wordBreak: 'break-word' }}>
-                    <div style={{ fontSize: '14px', color: 'var(--ink)', opacity: childNode?.text ? 1 : 0.4 }}>
-                      {childNode && childNode.text ? childNode.text : `Idea ${cell.childIndex + 1}...`}
+                  return (
+                    <div 
+                      key={cell.gridIndex} 
+                      className={`lotus-cell ${status ? `status-${status.toLowerCase()}` : ''} ${isOverIndex === cell.childIndex ? 'is-over' : ''}`}
+                      onClick={() => openSelectionModal(childId, cell.childIndex)}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, cell.childIndex)}
+                      onDragOver={(e) => onDragOver(e, cell.childIndex)}
+                      onDrop={(e) => onDrop(e, cell.childIndex)}
+                      onDragEnd={onDragEnd}
+                    >
+                      {status && (
+                        <div className="status-badge">{status}</div>
+                      )}
+                      <div className="lotus-cell-inner">
+                        <div className="cell-text" style={{ color: 'var(--ink)', opacity: childNode?.text ? 1 : 0.4 }}>
+                          {childNode && childNode.text ? childNode.text : `Idea ${cell.childIndex + 1}...`}
+                        </div>
+                      </div>
+                      {hasExpanded && (
+                        <div className="lotus-expand-indicator" title="Has sub-ideas"></div>
+                      )}
                     </div>
-                  </div>
-                  {hasExpanded && (
-                    <div style={{ position: 'absolute', top: 8, right: 8, width: 6, height: 6, backgroundColor: 'var(--sage)', borderRadius: '50%' }} title="Has sub-ideas"></div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            renderGraph()
+          )}
         </div>
       </div>
 
@@ -270,6 +462,24 @@ export default function LotusBlossom() {
                       maxLength={2000}
                     />
                   </div>
+
+                  {nodes[selectedNodeId].parentId && (
+                    <div className="form-group">
+                      <label className="form-label">Priority / Status</label>
+                      <div className="status-picker">
+                        {['Validated', 'Promising', 'Blocked'].map((s) => (
+                          <div 
+                            key={s}
+                            className={`status-option ${s.toLowerCase()} ${nodes[selectedNodeId].status === s ? 'selected' : ''}`}
+                            onClick={() => handleNodeUpdate(selectedNodeId, { status: nodes[selectedNodeId].status === s ? null : s })}
+                          >
+                            {s}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="form-group">
                     <label className="form-label">Description</label>
                     <textarea 
@@ -285,9 +495,16 @@ export default function LotusBlossom() {
                 </>
               ) : (
                 <div style={{ minHeight: 280 }}>
-                  <h3 style={{ fontSize: 24, marginBottom: 16, color: 'var(--ink)' }}>
-                    {nodes[selectedNodeId].text || <span style={{ opacity: 0.4 }}>No Title</span>}
-                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 24, margin: 0, color: 'var(--ink)' }}>
+                      {nodes[selectedNodeId].text || <span style={{ opacity: 0.4 }}>No Title</span>}
+                    </h3>
+                    {nodes[selectedNodeId].status && (
+                      <span className={`tag tag-${nodes[selectedNodeId].status.toLowerCase() == 'validated' ? 'green' : nodes[selectedNodeId].status.toLowerCase() == 'promising' ? 'gold' : 'rust'}`}>
+                        {nodes[selectedNodeId].status}
+                      </span>
+                    )}
+                  </div>
                   <div className="markdown-body" style={{ color: 'var(--ink)' }}>
                     {nodes[selectedNodeId].description ? (
                       <MarkdownRenderer content={nodes[selectedNodeId].description} />
@@ -299,27 +516,30 @@ export default function LotusBlossom() {
               )}
             </div>
 
-            {selectedChildIndex !== null && (
-              <div style={{ borderTop: '1px solid rgba(13,13,13,0.08)', paddingTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                <button 
-                  className="btn btn-outline" 
-                  onClick={() => setSelectedNodeId(null)}
-                >
-                  Close
-                </button>
+            <div style={{ borderTop: '1px solid rgba(13,13,13,0.08)', paddingTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button 
+                className="btn btn-outline" 
+                onClick={() => setSelectedNodeId(null)}
+              >
+                Close
+              </button>
+              {selectedNodeId !== activeNodeId && (
                 <button 
                   className="btn btn-gold" 
                   onClick={() => {
-                    // Dive / Expand into this node
-                    handleExpand(selectedChildIndex);
+                    if (selectedChildIndex !== null) {
+                      handleExpand(selectedChildIndex);
+                    } else {
+                      navigateTo(selectedNodeId);
+                    }
                     setSelectedNodeId(null);
                   }}
                   title="Make this idea the center of a new 3x3 grid"
                 >
                   Focus this Idea ⤢
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}

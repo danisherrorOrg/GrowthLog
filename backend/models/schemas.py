@@ -533,6 +533,9 @@ class LotusNodeModel(BaseModel):
     description: Optional[str] = Field("", max_length=5000)
     parentId: Optional[str] = Field(None, max_length=100)
     childrenIds: List[Optional[str]]
+    color: Optional[str] = Field(None, max_length=50)
+    status: Optional[str] = Field(None, max_length=50)
+
 
 class LotusBlossomModel(BaseModel):
     title: str = Field("Untitled Blossom", max_length=200)
