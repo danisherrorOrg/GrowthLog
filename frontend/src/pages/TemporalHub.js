@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import SnapshotsTab from '../components/temporal/SnapshotsTab';
 import TimeCapsuleTab from '../components/temporal/TimeCapsuleTab';
 
@@ -8,7 +9,21 @@ const TABS = [
 ];
 
 export default function TemporalHub() {
-  const [activeTab, setActiveTab] = useState('snapshots');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'snapshots');
+
+  // Sync tab with URL parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && TABS.find(t => t.id === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   return (
     <div>
@@ -21,7 +36,7 @@ export default function TemporalHub() {
         {/* Navigation Tabs */}
         <div className="wrap-on-mobile" style={{ display: 'flex', gap: 5, background: 'var(--mist)', padding: 4, borderRadius: 12, flexWrap: 'wrap', marginBottom: 24 }}>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            <button key={tab.id} onClick={() => handleTabChange(tab.id)} style={{
               padding: '8px 16px', borderRadius: 9, border: 'none', cursor: 'pointer',
               fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 600,
               background: activeTab === tab.id ? 'white' : 'transparent',

@@ -75,6 +75,8 @@ export default function App() {
             <Route path="manifestations" element={<Manifestations />} />
             <Route path="manifestations/:manifestationId" element={<ManifestationDetail />} />
             <Route path="temporal" element={<TemporalHub />} />
+            <Route path="snapshots" element={<Navigate to="/temporal?tab=snapshots" />} />
+            <Route path="time-capsule" element={<Navigate to="/temporal?tab=timecapsule" />} />
             <Route path="snapshots/:snapshotId" element={<SnapshotDetail />} />
             <Route path="todos" element={<Todos />} />
             <Route path="knowledge" element={<KnowledgeVault />} />

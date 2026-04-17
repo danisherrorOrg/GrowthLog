@@ -201,7 +201,7 @@ export default function Dashboard() {
               The best way to start is by capturing who you are today.
             </p>
             <div className="dashboard-onboarding-actions" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => navigate('/snapshots')}>Take a Snapshot ○</button>
+              <button className="btn btn-primary" onClick={() => navigate('/temporal?tab=snapshots')}>Take a Snapshot ○</button>
               <button className="btn btn-outline" onClick={() => navigate('/log')}>Log your first day ✦</button>
             </div>
           </div>
@@ -620,7 +620,7 @@ export default function Dashboard() {
             <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.4 }}>Creativity, passions & meaning</div>
           </div>
 
-          <div className="card" onClick={() => navigate('/time-capsule')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid #8b6bc4', ...hoverStyles() }} {...hoverEvents()}>
+          <div className="card" onClick={() => navigate('/temporal?tab=timecapsule')} style={{ cursor: 'pointer', transition: 'transform 0.2s', borderLeft: '3px solid #8b6bc4', ...hoverStyles() }} {...hoverEvents()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <span style={{ fontSize: 24, background: 'rgba(139,107,196,0.1)', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12 }}>⏳</span>
               <span style={{ fontSize: 20, fontFamily: 'Fraunces', fontWeight: 600, color: '#8b6bc4' }}>{data?.time_capsule_count || 0}</span>

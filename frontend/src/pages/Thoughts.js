@@ -4,6 +4,7 @@ import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 const MAX_CHARS = 1000;
@@ -133,6 +134,7 @@ export default function Thoughts() {
   const [search, setSearch]             = useState('');
   const [viewingThought, setViewingThought] = useState(null);
   const [showOnlyPinned, setShowOnlyPinned] = useState(false);
+  const [confirm, setConfirm]         = useState(null);
   const textareaRef = useRef(null);
 
   const fetchThoughts = async () => {
@@ -164,7 +166,17 @@ export default function Thoughts() {
     }
   };
 
-  const deleteThought = async (id) => {
+  const deleteThought = (id) => {
+    setConfirm({
+      title: 'Remove Thought?',
+      message: 'Are you sure you want to delete this thought from your mind garden? This action cannot be undone.',
+      confirmLabel: 'Delete Forever',
+      danger: true,
+      onConfirm: () => executeDelete(id)
+    });
+  };
+
+  const executeDelete = async (id) => {
     try {
       await API.delete(`/thoughts/${id}`);
       setThoughts(thoughts.filter(t => t.id !== id));
@@ -470,6 +482,8 @@ export default function Thoughts() {
           </div>
         </div>
       )}
+
+      <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }
