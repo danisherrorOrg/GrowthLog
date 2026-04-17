@@ -120,6 +120,13 @@ class DailyLogEntryModel(BaseModel):
             raise ValueError("Rating must be between 1 and 10")
         return v
 
+    @field_validator("time_spent")
+    @classmethod
+    def validate_time(cls, v):
+        if v is not None and not (0 <= v <= 1440):
+            raise ValueError("Time spent must be between 0 and 1440 minutes (24 hours)")
+        return v
+
 class DailyLogModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30)
     entries: List[DailyLogEntryModel]
@@ -133,6 +140,14 @@ class DailyLogModel(BaseModel):
     def clamp_overall(cls, v):
         if v is not None and not (1 <= v <= 10):
             raise ValueError("Overall rating must be between 1 and 10")
+        return v
+
+    @field_validator("entries")
+    @classmethod
+    def validate_total_time(cls, v):
+        total_time = sum(entry.time_spent or 0 for entry in v)
+        if total_time > 1440:
+            raise ValueError(f"Total time logged across all categories ({total_time} mins) cannot exceed 1440 minutes (24 hours)")
         return v
 
 # --- Manifestations ---

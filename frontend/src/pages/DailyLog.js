@@ -109,6 +109,12 @@ export default function DailyLog() {
     const filled = Object.entries(entries).filter(([, e]) => e.text.trim());
     if (filled.length === 0) return toast.error('Write at least one entry');
 
+    // Calculate total time
+    const totalTime = Object.values(entries).reduce((sum, e) => sum + (parseInt(e.time_spent) || 0), 0);
+    if (totalTime > 1440) {
+      return toast.error(`Total time (${totalTime} mins) cannot exceed 24 hours (1440 mins)`);
+    }
+
     const entryList = filled.map(([catId, e]) => ({
       category_id: catId,
       text: e.text,
@@ -262,9 +268,9 @@ export default function DailyLog() {
                       <label className="form-label">Time Invested — {entry.time_spent} min</label>
                       <div className="rating-row">
                         <span style={{ fontSize: 16 }}>⏱</span>
-                        <input maxLength={200} type="range" className="rating-slider" min={0} max={180} step={5} value={entry.time_spent}
+                        <input maxLength={200} type="range" className="rating-slider" min={0} max={1440} step={5} value={entry.time_spent}
                           onChange={(e) => updateEntry(cat.id, 'time_spent', parseInt(e.target.value) || 0)}
-                          style={{ '--val': `${(entry.time_spent / 180) * 100}%`, '--color': '#8b6bc4' }} />
+                          style={{ '--val': `${(entry.time_spent / 1440) * 100}%`, '--color': '#8b6bc4' }} />
                         <span style={{ fontSize: 16 }}>⏳</span>
                       </div>
                     </div>
@@ -358,6 +364,11 @@ export default function DailyLog() {
               onChange={(e) => setOverallRating(+e.target.value)}
               style={{ '--val': `${(overallRating - 1) / 9 * 100}%`, width: '100%' }} />
           </div>
+        </div>
+
+        {/* Total Time indicator */}
+        <div style={{ marginBottom: 16, textAlign: 'right', fontSize: 14, color: 'rgba(13,13,13,0.6)' }}>
+          Total Time Invested: <strong>{Object.values(entries).reduce((sum, e) => sum + (parseInt(e.time_spent) || 0), 0)} / 1440 mins</strong>
         </div>
 
         <button className="btn btn-primary btn-lg" onClick={handleSave} disabled={saving} style={{ width: '100%', justifyContent: 'center' }}>
