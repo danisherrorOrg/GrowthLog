@@ -77,6 +77,7 @@ export default function Goals() {
       setShowCreateCat(false);
       setNewCatForm({ name: '', icon: '🎯', color: '#6b8c6b', description: '' });
       toast.success(`${r.data.icon} ${r.data.name} created!`);
+      window.location.reload();
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to create category')); }
 
 

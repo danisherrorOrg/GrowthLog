@@ -68,6 +68,7 @@ export default function Categories() {
       setForm({ name: '', icon: '🧠', color: '#6b8c6b', description: '' });
       setEditCat(null);
       load();
+      window.location.reload();
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to save category')); }
     finally { setLoading(false); }
   };
@@ -82,6 +83,7 @@ export default function Categories() {
           await API.delete(`/categories/${id}`);
           toast.success('Category archived');
           load();
+          window.location.reload();
         } catch (e) { toast.error(getErrorMessage(e, 'Failed to archive')); }
       }
     });
@@ -98,6 +100,7 @@ export default function Categories() {
           await API.delete(`/categories/${id}?permanent=true`);
           toast.success(`"${name}" and all its records deleted.`);
           load();
+          window.location.reload();
         } catch (e) { toast.error(getErrorMessage(e, 'Failed to delete')); }
       }
     });
@@ -107,6 +110,7 @@ export default function Categories() {
     await API.put(`/categories/${id}/restore`);
     toast.success(`${name} restored!`);
     load();
+    window.location.reload();
   };
 
   const addDefault = async (def) => {
@@ -114,6 +118,7 @@ export default function Categories() {
       await API.post('/categories', def);
       toast.success(`${def.icon} ${def.name} added!`);
       load();
+      window.location.reload();
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to add category')); }
   };
 
