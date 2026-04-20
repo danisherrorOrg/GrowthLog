@@ -22,6 +22,7 @@ const NAV_GROUPS = [
       { to: '/temporal', icon: '🕰️', label: 'Temporal Space', shortcut: 'P' },
       { to: '/reframes', icon: '🧠', label: 'Reframing', shortcut: 'R' },
       { to: '/lotus', icon: '🌸', label: 'Lotus Blossom', shortcut: 'B' },
+      { to: '/reviews', icon: '📋', label: 'Reviews', shortcut: 'E' },
     ]
   },
   {

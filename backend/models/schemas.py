@@ -563,3 +563,31 @@ class LotusBlossomUpdateModel(BaseModel):
     title: Optional[str] = Field(None, max_length=200)
     nodes: Optional[Dict[str, LotusNodeModel]] = None
     activeNodeId: Optional[str] = Field(None, max_length=100)
+
+# --- Periodic Reviews ---
+class ReviewModel(BaseModel):
+    period_type: Literal["weekly", "monthly", "yearly"]
+    period_label: str = Field(..., max_length=100)  # e.g. "Week of Apr 14, 2026"
+    start_date: str = Field(..., max_length=30)      # yyyy-MM-dd
+    end_date: str = Field(..., max_length=30)        # yyyy-MM-dd
+    rating: Optional[int] = Field(5)
+    wins: Optional[str] = Field("", max_length=5000)
+    challenges: Optional[str] = Field("", max_length=5000)
+    learnings: Optional[str] = Field("", max_length=5000)
+    intentions: Optional[str] = Field("", max_length=5000)
+    tags: Optional[List[str]] = []
+
+    @field_validator("rating")
+    @classmethod
+    def clamp_rating(cls, v):
+        if v is not None and not (1 <= v <= 10):
+            raise ValueError("Rating must be between 1 and 10")
+        return v
+
+class ReviewUpdateModel(BaseModel):
+    rating: Optional[int] = None
+    wins: Optional[str] = Field(None, max_length=5000)
+    challenges: Optional[str] = Field(None, max_length=5000)
+    learnings: Optional[str] = Field(None, max_length=5000)
+    intentions: Optional[str] = Field(None, max_length=5000)
+    tags: Optional[List[str]] = None

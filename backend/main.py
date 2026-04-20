@@ -46,6 +46,7 @@ from api.routers.health import router as health_router
 from api.routers.spirituality import router as spirituality_router
 from api.routers.timeline import router as timeline_router
 from api.routers.lotus import router as lotus_router
+from api.routers.reviews import router as reviews_router
 
 from contextlib import asynccontextmanager
 
@@ -136,6 +137,7 @@ app.include_router(health_router, prefix="/health", tags=["Health"])
 app.include_router(spirituality_router)
 app.include_router(timeline_router)
 app.include_router(lotus_router)
+app.include_router(reviews_router)
 
 
 
