@@ -591,3 +591,54 @@ class ReviewUpdateModel(BaseModel):
     learnings: Optional[str] = Field(None, max_length=5000)
     intentions: Optional[str] = Field(None, max_length=5000)
     tags: Optional[List[str]] = None
+
+# --- Failure Prevention ---
+class TriggerModel(BaseModel):
+    trigger: str = Field(..., max_length=300)       # The situation / stimulus
+    behavior: str = Field(..., max_length=500)       # What you did as a result
+    consequence: Optional[str] = Field("", max_length=1000)  # What it cost you
+    guard: Optional[str] = Field("", max_length=1000)        # System to prevent next time
+    date: Optional[str] = Field(None, max_length=30)
+
+    @field_validator("trigger")
+    @classmethod
+    def trigger_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Trigger cannot be empty")
+        return v
+
+class BadDecisionModel(BaseModel):
+    decision: str = Field(..., max_length=300)
+    what_went_wrong: Optional[str] = Field("", max_length=2000)
+    root_cause: Optional[str] = Field("", max_length=1000)
+    do_differently: Optional[str] = Field("", max_length=1000)
+    domain: Optional[str] = Field("General", max_length=100)   # Work, Health, Finance, etc.
+    date: Optional[str] = Field(None, max_length=30)
+
+    @field_validator("decision")
+    @classmethod
+    def decision_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Decision cannot be empty")
+        return v
+
+class WeaknessModel(BaseModel):
+    weakness: str = Field(..., max_length=300)
+    description: Optional[str] = Field("", max_length=2000)
+    severity: Optional[int] = Field(3)   # 1-5
+    frequency: Optional[int] = Field(3)  # 1-5
+    guard_system: Optional[str] = Field("", max_length=1000)
+
+    @field_validator("weakness")
+    @classmethod
+    def weakness_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError("Weakness cannot be empty")
+        return v
+
+    @field_validator("severity", "frequency")
+    @classmethod
+    def clamp_rating(cls, v):
+        if v is not None and not (1 <= v <= 5):
+            raise ValueError("Rating must be between 1 and 5")
+        return v

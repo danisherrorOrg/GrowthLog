@@ -49,6 +49,16 @@ export default function Dashboard() {
     });
   }, []);
 
+  const [alerts, setAlerts] = useState([]);
+  const [alertsDismissed, setAlertsDismissed] = useState(false);
+
+  useEffect(() => {
+    API.get('/dashboard/consistency-alerts')
+      .then(r => setAlerts(r.data || []))
+      .catch(() => {});
+  }, []);
+
+
   useEffect(() => {
     const fetchDashboard = async () => {
       setLoading(true);
@@ -157,7 +167,7 @@ export default function Dashboard() {
       </div>
 
       <div className="page-body">
-        {/* Insights Section */}
+        {/* Behavioral Insights */}
         {data?.insights?.length > 0 && (
           <div style={{ marginBottom: 28 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
@@ -179,6 +189,51 @@ export default function Dashboard() {
                   <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, fontWeight: 500 }}>
                     {insight.text}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Consistency Drop Alerts ── */}
+        {alerts.length > 0 && !alertsDismissed && (
+          <div style={{
+            marginBottom: 28, padding: '16px 20px',
+            background: 'linear-gradient(135deg, rgba(196,98,58,0.04) 0%, rgba(196,98,58,0.02) 100%)',
+            border: '1px solid rgba(196,98,58,0.18)', borderRadius: 16,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>⚠️</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rust)' }}>
+                  Consistency Drift — {alerts.length} {alerts.length === 1 ? 'category' : 'categories'} going quiet
+                </span>
+              </div>
+              <button onClick={() => setAlertsDismissed(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(13,13,13,0.3)', padding: '2px 6px' }}>
+                ✕
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {alerts.map(a => (
+                <div key={a.category_id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 16px', background: 'white', borderRadius: 12,
+                  border: `1px solid ${a.color}33`,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}>
+                  <span style={{ fontSize: 18 }}>{a.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{a.name}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)' }}>
+                      {a.never_logged ? 'Never logged' : `${a.days_since}d ago`}
+                    </div>
+                  </div>
+                  <button className="btn btn-sm btn-outline"
+                    onClick={() => navigate('/log')}
+                    style={{ borderRadius: 20, fontSize: 11, padding: '4px 12px', marginLeft: 6, borderColor: a.color, color: a.color }}>
+                    Log now →
+                  </button>
                 </div>
               ))}
             </div>

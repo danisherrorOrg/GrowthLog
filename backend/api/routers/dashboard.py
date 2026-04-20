@@ -228,3 +228,66 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
 
     cache_set(cache_key, result, ttl=300)
     return result
+
+@router.get("/consistency-alerts")
+def get_consistency_alerts(current_user=Depends(get_current_user)):
+    """
+    Returns active categories that haven't been logged in 5+ days.
+    Used by the Dashboard to show drift/consistency drop alerts.
+    """
+    uid = str(current_user["_id"])
+    threshold_days = 5
+
+    # All active categories
+    categories = list(db.categories.find({"user_id": uid, "archived": {"$ne": True}}))
+    if not categories:
+        return []
+
+    alerts = []
+    today_str = utcnow().strftime("%Y-%m-%d")
+    cutoff = (utcnow() - timedelta(days=threshold_days)).strftime("%Y-%m-%d")
+
+    for cat in categories:
+        cat_id = str(cat["_id"])
+        # Find the most recent log that contains this category
+        recent = db.daily_logs.find_one(
+            {"user_id": uid, "entries.category_id": cat_id},
+            sort=[("date", -1)],
+            projection={"date": 1}
+        )
+        if recent is None:
+            # Never logged — only alert if category was created >5 days ago
+            created = cat.get("created_at")
+            if created:
+                created_str = created.strftime("%Y-%m-%d") if hasattr(created, "strftime") else str(created)[:10]
+                if created_str <= cutoff:
+                    alerts.append({
+                        "category_id": cat_id,
+                        "name": cat["name"],
+                        "icon": cat["icon"],
+                        "color": cat["color"],
+                        "last_logged": None,
+                        "days_since": None,
+                        "never_logged": True,
+                    })
+        elif recent["date"] < cutoff:
+            # Calculate exact days since last log
+            try:
+                last_dt = datetime.strptime(recent["date"], "%Y-%m-%d")
+                today_dt = datetime.strptime(today_str, "%Y-%m-%d")
+                days_since = (today_dt - last_dt).days
+            except Exception:
+                days_since = threshold_days
+            alerts.append({
+                "category_id": cat_id,
+                "name": cat["name"],
+                "icon": cat["icon"],
+                "color": cat["color"],
+                "last_logged": recent["date"],
+                "days_since": days_since,
+                "never_logged": False,
+            })
+
+    # Sort by days_since descending (most neglected first)
+    alerts.sort(key=lambda x: x.get("days_since") or 999, reverse=True)
+    return alerts

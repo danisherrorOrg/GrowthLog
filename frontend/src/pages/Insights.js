@@ -7,12 +7,15 @@ import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 const TABS = [
-  { id: 'anti-goals', label: 'Anti-Goals', icon: '🚫', color: 'var(--rust)' },
-  { id: 'graveyard', label: 'Habit Graveyard', icon: '🪦', color: '#8b6bc4' },
-  { id: 'time', label: 'Time Tracking', icon: '⏱', color: 'var(--sage)' },
-  { id: 'screen', label: 'Screen Time', icon: '📱', color: '#5b8ba8' },
+  { id: 'anti-goals',    label: 'Anti-Goals',      icon: '🚫', color: 'var(--rust)' },
+  { id: 'graveyard',    label: 'Habit Graveyard',  icon: '🪦', color: '#8b6bc4' },
+  { id: 'time',         label: 'Time Tracking',    icon: '⏱', color: 'var(--sage)' },
+  { id: 'screen',       label: 'Screen Time',      icon: '📱', color: '#5b8ba8' },
   { id: 'procrastination', label: 'Procrastination', icon: '😬', color: '#c9a84c' },
-  { id: 'nottodo', label: 'Not-to-do', icon: '🚷', color: '#c4623a' },
+  { id: 'nottodo',      label: 'Not-to-do',        icon: '🚷', color: '#c4623a' },
+  { id: 'triggers',     label: 'Trigger Journal',  icon: '🎯', color: '#e05a77' },
+  { id: 'decisions',    label: 'Bad Decisions',    icon: '💀', color: '#7a5c8a' },
+  { id: 'weaknesses',   label: 'Weakness Map',     icon: '🧩', color: '#b87333' },
 ];
 
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -139,9 +142,28 @@ export default function Insights() {
   const [ntForm, setNtForm] = useState({ text: '', reason: '' });
   const [ntPreview, setNtPreview] = useState(null);
 
+  // ── Trigger Journal ────────────────────────────────────────────────────
+  const [triggers, setTriggers] = useState([]); const [trLoad, setTrLoad] = useState(true);
+  const [trModal, setTrModal] = useState(false); const [trEdit, setTrEdit] = useState(null);
+  const [trForm, setTrForm] = useState({ trigger: '', behavior: '', consequence: '', guard: '', date: TODAY });
+  const [trPreview, setTrPreview] = useState(null);
+
+  // ── Bad Decisions ──────────────────────────────────────────────────────
+  const [decisions, setDecisions] = useState([]); const [dcLoad, setDcLoad] = useState(true);
+  const [dcModal, setDcModal] = useState(false); const [dcEdit, setDcEdit] = useState(null);
+  const [dcForm, setDcForm] = useState({ decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: TODAY });
+  const [dcPreview, setDcPreview] = useState(null);
+
+  // ── Weakness Map ───────────────────────────────────────────────────────
+  const [weaknesses, setWeaknesses] = useState([]); const [wkLoad, setWkLoad] = useState(true);
+  const [wkModal, setWkModal] = useState(false); const [wkEdit, setWkEdit] = useState(null);
+  const [wkForm, setWkForm] = useState({ weakness: '', description: '', severity: 3, frequency: 3, guard_system: '' });
+  const [wkPreview, setWkPreview] = useState(null);
+
   // ── Shared ─────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
+
 
   // ── Loaders ────────────────────────────────────────────────────────────
   const load = async (url, setter, setLoading) => {
@@ -158,6 +180,9 @@ export default function Insights() {
     load('/insights/screen-time', setScreenEntries, setStLoad);
     load('/insights/procrastination', setProcEntries, setPrLoad);
     load('/insights/not-to-do', setNotToDos, setNtLoad);
+    load('/insights/triggers', setTriggers, setTrLoad);
+    load('/insights/bad-decisions', setDecisions, setDcLoad);
+    load('/insights/weaknesses', setWeaknesses, setWkLoad);
   }, []);
 
   const reloadAg = () => load('/insights/anti-goals', setAntiGoals, setAgLoad);
@@ -166,6 +191,9 @@ export default function Insights() {
   const reloadSt = () => load('/insights/screen-time', setScreenEntries, setStLoad);
   const reloadPr = () => load('/insights/procrastination', setProcEntries, setPrLoad);
   const reloadNt = () => load('/insights/not-to-do', setNotToDos, setNtLoad);
+  const reloadTr = () => load('/insights/triggers', setTriggers, setTrLoad);
+  const reloadDc = () => load('/insights/bad-decisions', setDecisions, setDcLoad);
+  const reloadWk = () => load('/insights/weaknesses', setWeaknesses, setWkLoad);
 
   // ── Group by date ──────────────────────────────────────────────────────
   const groupByDate = (entries) => {
@@ -318,7 +346,65 @@ export default function Insights() {
     onConfirm: async () => { await API.delete(`/insights/not-to-do/${item.id}`); toast.success('Deleted'); reloadNt(); }
   });
 
+  // ── Trigger Journal CRUD ───────────────────────────────────────────────
+  const openTrCreate = () => { setTrEdit(null); setTrForm({ trigger: '', behavior: '', consequence: '', guard: '', date: TODAY }); setTrModal(true); };
+  const openTrEdit   = (i) => { setTrEdit(i); setTrForm({ trigger: i.trigger, behavior: i.behavior, consequence: i.consequence || '', guard: i.guard || '', date: i.date || TODAY }); setTrModal(true); };
+  const handleTrSave = async () => {
+    if (!trForm.trigger.trim() || !trForm.behavior.trim()) return toast.error('Trigger and behavior are required');
+    setSaving(true);
+    try {
+      trEdit ? await API.put(`/insights/triggers/${trEdit.id}`, trForm) : await API.post('/insights/triggers', trForm);
+      toast.success(trEdit ? 'Updated' : '🎯 Logged'); setTrModal(false); reloadTr();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); } finally { setSaving(false); }
+  };
+  const handleTrDelete = (item) => setConfirm({
+    title: 'Delete Trigger?', message: 'This cannot be undone.', confirmLabel: 'Delete', danger: true,
+    onConfirm: async () => { await API.delete(`/insights/triggers/${item.id}`); toast.success('Deleted'); reloadTr(); }
+  });
+
+  // ── Bad Decisions CRUD ─────────────────────────────────────────────────
+  const openDcCreate = () => { setDcEdit(null); setDcForm({ decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: TODAY }); setDcModal(true); };
+  const openDcEdit   = (i) => { setDcEdit(i); setDcForm({ decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || TODAY }); setDcModal(true); };
+  const handleDcSave = async () => {
+    if (!dcForm.decision.trim()) return toast.error('Describe the decision');
+    setSaving(true);
+    try {
+      dcEdit ? await API.put(`/insights/bad-decisions/${dcEdit.id}`, dcForm) : await API.post('/insights/bad-decisions', dcForm);
+      toast.success(dcEdit ? 'Updated' : '💀 Logged'); setDcModal(false); reloadDc();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); } finally { setSaving(false); }
+  };
+  const handleDcDelete = (item) => setConfirm({
+    title: 'Delete entry?', message: 'This cannot be undone.', confirmLabel: 'Delete', danger: true,
+    onConfirm: async () => { await API.delete(`/insights/bad-decisions/${item.id}`); toast.success('Deleted'); reloadDc(); }
+  });
+
+  // ── Weakness Map CRUD ──────────────────────────────────────────────────
+  const openWkCreate = () => { setWkEdit(null); setWkForm({ weakness: '', description: '', severity: 3, frequency: 3, guard_system: '' }); setWkModal(true); };
+  const openWkEdit   = (i) => { setWkEdit(i); setWkForm({ weakness: i.weakness, description: i.description || '', severity: i.severity || 3, frequency: i.frequency || 3, guard_system: i.guard_system || '' }); setWkModal(true); };
+  const handleWkSave = async () => {
+    if (!wkForm.weakness.trim()) return toast.error('Name the weakness');
+    setSaving(true);
+    try {
+      wkEdit ? await API.put(`/insights/weaknesses/${wkEdit.id}`, wkForm) : await API.post('/insights/weaknesses', wkForm);
+      toast.success(wkEdit ? 'Updated' : '🧩 Mapped'); setWkModal(false); reloadWk();
+    } catch (e) { toast.error(getErrorMessage(e, 'Failed')); } finally { setSaving(false); }
+  };
+  const handleWkDelete = (item) => setConfirm({
+    title: 'Remove Weakness?', message: 'This cannot be undone.', confirmLabel: 'Delete', danger: true,
+    onConfirm: async () => { await API.delete(`/insights/weaknesses/${item.id}`); toast.success('Removed'); reloadWk(); }
+  });
+
+  // ── Rating bar helper ──────────────────────────────────────────────────
+  const RatingBar = ({ value, color }) => (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} style={{ width: 18, height: 6, borderRadius: 3, background: i < value ? color : 'rgba(13,13,13,0.08)' }} />
+      ))}
+    </div>
+  );
+
   // ── Preview modal ──────────────────────────────────────────────────────
+
   const PreviewModal = ({ item, onClose, icon, iconBg, titleColor, title, subtitle, body }) => item && (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ background: 'rgba(13,13,13,0.85)', zIndex: 1100 }}>
       <div className="modal modal-md">
@@ -595,7 +681,136 @@ export default function Insights() {
             )}
           </>
         )}
-      </div>
+
+        {/* ══════════════════════════════════════════════════════════════
+            TAB: Trigger Journal
+        ══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'triggers' && (
+          <>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 20, marginBottom: 4 }}>🎯 Trigger Journal</h3>
+                <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Situation → Behavior → Consequence → Guard system.</p>
+              </div>
+              <button className="btn btn-primary" onClick={openTrCreate} style={{ borderRadius: 30, padding: '10px 22px', background: '#e05a77', borderColor: '#e05a77' }}>+ Log Trigger</button>
+            </div>
+            {trLoad ? <Skeletons h={110} /> : triggers.length === 0 ? (
+              <Empty icon="🎯" title="No triggers logged" desc="Break negative cycles by naming what sets them off. Awareness is the cure." onAdd={openTrCreate} label="+ Log First Trigger" />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {triggers.map(item => (
+                  <div key={item.id} onClick={() => setTrPreview(item)} className="card"
+                    style={{ borderLeft: '4px solid #e05a77', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                    onMouseEnter={onHover('rgba(224,90,119,0.1)')} onMouseLeave={offHover()}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: '#e05a77', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 800, marginBottom: 4 }}>{item.date}</div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700, fontSize: 14 }}>🎯 {item.trigger}</span>
+                          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>→</span>
+                          <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.65)' }}>{item.behavior.slice(0, 60)}{item.behavior.length > 60 ? '…' : ''}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => openTrEdit(item)} style={{ padding: 5 }}>✎</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => handleTrDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
+                      </div>
+                    </div>
+                    {item.guard && <div style={{ fontSize: 12, color: '#e05a77', fontWeight: 600, marginTop: 6 }}>🛡 Guard: {item.guard.slice(0, 80)}{item.guard.length > 80 ? '…' : ''}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            TAB: Bad Decisions
+        ══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'decisions' && (
+          <>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 20, marginBottom: 4 }}>💀 Bad Decision Journal</h3>
+                <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Post-mortem your poor choices — process, not just outcome.</p>
+              </div>
+              <button className="btn btn-primary" onClick={openDcCreate} style={{ borderRadius: 30, padding: '10px 22px', background: '#7a5c8a', borderColor: '#7a5c8a' }}>+ Log Decision</button>
+            </div>
+            {dcLoad ? <Skeletons h={110} /> : decisions.length === 0 ? (
+              <Empty icon="💀" title="No decisions logged" desc="The best investors keep a decision journal. Start yours — every bad call is a lesson." onAdd={openDcCreate} label="+ Log First Decision" />
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
+                {decisions.map(item => (
+                  <div key={item.id} onClick={() => setDcPreview(item)} className="card"
+                    style={{ borderLeft: '4px solid #7a5c8a', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                    onMouseEnter={onHover('rgba(122,92,138,0.1)')} onMouseLeave={offHover()}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                          <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(122,92,138,0.1)', color: '#7a5c8a', borderRadius: 20, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{item.domain}</span>
+                          <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)' }}>{item.date}</span>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{item.decision}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => openDcEdit(item)} style={{ padding: 5 }}>✎</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => handleDcDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
+                      </div>
+                    </div>
+                    {item.what_went_wrong && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.what_went_wrong}</div>}
+                    {item.do_differently && <div style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600 }}>→ {item.do_differently.slice(0, 70)}{item.do_differently.length > 70 ? '…' : ''}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════
+            TAB: Weakness Map
+        ══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'weaknesses' && (
+          <>
+            <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <h3 style={{ fontSize: 20, marginBottom: 4 }}>🧩 Weakness / Temptation Map</h3>
+                <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>Know your vulnerabilities — rated by severity and frequency — and build guards.</p>
+              </div>
+              <button className="btn btn-primary" onClick={openWkCreate} style={{ borderRadius: 30, padding: '10px 22px', background: '#b87333', borderColor: '#b87333' }}>+ Map Weakness</button>
+            </div>
+            {wkLoad ? <Skeletons h={120} /> : weaknesses.length === 0 ? (
+              <Empty icon="🧩" title="Map is empty" desc="Knowing your weaknesses is a superpower. Map them honestly and build guard systems." onAdd={openWkCreate} label="+ Map First Weakness" />
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
+                {weaknesses.map(item => (
+                  <div key={item.id} onClick={() => setWkPreview(item)} className="card"
+                    style={{ borderLeft: '4px solid #b87333', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                    onMouseEnter={onHover('rgba(184,115,51,0.1)')} onMouseLeave={offHover()}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16 }}>🧩 {item.weakness}</div>
+                      <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => openWkEdit(item)} style={{ padding: 5 }}>✎</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => handleWkDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.45)', fontWeight: 600 }}>Severity</span>
+                        <RatingBar value={item.severity || 3} color="#e05a77" />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.45)', fontWeight: 600 }}>Frequency</span>
+                        <RatingBar value={item.frequency || 3} color="#b87333" />
+                      </div>
+                    </div>
+                    {item.description && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic' }}>{item.description}</div>}
+                    {item.guard_system && <div style={{ fontSize: 12, color: '#b87333', fontWeight: 600 }}>🛡 {item.guard_system.slice(0, 80)}{item.guard_system.length > 80 ? '…' : ''}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
       {/* ════════════════════════ MODALS ════════════════════════ */}
 
@@ -709,6 +924,54 @@ export default function Insights() {
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setNtModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleNtSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : ntEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}
 
+      {/* Trigger Journal Modal */}
+      {trModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setTrModal(false)}><div className="modal">
+        <div className="modal-header"><h3>{trEdit ? 'Edit Entry' : 'Log a Trigger'}</h3><button className="modal-close" onClick={() => setTrModal(false)}>✕</button></div>
+        <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={trForm.date} onChange={e => setTrForm({ ...trForm, date: e.target.value })} style={{ maxWidth: 200 }} /></div>
+        <div className="form-group"><label className="form-label">Trigger (the situation)</label><input maxLength={300} className="form-input" value={trForm.trigger} onChange={e => setTrForm({ ...trForm, trigger: e.target.value })} placeholder="e.g. When I'm stressed before a deadline…" /></div>
+        <div className="form-group"><label className="form-label">Behavior (what you did)</label><textarea maxLength={500} className="form-textarea" value={trForm.behavior} onChange={e => setTrForm({ ...trForm, behavior: e.target.value })} placeholder="e.g. I opened YouTube and watched for 2 hours" style={{ minHeight: 80 }} /></div>
+        <div className="form-group"><label className="form-label">Consequence (what it cost) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.consequence} onChange={e => setTrForm({ ...trForm, consequence: e.target.value })} placeholder="e.g. Missed the deadline, felt guilty" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Guard System (how to prevent) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.guard} onChange={e => setTrForm({ ...trForm, guard: e.target.value })} placeholder="e.g. Block YouTube on days with deadlines, use Forest app" style={{ minHeight: 70 }} /></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setTrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleTrSave} disabled={saving} style={{ flex: 1, background: '#e05a77', borderColor: '#e05a77' }}>{saving ? 'Saving…' : trEdit ? 'Save Changes' : 'Log Trigger'}</button></div>
+      </div></div>)}
+
+      {/* Bad Decision Modal */}
+      {dcModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setDcModal(false)}><div className="modal">
+        <div className="modal-header"><h3>{dcEdit ? 'Edit Entry' : 'Log a Bad Decision'}</h3><button className="modal-close" onClick={() => setDcModal(false)}>✕</button></div>
+        <div className="grid-2" style={{ gap: 12 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={dcForm.date} onChange={e => setDcForm({ ...dcForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label>
+            <select className="form-input" value={dcForm.domain} onChange={e => setDcForm({ ...dcForm, domain: e.target.value })}>
+              {['General','Work','Finance','Health','Relationships','Personal Growth','Business','Other'].map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="form-group"><label className="form-label">The Decision</label><input maxLength={300} className="form-input" value={dcForm.decision} onChange={e => setDcForm({ ...dcForm, decision: e.target.value })} placeholder="e.g. Skipped due diligence and invested impulsively" /></div>
+        <div className="form-group"><label className="form-label">What went wrong?</label><textarea maxLength={2000} className="form-textarea" value={dcForm.what_went_wrong} onChange={e => setDcForm({ ...dcForm, what_went_wrong: e.target.value })} placeholder="Describe the outcome and how it played out" style={{ minHeight: 90 }} /></div>
+        <div className="form-group"><label className="form-label">Root cause (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.root_cause} onChange={e => setDcForm({ ...dcForm, root_cause: e.target.value })} placeholder="Fear, ego, lack of information, peer pressure?" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">What would you do differently? (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.do_differently} onChange={e => setDcForm({ ...dcForm, do_differently: e.target.value })} placeholder="The rule or system you'd follow next time" style={{ minHeight: 70 }} /></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setDcModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleDcSave} disabled={saving} style={{ flex: 1, background: '#7a5c8a', borderColor: '#7a5c8a' }}>{saving ? 'Saving…' : dcEdit ? 'Save Changes' : 'Log Decision'}</button></div>
+      </div></div>)}
+
+      {/* Weakness Map Modal */}
+      {wkModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setWkModal(false)}><div className="modal">
+        <div className="modal-header"><h3>{wkEdit ? 'Edit Entry' : 'Map a Weakness'}</h3><button className="modal-close" onClick={() => setWkModal(false)}>✕</button></div>
+        <div className="form-group"><label className="form-label">Weakness / Temptation</label><input maxLength={300} className="form-input" value={wkForm.weakness} onChange={e => setWkForm({ ...wkForm, weakness: e.target.value })} placeholder="e.g. I cave to social pressure to say yes" /></div>
+        <div className="form-group"><label className="form-label">Description — how it manifests (optional)</label><textarea maxLength={2000} className="form-textarea" value={wkForm.description} onChange={e => setWkForm({ ...wkForm, description: e.target.value })} placeholder="When does this show up? In what situations?" style={{ minHeight: 90 }} /></div>
+        <div className="grid-2" style={{ gap: 12 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Severity — {wkForm.severity}/5</label>
+            <input type="range" min={1} max={5} value={wkForm.severity} onChange={e => setWkForm({ ...wkForm, severity: +e.target.value })} style={{ width: '100%' }} />
+          </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Frequency — {wkForm.frequency}/5</label>
+            <input type="range" min={1} max={5} value={wkForm.frequency} onChange={e => setWkForm({ ...wkForm, frequency: +e.target.value })} style={{ width: '100%' }} />
+          </div>
+        </div>
+        <div className="form-group"><label className="form-label">Guard System (optional)</label><textarea maxLength={1000} className="form-textarea" value={wkForm.guard_system} onChange={e => setWkForm({ ...wkForm, guard_system: e.target.value })} placeholder="What rule, system, or pre-commitment helps you resist this?" style={{ minHeight: 80 }} /></div>
+        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setWkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleWkSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : wkEdit ? 'Save Changes' : 'Map Weakness'}</button></div>
+      </div></div>)}
+
       {/* ═══ PREVIEW MODALS ═══ */}
       <PreviewModal item={agPreview} onClose={() => setAgPreview(null)} icon="🚫" iconBg="rgba(196,98,58,0.08)" titleColor="var(--rust)" title="Anti-Goal" subtitle={`Added ${agPreview ? dateLabel(agPreview.created_at) : ''}`} body={agPreview && (<>
         <div style={{ padding: '14px 18px', background: 'rgba(196,98,58,0.05)', borderRadius: 12, borderLeft: '4px solid var(--rust)', marginBottom: agPreview.reason ? 20 : 0 }}><p style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{agPreview.text}</p></div>
@@ -720,6 +983,24 @@ export default function Insights() {
         {prPreview.outcome && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: 'var(--sage)', marginBottom: 8 }}>Outcome</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{prPreview.outcome}</p></div>}
       </div>)} />
       <PreviewModal item={ntPreview} onClose={() => setNtPreview(null)} icon="🚷" iconBg="rgba(196,98,58,0.08)" titleColor="#c4623a" title={ntPreview?.text} subtitle={ntPreview && `Added ${dateLabel(ntPreview.created_at)}`} body={ntPreview?.reason && <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, margin: 0 }}><MarkdownRenderer content={ntPreview.reason} /></div>} />
+      <PreviewModal item={trPreview} onClose={() => setTrPreview(null)} icon="🎯" iconBg="rgba(224,90,119,0.1)" titleColor="#e05a77" title={trPreview?.trigger} subtitle={trPreview?.date} body={trPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: '14px 18px', background: 'rgba(224,90,119,0.06)', borderRadius: 12, borderLeft: '4px solid #e05a77' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#e05a77', fontWeight: 800, marginBottom: 6 }}>Behavior</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.behavior}</p></div>
+        {trPreview.consequence && <div style={{ padding: '14px 18px', background: 'rgba(196,98,58,0.06)', borderRadius: 12, borderLeft: '4px solid var(--rust)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--rust)', fontWeight: 800, marginBottom: 6 }}>Consequence</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.consequence}</p></div>}
+        {trPreview.guard && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.guard}</p></div>}
+      </div>)} />
+      <PreviewModal item={dcPreview} onClose={() => setDcPreview(null)} icon="💀" iconBg="rgba(122,92,138,0.08)" titleColor="#7a5c8a" title={dcPreview?.decision} subtitle={dcPreview && `${dcPreview.domain} · ${dcPreview.date}`} body={dcPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {dcPreview.what_went_wrong && <div style={{ padding: '14px 18px', background: 'rgba(122,92,138,0.06)', borderRadius: 12, borderLeft: '4px solid #7a5c8a' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#7a5c8a', fontWeight: 800, marginBottom: 6 }}>What went wrong</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.what_went_wrong}</p></div>}
+        {dcPreview.root_cause && <div style={{ padding: '14px 18px', background: 'rgba(201,168,76,0.06)', borderRadius: 12, borderLeft: '4px solid var(--gold)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', fontWeight: 800, marginBottom: 6 }}>Root Cause</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.root_cause}</p></div>}
+        {dcPreview.do_differently && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>→ Next Time</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.do_differently}</p></div>}
+      </div>)} />
+      <PreviewModal item={wkPreview} onClose={() => setWkPreview(null)} icon="🧩" iconBg="rgba(184,115,51,0.08)" titleColor="#b87333" title={wkPreview?.weakness} subtitle={wkPreview && `Severity ${wkPreview.severity}/5 · Frequency ${wkPreview.frequency}/5`} body={wkPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 24, padding: '12px 18px', background: 'rgba(184,115,51,0.05)', borderRadius: 12 }}>
+          <div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#b87333', fontWeight: 800, marginBottom: 8 }}>Severity</div><RatingBar value={wkPreview.severity || 3} color="#e05a77" /></div>
+          <div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#b87333', fontWeight: 800, marginBottom: 8 }}>Frequency</div><RatingBar value={wkPreview.frequency || 3} color="#b87333" /></div>
+        </div>
+        {wkPreview.description && <div style={{ padding: '14px 18px', background: 'rgba(13,13,13,0.03)', borderRadius: 12 }}><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, fontStyle: 'italic' }}>{wkPreview.description}</p></div>}
+        {wkPreview.guard_system && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{wkPreview.guard_system}</p></div>}
+      </div>)} />
 
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>

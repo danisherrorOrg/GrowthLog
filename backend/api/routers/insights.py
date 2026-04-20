@@ -8,7 +8,8 @@ from utils.helpers import serialize, serialize_list
 from api.deps import get_current_user
 from models.schemas import (
     AntiGoalModel, HabitGraveyardModel,
-    TimeEntryModel, ScreenTimeModel, ProcrastinationLogModel, NotToDoModel
+    TimeEntryModel, ScreenTimeModel, ProcrastinationLogModel, NotToDoModel,
+    TriggerModel, BadDecisionModel, WeaknessModel
 )
 
 router = APIRouter(prefix="/insights", tags=["insights"])
@@ -283,4 +284,143 @@ def delete_not_to_do(item_id: str, current_user=Depends(get_current_user)):
     result = db.not_to_do.delete_one({"_id": ObjectId(item_id), "user_id": uid})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not-to-do item not found")
+    return {"success": True}
+
+
+# ──────────────────────────────────────────────
+#  Trigger Journal
+# ──────────────────────────────────────────────
+
+@router.get("/triggers")
+def get_triggers(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    return serialize_list(db.trigger_journal.find({"user_id": uid}).sort("created_at", DESCENDING))
+
+@router.post("/triggers")
+def create_trigger(data: TriggerModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    doc = {
+        "user_id": uid,
+        "trigger": data.trigger,
+        "behavior": data.behavior,
+        "consequence": data.consequence or "",
+        "guard": data.guard or "",
+        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "created_at": utcnow(),
+    }
+    result = db.trigger_journal.insert_one(doc)
+    return {"id": str(result.inserted_id), **{k: v for k, v in doc.items() if k != "_id"}}
+
+@router.put("/triggers/{item_id}")
+def update_trigger(item_id: str, data: TriggerModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.trigger_journal.update_one(
+        {"_id": ObjectId(item_id), "user_id": uid},
+        {"$set": {"trigger": data.trigger, "behavior": data.behavior,
+                  "consequence": data.consequence or "", "guard": data.guard or "",
+                  "date": data.date or ""}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Trigger entry not found")
+    return {"success": True}
+
+@router.delete("/triggers/{item_id}")
+def delete_trigger(item_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.trigger_journal.delete_one({"_id": ObjectId(item_id), "user_id": uid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Trigger entry not found")
+    return {"success": True}
+
+
+# ──────────────────────────────────────────────
+#  Bad Decision Journal
+# ──────────────────────────────────────────────
+
+@router.get("/bad-decisions")
+def get_bad_decisions(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    return serialize_list(db.bad_decisions.find({"user_id": uid}).sort("created_at", DESCENDING))
+
+@router.post("/bad-decisions")
+def create_bad_decision(data: BadDecisionModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    doc = {
+        "user_id": uid,
+        "decision": data.decision,
+        "what_went_wrong": data.what_went_wrong or "",
+        "root_cause": data.root_cause or "",
+        "do_differently": data.do_differently or "",
+        "domain": data.domain or "General",
+        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "created_at": utcnow(),
+    }
+    result = db.bad_decisions.insert_one(doc)
+    return {"id": str(result.inserted_id), **{k: v for k, v in doc.items() if k != "_id"}}
+
+@router.put("/bad-decisions/{item_id}")
+def update_bad_decision(item_id: str, data: BadDecisionModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.bad_decisions.update_one(
+        {"_id": ObjectId(item_id), "user_id": uid},
+        {"$set": {"decision": data.decision, "what_went_wrong": data.what_went_wrong or "",
+                  "root_cause": data.root_cause or "", "do_differently": data.do_differently or "",
+                  "domain": data.domain or "General", "date": data.date or ""}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Decision entry not found")
+    return {"success": True}
+
+@router.delete("/bad-decisions/{item_id}")
+def delete_bad_decision(item_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.bad_decisions.delete_one({"_id": ObjectId(item_id), "user_id": uid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Decision entry not found")
+    return {"success": True}
+
+
+# ──────────────────────────────────────────────
+#  Weakness / Temptation Map
+# ──────────────────────────────────────────────
+
+@router.get("/weaknesses")
+def get_weaknesses(current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    return serialize_list(db.weakness_map.find({"user_id": uid}).sort("severity", DESCENDING))
+
+@router.post("/weaknesses")
+def create_weakness(data: WeaknessModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    doc = {
+        "user_id": uid,
+        "weakness": data.weakness,
+        "description": data.description or "",
+        "severity": data.severity or 3,
+        "frequency": data.frequency or 3,
+        "guard_system": data.guard_system or "",
+        "created_at": utcnow(),
+    }
+    result = db.weakness_map.insert_one(doc)
+    return {"id": str(result.inserted_id), **{k: v for k, v in doc.items() if k != "_id"}}
+
+@router.put("/weaknesses/{item_id}")
+def update_weakness(item_id: str, data: WeaknessModel, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.weakness_map.update_one(
+        {"_id": ObjectId(item_id), "user_id": uid},
+        {"$set": {"weakness": data.weakness, "description": data.description or "",
+                  "severity": data.severity or 3, "frequency": data.frequency or 3,
+                  "guard_system": data.guard_system or ""}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Weakness entry not found")
+    return {"success": True}
+
+@router.delete("/weaknesses/{item_id}")
+def delete_weakness(item_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user["_id"])
+    result = db.weakness_map.delete_one({"_id": ObjectId(item_id), "user_id": uid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Weakness entry not found")
     return {"success": True}
