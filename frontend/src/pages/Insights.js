@@ -640,8 +640,16 @@ export default function Insights() {
                         <button className="btn btn-sm btn-ghost" onClick={() => handlePrDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
                       </div>
                     </div>
-                    {item.why && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 6 }}>Why: {item.why.slice(0, 80)}{item.why.length > 80 ? '…' : ''}</div>}
-                    {item.outcome && <div style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600 }}>→ {item.outcome.slice(0, 60)}{item.outcome.length > 60 ? '…' : ''}</div>}
+                    {item.why && (
+                      <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <strong>Why:</strong> <MarkdownRenderer content={item.why} />
+                      </div>
+                    )}
+                    {item.outcome && (
+                      <div className="markdown-body" style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        → <MarkdownRenderer content={item.outcome} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -708,7 +716,9 @@ export default function Insights() {
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 700, fontSize: 14 }}>🎯 {item.trigger}</span>
                           <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>→</span>
-                          <span style={{ fontSize: 13, color: 'rgba(13,13,13,0.65)' }}>{item.behavior.slice(0, 60)}{item.behavior.length > 60 ? '…' : ''}</span>
+                          <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.65)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
+                            <MarkdownRenderer content={item.behavior} />
+                          </div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
@@ -716,7 +726,11 @@ export default function Insights() {
                         <button className="btn btn-sm btn-ghost" onClick={() => handleTrDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
                       </div>
                     </div>
-                    {item.guard && <div style={{ fontSize: 12, color: '#e05a77', fontWeight: 600, marginTop: 6 }}>🛡 Guard: {item.guard.slice(0, 80)}{item.guard.length > 80 ? '…' : ''}</div>}
+                    {item.guard && (
+                      <div className="markdown-body" style={{ fontSize: 12, color: '#e05a77', fontWeight: 600, marginTop: 6, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        🛡 Guard: <MarkdownRenderer content={item.guard} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -757,8 +771,16 @@ export default function Insights() {
                         <button className="btn btn-sm btn-ghost" onClick={() => handleDcDelete(item)} style={{ padding: 5, color: 'rgba(13,13,13,0.25)' }}>🗑</button>
                       </div>
                     </div>
-                    {item.what_went_wrong && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.what_went_wrong}</div>}
-                    {item.do_differently && <div style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600 }}>→ {item.do_differently.slice(0, 70)}{item.do_differently.length > 70 ? '…' : ''}</div>}
+                    {item.what_went_wrong && (
+                      <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <MarkdownRenderer content={item.what_went_wrong} />
+                      </div>
+                    )}
+                    {item.do_differently && (
+                      <div className="markdown-body" style={{ fontSize: 12, color: 'var(--sage)', fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        → <MarkdownRenderer content={item.do_differently} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -803,8 +825,16 @@ export default function Insights() {
                         <RatingBar value={item.frequency || 3} color="#b87333" />
                       </div>
                     </div>
-                    {item.description && <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic' }}>{item.description}</div>}
-                    {item.guard_system && <div style={{ fontSize: 12, color: '#b87333', fontWeight: 600 }}>🛡 {item.guard_system.slice(0, 80)}{item.guard_system.length > 80 ? '…' : ''}</div>}
+                    {item.description && (
+                      <div className="markdown-body" style={{ fontSize: 13, color: 'rgba(13,13,13,0.55)', marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic' }}>
+                        <MarkdownRenderer content={item.description} />
+                      </div>
+                    )}
+                    {item.guard_system && (
+                      <div className="markdown-body" style={{ fontSize: 12, color: '#b87333', fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        🛡 <MarkdownRenderer content={item.guard_system} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -912,8 +942,8 @@ export default function Insights() {
         <div className="modal-header"><h3>{prEdit ? 'Edit Entry' : 'Log Procrastination'}</h3><button className="modal-close" onClick={() => setPrModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={prForm.date} onChange={e => setPrForm({ ...prForm, date: e.target.value })} /></div>
         <div className="form-group"><label className="form-label">What did you avoid?</label><input maxLength={200} className="form-input" value={prForm.what} onChange={e => setPrForm({ ...prForm, what: e.target.value })} placeholder="e.g. Writing that overdue report…" /></div>
-        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.why} onChange={e => setPrForm({ ...prForm, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /></div>
-        <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.outcome} onChange={e => setPrForm({ ...prForm, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.why} onChange={e => setPrForm({ ...prForm, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea maxLength={2000} className="form-textarea" value={prForm.outcome} onChange={e => setPrForm({ ...prForm, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setPrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handlePrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : prEdit ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
@@ -930,9 +960,9 @@ export default function Insights() {
         <div className="modal-header"><h3>{trEdit ? 'Edit Entry' : 'Log a Trigger'}</h3><button className="modal-close" onClick={() => setTrModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={trForm.date} onChange={e => setTrForm({ ...trForm, date: e.target.value })} style={{ maxWidth: 200 }} /></div>
         <div className="form-group"><label className="form-label">Trigger (the situation)</label><input maxLength={300} className="form-input" value={trForm.trigger} onChange={e => setTrForm({ ...trForm, trigger: e.target.value })} placeholder="e.g. When I'm stressed before a deadline…" /></div>
-        <div className="form-group"><label className="form-label">Behavior (what you did)</label><textarea maxLength={500} className="form-textarea" value={trForm.behavior} onChange={e => setTrForm({ ...trForm, behavior: e.target.value })} placeholder="e.g. I opened YouTube and watched for 2 hours" style={{ minHeight: 80 }} /></div>
-        <div className="form-group"><label className="form-label">Consequence (what it cost) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.consequence} onChange={e => setTrForm({ ...trForm, consequence: e.target.value })} placeholder="e.g. Missed the deadline, felt guilty" style={{ minHeight: 70 }} /></div>
-        <div className="form-group"><label className="form-label">Guard System (how to prevent) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.guard} onChange={e => setTrForm({ ...trForm, guard: e.target.value })} placeholder="e.g. Block YouTube on days with deadlines, use Forest app" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">Behavior (what you did)</label><textarea maxLength={500} className="form-textarea" value={trForm.behavior} onChange={e => setTrForm({ ...trForm, behavior: e.target.value })} placeholder="e.g. I opened YouTube and watched for 2 hours" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Consequence (what it cost) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.consequence} onChange={e => setTrForm({ ...trForm, consequence: e.target.value })} placeholder="e.g. Missed the deadline, felt guilty" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Guard System (how to prevent) — optional</label><textarea maxLength={1000} className="form-textarea" value={trForm.guard} onChange={e => setTrForm({ ...trForm, guard: e.target.value })} placeholder="e.g. Block YouTube on days with deadlines, use Forest app" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setTrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleTrSave} disabled={saving} style={{ flex: 1, background: '#e05a77', borderColor: '#e05a77' }}>{saving ? 'Saving…' : trEdit ? 'Save Changes' : 'Log Trigger'}</button></div>
       </div></div>)}
 
@@ -948,9 +978,9 @@ export default function Insights() {
           </div>
         </div>
         <div className="form-group"><label className="form-label">The Decision</label><input maxLength={300} className="form-input" value={dcForm.decision} onChange={e => setDcForm({ ...dcForm, decision: e.target.value })} placeholder="e.g. Skipped due diligence and invested impulsively" /></div>
-        <div className="form-group"><label className="form-label">What went wrong?</label><textarea maxLength={2000} className="form-textarea" value={dcForm.what_went_wrong} onChange={e => setDcForm({ ...dcForm, what_went_wrong: e.target.value })} placeholder="Describe the outcome and how it played out" style={{ minHeight: 90 }} /></div>
-        <div className="form-group"><label className="form-label">Root cause (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.root_cause} onChange={e => setDcForm({ ...dcForm, root_cause: e.target.value })} placeholder="Fear, ego, lack of information, peer pressure?" style={{ minHeight: 70 }} /></div>
-        <div className="form-group"><label className="form-label">What would you do differently? (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.do_differently} onChange={e => setDcForm({ ...dcForm, do_differently: e.target.value })} placeholder="The rule or system you'd follow next time" style={{ minHeight: 70 }} /></div>
+        <div className="form-group"><label className="form-label">What went wrong?</label><textarea maxLength={2000} className="form-textarea" value={dcForm.what_went_wrong} onChange={e => setDcForm({ ...dcForm, what_went_wrong: e.target.value })} placeholder="Describe the outcome and how it played out" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">Root cause (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.root_cause} onChange={e => setDcForm({ ...dcForm, root_cause: e.target.value })} placeholder="Fear, ego, lot of information, peer pressure?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
+        <div className="form-group"><label className="form-label">What would you do differently? (optional)</label><textarea maxLength={1000} className="form-textarea" value={dcForm.do_differently} onChange={e => setDcForm({ ...dcForm, do_differently: e.target.value })} placeholder="The rule or system you'd follow next time" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setDcModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleDcSave} disabled={saving} style={{ flex: 1, background: '#7a5c8a', borderColor: '#7a5c8a' }}>{saving ? 'Saving…' : dcEdit ? 'Save Changes' : 'Log Decision'}</button></div>
       </div></div>)}
 
@@ -958,7 +988,7 @@ export default function Insights() {
       {wkModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setWkModal(false)}><div className="modal">
         <div className="modal-header"><h3>{wkEdit ? 'Edit Entry' : 'Map a Weakness'}</h3><button className="modal-close" onClick={() => setWkModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">Weakness / Temptation</label><input maxLength={300} className="form-input" value={wkForm.weakness} onChange={e => setWkForm({ ...wkForm, weakness: e.target.value })} placeholder="e.g. I cave to social pressure to say yes" /></div>
-        <div className="form-group"><label className="form-label">Description — how it manifests (optional)</label><textarea maxLength={2000} className="form-textarea" value={wkForm.description} onChange={e => setWkForm({ ...wkForm, description: e.target.value })} placeholder="When does this show up? In what situations?" style={{ minHeight: 90 }} /></div>
+        <div className="form-group"><label className="form-label">Description — how it manifests (optional)</label><textarea maxLength={2000} className="form-textarea" value={wkForm.description} onChange={e => setWkForm({ ...wkForm, description: e.target.value })} placeholder="When does this show up? In what situations?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="grid-2" style={{ gap: 12 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Severity — {wkForm.severity}/5</label>
@@ -969,7 +999,7 @@ export default function Insights() {
             <input type="range" min={1} max={5} value={wkForm.frequency} onChange={e => setWkForm({ ...wkForm, frequency: +e.target.value })} style={{ width: '100%' }} />
           </div>
         </div>
-        <div className="form-group"><label className="form-label">Guard System (optional)</label><textarea maxLength={1000} className="form-textarea" value={wkForm.guard_system} onChange={e => setWkForm({ ...wkForm, guard_system: e.target.value })} placeholder="What rule, system, or pre-commitment helps you resist this?" style={{ minHeight: 80 }} /></div>
+        <div className="form-group"><label className="form-label">Guard System (optional)</label><textarea maxLength={1000} className="form-textarea" value={wkForm.guard_system} onChange={e => setWkForm({ ...wkForm, guard_system: e.target.value })} placeholder="What rule, system, or pre-commitment helps you resist this?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setWkModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleWkSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : wkEdit ? 'Save Changes' : 'Map Weakness'}</button></div>
       </div></div>)}
 
@@ -980,27 +1010,27 @@ export default function Insights() {
       </>)} />
       <PreviewModal item={hgPreview} onClose={() => setHgPreview(null)} icon="🪦" iconBg="linear-gradient(135deg,#f3eeff,#e8dcff)" titleColor="#8b6bc4" title={hgPreview?.habit} subtitle={[hgPreview?.started_at && `🌱 ${hgPreview.started_at}`, hgPreview?.abandoned_at && `🪦 ${hgPreview.abandoned_at}`].filter(Boolean).join(' → ')} body={hgPreview && (hgPreview.reason ? <div style={{ padding: '18px 22px', background: 'linear-gradient(135deg,#f3eeff,#ede4ff)', borderRadius: 14, border: '1px solid rgba(139,107,196,0.2)' }}><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8b6bc4', fontWeight: 800, marginBottom: 10 }}>Why it didn't stick</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, fontStyle: 'italic', margin: 0 }}><MarkdownRenderer content={hgPreview.reason} /></div></div> : <p style={{ color: 'rgba(13,13,13,0.4)', fontStyle: 'italic' }}>No reason recorded.</p>)} />
       <PreviewModal item={prPreview} onClose={() => setPrPreview(null)} icon="😬" iconBg="rgba(201,168,76,0.1)" titleColor="#c9a84c" title={prPreview?.what} subtitle={prPreview && dateLabel(prPreview.date)} body={prPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {prPreview.why && <div style={{ padding: '14px 18px', background: 'rgba(201,168,76,0.07)', borderRadius: 12, borderLeft: '4px solid #c9a84c' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: '#c9a84c', marginBottom: 8 }}>Why avoided</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{prPreview.why}</p></div>}
-        {prPreview.outcome && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: 'var(--sage)', marginBottom: 8 }}>Outcome</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{prPreview.outcome}</p></div>}
+        {prPreview.why && <div style={{ padding: '14px 18px', background: 'rgba(201,168,76,0.07)', borderRadius: 12, borderLeft: '4px solid #c9a84c' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: '#c9a84c', marginBottom: 8 }}>Why avoided</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={prPreview.why} /></div></div>}
+        {prPreview.outcome && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 800, color: 'var(--sage)', marginBottom: 8 }}>Outcome</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={prPreview.outcome} /></div></div>}
       </div>)} />
       <PreviewModal item={ntPreview} onClose={() => setNtPreview(null)} icon="🚷" iconBg="rgba(196,98,58,0.08)" titleColor="#c4623a" title={ntPreview?.text} subtitle={ntPreview && `Added ${dateLabel(ntPreview.created_at)}`} body={ntPreview?.reason && <div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, margin: 0 }}><MarkdownRenderer content={ntPreview.reason} /></div>} />
       <PreviewModal item={trPreview} onClose={() => setTrPreview(null)} icon="🎯" iconBg="rgba(224,90,119,0.1)" titleColor="#e05a77" title={trPreview?.trigger} subtitle={trPreview?.date} body={trPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div style={{ padding: '14px 18px', background: 'rgba(224,90,119,0.06)', borderRadius: 12, borderLeft: '4px solid #e05a77' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#e05a77', fontWeight: 800, marginBottom: 6 }}>Behavior</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.behavior}</p></div>
-        {trPreview.consequence && <div style={{ padding: '14px 18px', background: 'rgba(196,98,58,0.06)', borderRadius: 12, borderLeft: '4px solid var(--rust)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--rust)', fontWeight: 800, marginBottom: 6 }}>Consequence</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.consequence}</p></div>}
-        {trPreview.guard && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{trPreview.guard}</p></div>}
+        <div style={{ padding: '14px 18px', background: 'rgba(224,90,119,0.06)', borderRadius: 12, borderLeft: '4px solid #e05a77' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#e05a77', fontWeight: 800, marginBottom: 6 }}>Behavior</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={trPreview.behavior} /></div></div>
+        {trPreview.consequence && <div style={{ padding: '14px 18px', background: 'rgba(196,98,58,0.06)', borderRadius: 12, borderLeft: '4px solid var(--rust)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--rust)', fontWeight: 800, marginBottom: 6 }}>Consequence</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={trPreview.consequence} /></div></div>}
+        {trPreview.guard && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={trPreview.guard} /></div></div>}
       </div>)} />
       <PreviewModal item={dcPreview} onClose={() => setDcPreview(null)} icon="💀" iconBg="rgba(122,92,138,0.08)" titleColor="#7a5c8a" title={dcPreview?.decision} subtitle={dcPreview && `${dcPreview.domain} · ${dcPreview.date}`} body={dcPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {dcPreview.what_went_wrong && <div style={{ padding: '14px 18px', background: 'rgba(122,92,138,0.06)', borderRadius: 12, borderLeft: '4px solid #7a5c8a' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#7a5c8a', fontWeight: 800, marginBottom: 6 }}>What went wrong</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.what_went_wrong}</p></div>}
-        {dcPreview.root_cause && <div style={{ padding: '14px 18px', background: 'rgba(201,168,76,0.06)', borderRadius: 12, borderLeft: '4px solid var(--gold)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', fontWeight: 800, marginBottom: 6 }}>Root Cause</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.root_cause}</p></div>}
-        {dcPreview.do_differently && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>→ Next Time</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{dcPreview.do_differently}</p></div>}
+        {dcPreview.what_went_wrong && <div style={{ padding: '14px 18px', background: 'rgba(122,92,138,0.06)', borderRadius: 12, borderLeft: '4px solid #7a5c8a' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#7a5c8a', fontWeight: 800, marginBottom: 6 }}>What went wrong</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={dcPreview.what_went_wrong} /></div></div>}
+        {dcPreview.root_cause && <div style={{ padding: '14px 18px', background: 'rgba(201,168,76,0.06)', borderRadius: 12, borderLeft: '4px solid var(--gold)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--gold)', fontWeight: 800, marginBottom: 6 }}>Root Cause</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={dcPreview.root_cause} /></div></div>}
+        {dcPreview.do_differently && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>→ Next Time</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={dcPreview.do_differently} /></div></div>}
       </div>)} />
       <PreviewModal item={wkPreview} onClose={() => setWkPreview(null)} icon="🧩" iconBg="rgba(184,115,51,0.08)" titleColor="#b87333" title={wkPreview?.weakness} subtitle={wkPreview && `Severity ${wkPreview.severity}/5 · Frequency ${wkPreview.frequency}/5`} body={wkPreview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', gap: 24, padding: '12px 18px', background: 'rgba(184,115,51,0.05)', borderRadius: 12 }}>
           <div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#b87333', fontWeight: 800, marginBottom: 8 }}>Severity</div><RatingBar value={wkPreview.severity || 3} color="#e05a77" /></div>
           <div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#b87333', fontWeight: 800, marginBottom: 8 }}>Frequency</div><RatingBar value={wkPreview.frequency || 3} color="#b87333" /></div>
         </div>
-        {wkPreview.description && <div style={{ padding: '14px 18px', background: 'rgba(13,13,13,0.03)', borderRadius: 12 }}><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7, fontStyle: 'italic' }}>{wkPreview.description}</p></div>}
-        {wkPreview.guard_system && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><p style={{ margin: 0, fontSize: 15, lineHeight: 1.7 }}>{wkPreview.guard_system}</p></div>}
+        {wkPreview.description && <div style={{ padding: '14px 18px', background: 'rgba(13,13,13,0.03)', borderRadius: 12 }}><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7, fontStyle: 'italic' }}><MarkdownRenderer content={wkPreview.description} /></div></div>}
+        {wkPreview.guard_system && <div style={{ padding: '14px 18px', background: 'rgba(107,140,107,0.06)', borderRadius: 12, borderLeft: '4px solid var(--sage)' }}><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'var(--sage)', fontWeight: 800, marginBottom: 6 }}>🛡 Guard System</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.7 }}><MarkdownRenderer content={wkPreview.guard_system} /></div></div>}
       </div>)} />
 
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
