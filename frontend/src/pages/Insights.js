@@ -7,15 +7,15 @@ import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 const TABS = [
-  { id: 'anti-goals',    label: 'Anti-Goals',      icon: '🚫', color: 'var(--rust)' },
-  { id: 'graveyard',    label: 'Habit Graveyard',  icon: '🪦', color: '#8b6bc4' },
-  { id: 'time',         label: 'Time Tracking',    icon: '⏱', color: 'var(--sage)' },
-  { id: 'screen',       label: 'Screen Time',      icon: '📱', color: '#5b8ba8' },
+  { id: 'anti-goals', label: 'Anti-Goals', icon: '🚫', color: 'var(--rust)' },
+  { id: 'graveyard', label: 'Habit Graveyard', icon: '🪦', color: '#8b6bc4' },
+  { id: 'time', label: 'Time Tracking', icon: '⏱', color: 'var(--sage)' },
+  { id: 'screen', label: 'Screen Time', icon: '📱', color: '#5b8ba8' },
   { id: 'procrastination', label: 'Procrastination', icon: '😬', color: '#c9a84c' },
-  { id: 'nottodo',      label: 'Not-to-do',        icon: '🚷', color: '#c4623a' },
-  { id: 'triggers',     label: 'Trigger Journal',  icon: '🎯', color: '#e05a77' },
-  { id: 'decisions',    label: 'Bad Decisions',    icon: '💀', color: '#7a5c8a' },
-  { id: 'weaknesses',   label: 'Weakness Map',     icon: '🧩', color: '#b87333' },
+  { id: 'nottodo', label: 'Not-to-do', icon: '🚷', color: '#c4623a' },
+  { id: 'triggers', label: 'Trigger Journal', icon: '🎯', color: '#e05a77' },
+  { id: 'decisions', label: 'Bad Decisions', icon: '💀', color: '#7a5c8a' },
+  { id: 'weaknesses', label: 'Weakness Map', icon: '🧩', color: '#b87333' },
 ];
 
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -348,7 +348,7 @@ export default function Insights() {
 
   // ── Trigger Journal CRUD ───────────────────────────────────────────────
   const openTrCreate = () => { setTrEdit(null); setTrForm({ trigger: '', behavior: '', consequence: '', guard: '', date: TODAY }); setTrModal(true); };
-  const openTrEdit   = (i) => { setTrEdit(i); setTrForm({ trigger: i.trigger, behavior: i.behavior, consequence: i.consequence || '', guard: i.guard || '', date: i.date || TODAY }); setTrModal(true); };
+  const openTrEdit = (i) => { setTrEdit(i); setTrForm({ trigger: i.trigger, behavior: i.behavior, consequence: i.consequence || '', guard: i.guard || '', date: i.date || TODAY }); setTrModal(true); };
   const handleTrSave = async () => {
     if (!trForm.trigger.trim() || !trForm.behavior.trim()) return toast.error('Trigger and behavior are required');
     setSaving(true);
@@ -364,7 +364,7 @@ export default function Insights() {
 
   // ── Bad Decisions CRUD ─────────────────────────────────────────────────
   const openDcCreate = () => { setDcEdit(null); setDcForm({ decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: TODAY }); setDcModal(true); };
-  const openDcEdit   = (i) => { setDcEdit(i); setDcForm({ decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || TODAY }); setDcModal(true); };
+  const openDcEdit = (i) => { setDcEdit(i); setDcForm({ decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || TODAY }); setDcModal(true); };
   const handleDcSave = async () => {
     if (!dcForm.decision.trim()) return toast.error('Describe the decision');
     setSaving(true);
@@ -380,7 +380,7 @@ export default function Insights() {
 
   // ── Weakness Map CRUD ──────────────────────────────────────────────────
   const openWkCreate = () => { setWkEdit(null); setWkForm({ weakness: '', description: '', severity: 3, frequency: 3, guard_system: '' }); setWkModal(true); };
-  const openWkEdit   = (i) => { setWkEdit(i); setWkForm({ weakness: i.weakness, description: i.description || '', severity: i.severity || 3, frequency: i.frequency || 3, guard_system: i.guard_system || '' }); setWkModal(true); };
+  const openWkEdit = (i) => { setWkEdit(i); setWkForm({ weakness: i.weakness, description: i.description || '', severity: i.severity || 3, frequency: i.frequency || 3, guard_system: i.guard_system || '' }); setWkModal(true); };
   const handleWkSave = async () => {
     if (!wkForm.weakness.trim()) return toast.error('Name the weakness');
     setSaving(true);
@@ -811,6 +811,7 @@ export default function Insights() {
             )}
           </>
         )}
+      </div>
 
       {/* ════════════════════════ MODALS ════════════════════════ */}
 
@@ -942,7 +943,7 @@ export default function Insights() {
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={dcForm.date} onChange={e => setDcForm({ ...dcForm, date: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label>
             <select className="form-input" value={dcForm.domain} onChange={e => setDcForm({ ...dcForm, domain: e.target.value })}>
-              {['General','Work','Finance','Health','Relationships','Personal Growth','Business','Other'].map(d => <option key={d} value={d}>{d}</option>)}
+              {['General', 'Work', 'Finance', 'Health', 'Relationships', 'Personal Growth', 'Business', 'Other'].map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
         </div>
