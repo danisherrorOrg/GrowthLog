@@ -185,3 +185,37 @@
 | 10 | Goal Deadline Intelligence | ★★★☆☆ | Low | ❌ None (data exists) |
 
 > **Key insight:** 9 out of 10 features require **zero new data modeling** — the data is already being captured. The bottleneck is surfacing it meaningfully, not collecting it.
+
+
+
+---
+
+## 🔑 Key Insight First
+
+**9 out of 10 recommendations require zero new data modeling.** All the data is already being captured — the bottleneck is *surfacing* it, not collecting it. That's why these are high ROI: the hardest part (persistence design, schema, auth) is already done.
+
+---
+
+## Tier 1 — Build These First
+
+| # | Feature | Why It's #1 |
+|---|---|---|
+| **1** | 📤 **Data Export (CSV/JSON)** | Trust & retention. One `/export/all` endpoint. Data is already clean. ~50 lines backend. |
+| **2** | 🔔 **Notification/Reminder Center** | You already compute consistency alerts + overdue todos — just need a bell icon + inbox to aggregate them. Highest daily-return driver. |
+| **3** | 📅 **Weekly Review Ritual Page** | Dashboard already computes 7-day insights. Just need a guided form to assemble them into a structured reflection. |
+| **4** | 📸 **"Spotify Wrapped" Shareable Cards** | Public profile route already exists. Use `html2canvas` + existing stats. Viral growth, zero data work. |
+| **5** | 🔍 **Global Search (⌘K)** | 29 pages, no cross-app search. MongoDB `$text` index across 5-6 collections. Users with 6+ months of data desperately need this. |
+
+---
+
+## Tier 2 — Next Wave
+
+| # | Feature | Core Idea |
+|---|---|---|
+| **6** | 🏅 **Life Score** | Composite weekly score from existing mood/consistency/goal data. Single number = highest dopamine loop. |
+| **7** | 📌 **Best Days Pattern Report** | Which day of week do you perform best? Data is in `daily_logs`. Pure MongoDB aggregation, no AI. |
+| **8** | ⏱ **Pomodoro Timer in Action Board** | `Todos.js` already tracks estimated/actual minutes — but users have to leave the app to work. Close the loop with a `setInterval` timer that pre-fills actual time on completion. |
+| **9** | 🗓 **"On This Day" Memory Feed** | Query logs where `month+day` = today in past years. One of the highest-engagement features in any journal app. |
+| **10** | 🎯 **Goal Deadline Intelligence** | `extension_history` is already stored in every goal. Just need to aggregate it into: "you extended 4 of 7 goals — here's the pattern." |
+
+The full details with implementation specifics are in the report above. Which of these do you want to build first?
