@@ -10,6 +10,7 @@ import {
   BarChart, Bar, ResponsiveContainer, Tooltip as RechartsTooltip, Cell
 } from 'recharts';
 import PromptModal from '../components/ui/PromptModal';
+import { generateGrowthLogPDF } from '../utils/pdfExport';
 
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 
@@ -88,7 +89,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [prompt, setPrompt] = useState(null);
-  const [exportLoading, setExportLoading] = useState(null); // 'json' | 'zip' | null
+  const [exportLoading, setExportLoading] = useState(null); // 'json' | 'zip' | 'pdf' | null
 
   useEffect(() => {
     if (user) {
@@ -262,6 +263,32 @@ export default function Profile() {
       toast.success('ZIP export downloaded! Contains JSON + CSV files.');
     } catch (e) {
       toast.error('Export failed. Please try again.');
+    } finally {
+      setExportLoading(null);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setExportLoading('pdf');
+    const toastId = toast.loading('Building your PDF report…');
+    try {
+      const [goalsRes, logsRes, catsRes] = await Promise.all([
+        API.get('/goals'),
+        API.get('/logs?days=90&limit=50'),
+        API.get('/categories'),
+      ]);
+      await generateGrowthLogPDF({
+        user,
+        stats,
+        sparklineData,
+        goals: goalsRes.data || [],
+        logs: logsRes.data || [],
+        categories: catsRes.data || [],
+      });
+      toast.success('PDF downloaded!', { id: toastId });
+    } catch (e) {
+      console.error(e);
+      toast.error('PDF generation failed. Please try again.', { id: toastId });
     } finally {
       setExportLoading(null);
     }
@@ -534,8 +561,8 @@ export default function Profile() {
             <div>
               <h3 style={{ fontSize: 18, color: 'var(--sage)', marginBottom: 6 }}>📦 Export Your Data</h3>
               <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', maxWidth: 560, lineHeight: 1.6 }}>
-                Download a complete copy of your GrowthLog data. Your data belongs to you — no lock-in.
-                The ZIP export contains a master JSON file plus individual CSVs for each section.
+                Download a complete copy of your GrowthLog data in JSON, ZIP (JSON + CSV), or a
+                beautifully formatted <strong>PDF report</strong> with charts, stats, and goals.
               </p>
             </div>
           </div>
@@ -610,6 +637,40 @@ export default function Profile() {
                 style={{ marginTop: 4, background: 'var(--gold)', color: 'white', border: 'none', fontWeight: 600 }}
               >
                 {exportLoading === 'zip' ? '⏳ Preparing…' : '⬇ Download ZIP'}
+              </button>
+            </div>
+
+            {/* PDF card */}
+            <div style={{
+              background: 'white',
+              border: '1px solid rgba(13,13,13,0.12)',
+              borderRadius: 12,
+              padding: '20px 20px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  width: 40, height: 40, borderRadius: 10, background: 'rgba(180,80,60,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+                }}>📄</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>PDF Report</div>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>4-page visual report</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.5, margin: 0 }}>
+                A polished multi-page PDF with charts, goal tables, activity graphs, and key insights.
+              </p>
+              <button
+                id="btn-export-pdf"
+                className="btn btn-sm"
+                onClick={handleExportPDF}
+                disabled={exportLoading !== null}
+                style={{ marginTop: 4, background: 'var(--ink)', color: 'white', border: 'none', fontWeight: 600 }}
+              >
+                {exportLoading === 'pdf' ? '⏳ Generating…' : '⬇ Download PDF'}
               </button>
             </div>
           </div>
