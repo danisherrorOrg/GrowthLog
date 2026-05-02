@@ -88,6 +88,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [prompt, setPrompt] = useState(null);
+  const [exportLoading, setExportLoading] = useState(null); // 'json' | 'zip' | null
 
   useEffect(() => {
     if (user) {
@@ -227,6 +228,43 @@ export default function Profile() {
         }
       }
     });
+  };
+
+  // ---- Export handlers ----
+  const triggerDownload = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+  };
+
+  const handleExportJSON = async () => {
+    setExportLoading('json');
+    try {
+      const res = await API.get('/export/all', { responseType: 'blob' });
+      triggerDownload(res.data, 'growthlog_export.json');
+      toast.success('JSON export downloaded!');
+    } catch (e) {
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setExportLoading(null);
+    }
+  };
+
+  const handleExportZip = async () => {
+    setExportLoading('zip');
+    try {
+      const res = await API.get('/export/all/zip', { responseType: 'blob' });
+      triggerDownload(res.data, 'growthlog_export.zip');
+      toast.success('ZIP export downloaded! Contains JSON + CSV files.');
+    } catch (e) {
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setExportLoading(null);
+    }
   };
 
   const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';
@@ -488,6 +526,97 @@ export default function Profile() {
                 }}>Copy Link</button>
             </div>
           )}
+        </div>
+
+        {/* ── Export Data ── */}
+        <div className="card" style={{ marginBottom: 20, padding: 24, borderLeft: '4px solid var(--sage)', background: 'var(--mist)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h3 style={{ fontSize: 18, color: 'var(--sage)', marginBottom: 6 }}>📦 Export Your Data</h3>
+              <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', maxWidth: 560, lineHeight: 1.6 }}>
+                Download a complete copy of your GrowthLog data. Your data belongs to you — no lock-in.
+                The ZIP export contains a master JSON file plus individual CSVs for each section.
+              </p>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: 12,
+          }}>
+            {/* JSON card */}
+            <div style={{
+              background: 'white',
+              border: '1px solid rgba(107,140,107,0.2)',
+              borderRadius: 12,
+              padding: '20px 20px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  width: 40, height: 40, borderRadius: 10, background: 'rgba(107,140,107,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, fontWeight: 700, color: 'var(--sage)', fontFamily: 'monospace',
+                }}>{'{ }'}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>JSON Export</div>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>Single structured file</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.5, margin: 0 }}>
+                Perfect for developers or importing into other tools. Contains all your data in one JSON file.
+              </p>
+              <button
+                id="btn-export-json"
+                className="btn btn-outline btn-sm"
+                onClick={handleExportJSON}
+                disabled={exportLoading !== null}
+                style={{ marginTop: 4, borderColor: 'var(--sage)', color: 'var(--sage)', fontWeight: 600 }}
+              >
+                {exportLoading === 'json' ? '⏳ Preparing…' : '⬇ Download JSON'}
+              </button>
+            </div>
+
+            {/* ZIP card */}
+            <div style={{
+              background: 'white',
+              border: '1px solid rgba(201,168,76,0.25)',
+              borderRadius: 12,
+              padding: '20px 20px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  width: 40, height: 40, borderRadius: 10, background: 'rgba(201,168,76,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+                }}>🗜</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>Full ZIP Export</div>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>JSON + CSV per section</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.5, margin: 0 }}>
+                Includes a master JSON and individual CSVs for every section — great for spreadsheets.
+              </p>
+              <button
+                id="btn-export-zip"
+                className="btn btn-sm"
+                onClick={handleExportZip}
+                disabled={exportLoading !== null}
+                style={{ marginTop: 4, background: 'var(--gold)', color: 'white', border: 'none', fontWeight: 600 }}
+              >
+                {exportLoading === 'zip' ? '⏳ Preparing…' : '⬇ Download ZIP'}
+              </button>
+            </div>
+          </div>
+
+          <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 14, fontStyle: 'italic' }}>
+            ✦ Large exports may take a few seconds to prepare. Your data is streamed directly — nothing is stored on our servers.
+          </p>
         </div>
 
         {/* Danger Zone */}
