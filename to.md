@@ -45,18 +45,6 @@
 
 ---
 
-### 3. 📅 Weekly Review / Reflection Ritual Page
-**Impact: ★★★★★ | Effort: ★★☆☆☆**
-
-**Gap found in code:** `CoreFeature.md` marks "Monthly reflection prompts" as `[ ]` (not started). The `Reviews.js` page exists (28KB) but seems focused on book reviews. The `dashboard.py` already calculates weekly insights (top performer, mood booster, balance nudges). None of this is assembled into a **guided weekly ritual**.
-
-**Why it's high ROI:**
-- The most impactful habit for a growth tracking app is a structured Sunday review
-- All the data already exists: last 7 days of logs, goal progress delta, mood/energy trend, emotions logged, time tracked
-- This is pure data **assembly** — no new collection, no new schema
-- Proven engagement pattern from RescueTime, Notion, Todoist weekly reports
-
-**What to build:** A `/weekly-review` page that auto-populates for the current week: wins from logs, goals advanced, mood average, most logged category, worst day highlight, and 3 open-ended reflection prompts. User fills in text responses that are saved as a `WeeklyReview` document.
 
 ---
 

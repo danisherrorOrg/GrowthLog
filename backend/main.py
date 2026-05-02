@@ -47,6 +47,7 @@ from api.routers.spirituality import router as spirituality_router
 from api.routers.timeline import router as timeline_router
 from api.routers.lotus import router as lotus_router
 from api.routers.reviews import router as reviews_router
+from api.routers.export import router as export_router
 
 from contextlib import asynccontextmanager
 
@@ -138,6 +139,7 @@ app.include_router(spirituality_router)
 app.include_router(timeline_router)
 app.include_router(lotus_router)
 app.include_router(reviews_router)
+app.include_router(export_router)
 
 
 
