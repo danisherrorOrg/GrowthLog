@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
@@ -11,23 +12,29 @@ function MdTextarea({ value, onChange, placeholder, borderColor = 'var(--sage)',
     <div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
         <button type="button" onClick={() => setPreview(false)}
-          style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
+          style={{
+            fontSize: 11, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: 'pointer',
             background: !preview ? 'var(--ink)' : 'rgba(13,13,13,0.07)',
-            color: !preview ? 'white' : 'rgba(13,13,13,0.5)', fontWeight: 600 }}>
+            color: !preview ? 'white' : 'rgba(13,13,13,0.5)', fontWeight: 600
+          }}>
           ✏️ Write
         </button>
         <button type="button" onClick={() => setPreview(true)} disabled={!value?.trim()}
-          style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: value?.trim() ? 'pointer' : 'not-allowed',
+          style={{
+            fontSize: 11, padding: '3px 10px', borderRadius: 20, border: 'none', cursor: value?.trim() ? 'pointer' : 'not-allowed',
             background: preview ? 'var(--ink)' : 'rgba(13,13,13,0.07)',
-            color: preview ? 'white' : 'rgba(13,13,13,0.5)', fontWeight: 600, opacity: value?.trim() ? 1 : 0.4 }}>
+            color: preview ? 'white' : 'rgba(13,13,13,0.5)', fontWeight: 600, opacity: value?.trim() ? 1 : 0.4
+          }}>
           👁 Preview
         </button>
         <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.3)', alignSelf: 'center', marginLeft: 4 }}>Markdown supported</span>
       </div>
       {preview ? (
-        <div className="md-body" style={{ minHeight, padding: '10px 16px', background: 'rgba(13,13,13,0.02)',
+        <div className="md-body" style={{
+          minHeight, padding: '10px 16px', background: 'rgba(13,13,13,0.02)',
           border: '1px solid rgba(13,13,13,0.08)', borderLeft: `3px solid ${borderColor}`,
-          borderRadius: '0 10px 10px 0', fontSize: 13, lineHeight: 1.7 }}>
+          borderRadius: '0 10px 10px 0', fontSize: 13, lineHeight: 1.7
+        }}>
           <MarkdownRenderer content={value || '_Nothing written yet_'} />
         </div>
       ) : (
@@ -99,40 +106,36 @@ const VERDICTS = [
 function formatTime(s) {
   const m = Math.floor(s / 60);
   const sec = s % 60;
-  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 const QUICK_QUESTIONS = [
   { key: 'quick_most_important', label: 'Most important thing right now?' },
-  { key: 'quick_real_progress',  label: 'Making real progress or going in circles?' },
-  { key: 'quick_show_for_30',    label: 'What to show for this in 30 minutes?' },
-  { key: 'quick_energy_suited',  label: 'Is my energy level suited to this task?' },
+  { key: 'quick_real_progress', label: 'Making real progress or going in circles?' },
+  { key: 'quick_show_for_30', label: 'What to show for this in 30 minutes?' },
+  { key: 'quick_energy_suited', label: 'Is my energy level suited to this task?' },
 ];
 
 function CheckInCard({ checkin, onDelete }) {
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const verdict = VERDICTS.find(v => v.key === checkin.verdict) || VERDICTS[0];
-
-  const fullAnswers = [];
-  if (checkin.mode !== 'quick' && checkin.answers) {
-    CATEGORIES.forEach(cat => {
-      cat.questions.forEach(q => {
-        const ans = checkin.answers[q.key];
-        if (ans?.trim()) fullAnswers.push({ cat, q, ans });
-      });
-    });
-  }
-  const quickAnswers = QUICK_QUESTIONS.map(q => ({ ...q, ans: checkin[q.key] })).filter(q => q.ans?.trim());
-
   return (
-    <div style={{ border: '1px solid rgba(13,13,13,0.07)', borderRadius: 16, overflow: 'hidden', background: 'white', marginBottom: 10 }}>
-      <div onClick={() => setOpen(v => !v)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', cursor: 'pointer' }}>
+    <div
+      onClick={() => navigate(`/checkins/${checkin.id}`)}
+      style={{
+        border: '1px solid rgba(13,13,13,0.07)', borderRadius: 16, overflow: 'hidden',
+        background: 'white', marginBottom: 10, cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 16, color: 'rgba(13,13,13,0.35)' }}>{open ? '▼' : '▶'}</span>
           <div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>{checkin.task_name}</div>
             <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 2 }}>
               Check-in #{checkin.check_in_number} · {checkin.mode === 'quick' ? '⚡ Quick' : '📋 Full'} · {checkin.created_at?.slice(0, 10)}
+              {checkin.notes?.length > 0 && <span style={{ marginLeft: 8 }}>📌 {checkin.notes.length} note{checkin.notes.length > 1 ? 's' : ''}</span>}
             </div>
           </div>
         </div>
@@ -140,96 +143,18 @@ function CheckInCard({ checkin, onDelete }) {
           <span style={{ background: verdict.color, color: 'white', borderRadius: 20, padding: '3px 12px', fontSize: 11, fontWeight: 700 }}>
             {verdict.icon} {verdict.label}
           </span>
-          <button className="btn btn-ghost btn-sm" onClick={e => { e.stopPropagation(); onDelete(checkin.id); }} style={{ color: 'var(--rust)', padding: '4px 8px' }}>🗑</button>
+          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.3)' }}>→</span>
+          <button className="btn btn-ghost btn-sm"
+            onClick={e => { e.stopPropagation(); onDelete(checkin.id); }}
+            style={{ color: 'var(--rust)', padding: '4px 8px' }}>🗑</button>
         </div>
       </div>
-
-      {open && (
-        <div style={{ background: 'var(--mist)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-          {/* Verdict block */}
-          <div style={{ padding: '14px 18px', borderRadius: 12, border: `2px solid ${verdict.color}`, background: `${verdict.color}0d` }}>
-            <div style={{ fontWeight: 700, color: verdict.color, fontSize: 14, marginBottom: 6 }}>{verdict.icon} Verdict: {verdict.label}</div>
-            {checkin.verdict_reason && (
-              <div style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--ink)' }}>{checkin.verdict_reason}</div>
-            )}
-            {checkin.next_action && (
-              <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.6)', borderTop: '1px solid rgba(13,13,13,0.08)', paddingTop: 8, marginTop: 8 }}>
-                <span style={{ fontWeight: 600 }}>Next action: </span>{checkin.next_action}
-              </div>
-            )}
-          </div>
-
-          {/* Full mode answers by category */}
-          {checkin.mode !== 'quick' && fullAnswers.length > 0 && CATEGORIES.map(cat => {
-            const catAnswers = fullAnswers.filter(a => a.cat.id === cat.id);
-            if (catAnswers.length === 0) return null;
-            return (
-              <div key={cat.id}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 3, height: 16, borderRadius: 2, background: cat.color, flexShrink: 0 }} />
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 700, color: cat.color }}>
-                    {cat.icon} {cat.label}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 11 }}>
-                  {catAnswers.map(({ q, ans }) => (
-                    <div key={q.key} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', borderLeft: `3px solid ${cat.color}` }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>{q.text}</div>
-                      <div style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--ink)' }}>{ans}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Quick mode answers */}
-          {checkin.mode === 'quick' && quickAnswers.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 700, color: 'rgba(13,13,13,0.4)', marginBottom: 10 }}>⚡ Quick Check-In Answers</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {quickAnswers.map(q => (
-                  <div key={q.key} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', borderLeft: '3px solid var(--gold)' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>{q.label}</div>
-                    <div style={{ fontSize: 13, lineHeight: 1.65, color: 'var(--ink)' }}>{q.ans}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom questions */}
-          {checkin.custom_questions?.length > 0 && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <div style={{ width: 3, height: 16, borderRadius: 2, background: '#8b6bc4', flexShrink: 0 }} />
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.2, fontWeight: 700, color: '#8b6bc4' }}>✦ Custom Questions</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 11 }}>
-                {checkin.custom_questions.map((cq, i) => (
-                  <div key={i} style={{ background: 'white', borderRadius: 10, padding: '12px 16px', borderLeft: '3px solid #8b6bc4' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>{cq.text}</div>
-                    {cq.answer?.trim()
-                      ? <div className="md-body" style={{ fontSize: 13, lineHeight: 1.65 }}><MarkdownRenderer content={cq.answer} /></div>
-                      : <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.3)', fontStyle: 'italic' }}>No answer recorded</div>
-                    }
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {fullAnswers.length === 0 && quickAnswers.length === 0 && !checkin.custom_questions?.length && (
-            <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', textAlign: 'center', padding: '4px 0' }}>
-              No answers were recorded for this check-in.
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
+
+
+
 
 export default function TaskCheckins() {
   const [checkins, setCheckins] = useState([]);
@@ -241,7 +166,7 @@ export default function TaskCheckins() {
   const [taskName, setTaskName] = useState('');
   const [checkInNum, setCheckInNum] = useState(1);
   const [answers, setAnswers] = useState({});
-  const [quickAnswers, setQuickAnswers] = useState({ q1:'', q2:'', q3:'', q4:'' });
+  const [quickAnswers, setQuickAnswers] = useState({ q1: '', q2: '', q3: '', q4: '' });
   const [customQuestions, setCustomQuestions] = useState([]); // [{id, text, answer}]
   const [newCustomQ, setNewCustomQ] = useState('');
   const [verdict, setVerdict] = useState('continue');
@@ -285,7 +210,7 @@ export default function TaskCheckins() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setTaskName(''); setCheckInNum(1); setAnswers({}); setQuickAnswers({ q1:'', q2:'', q3:'', q4:'' });
+    setTaskName(''); setCheckInNum(1); setAnswers({}); setQuickAnswers({ q1: '', q2: '', q3: '', q4: '' });
     setCustomQuestions([]); setNewCustomQ('');
     setVerdict('continue'); setVerdictReason(''); setNextAction('');
     setActiveCategory(0); setStep('task'); setTimerSecs(0); setTimerRunning(false);

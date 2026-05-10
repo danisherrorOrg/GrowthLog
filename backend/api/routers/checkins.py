@@ -55,6 +55,7 @@ class TaskCheckInModel(BaseModel):
     next_action: Optional[str] = Field("", max_length=2000)
     date: Optional[str] = Field(None, max_length=30)
     custom_questions: Optional[List[dict]] = []  # [{"text": str, "answer": str}]
+    notes: Optional[List[dict]] = []  # [{"text": str, "added_at": str}]
 
 
 class TaskCheckInUpdateModel(BaseModel):
@@ -69,6 +70,8 @@ class TaskCheckInUpdateModel(BaseModel):
     verdict: Optional[str] = Field(None, max_length=50)
     verdict_reason: Optional[str] = Field(None, max_length=2000)
     next_action: Optional[str] = Field(None, max_length=2000)
+    custom_questions: Optional[List[dict]] = None
+    notes: Optional[List[dict]] = None
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
