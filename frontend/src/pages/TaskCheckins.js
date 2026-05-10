@@ -122,12 +122,14 @@ function CheckInCard({ checkin, onDelete }) {
   return (
     <div
       onClick={() => navigate(`/checkins/${checkin.id}`)}
+      className="card card-sm"
       style={{
-        border: '1px solid rgba(13,13,13,0.07)', borderRadius: 16, overflow: 'hidden',
+        borderLeft: `4px solid ${verdict.color}`,
         background: 'white', marginBottom: 10, cursor: 'pointer', transition: 'box-shadow 0.2s, transform 0.15s',
+        padding: 0
       }}
       onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)'; e.currentTarget.style.transform = 'none'; }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -161,6 +163,7 @@ export default function TaskCheckins() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [filterVerdict, setFilterVerdict] = useState(null);
   const [mode, setMode] = useState('full');
   const [activeCategory, setActiveCategory] = useState(0);
   const [taskName, setTaskName] = useState('');
@@ -296,17 +299,32 @@ export default function TaskCheckins() {
         {stats && !showForm && (
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
             {[
-              { icon: '📋', val: stats.total, label: 'Total Check-ins', color: 'var(--ink)' },
-              { icon: '✅', val: stats.continue_count, label: 'Continued', color: 'var(--sage)' },
-              { icon: '⏸️', val: stats.pause_count, label: 'Paused', color: 'var(--gold)' },
-              { icon: '🗑️', val: stats.drop_count, label: 'Dropped', color: 'var(--rust)' },
-            ].map(s => (
-              <div key={s.label} style={{ background: 'white', border: '1px solid rgba(13,13,13,0.06)', borderRadius: 16, padding: '18px 20px', flex: '1 1 120px', minWidth: 110 }}>
-                <div style={{ fontSize: 22 }}>{s.icon}</div>
-                <div style={{ fontFamily: 'Fraunces', fontSize: 28, fontWeight: 700, color: s.color }}>{s.val}</div>
-                <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>{s.label}</div>
-              </div>
-            ))}
+              { id: null, icon: '📋', val: stats.total, label: 'Total Check-ins', color: 'var(--ink)' },
+              { id: 'continue', icon: '✅', val: stats.continue_count, label: 'Continued', color: 'var(--sage)' },
+              { id: 'pause', icon: '⏸️', val: stats.pause_count, label: 'Paused', color: 'var(--gold)' },
+              { id: 'drop', icon: '🗑️', val: stats.drop_count, label: 'Dropped', color: 'var(--rust)' },
+            ].map(s => {
+              const isActive = filterVerdict === s.id;
+              return (
+                <div key={s.label} className="card"
+                  onClick={() => setFilterVerdict(s.id)}
+                  style={{
+                    background: isActive ? `${s.color}15` : 'white',
+                    border: isActive ? `2px solid ${s.color}` : '1px solid rgba(13,13,13,0.06)',
+                    borderRadius: 16,
+                    padding: isActive ? '17px 19px' : '18px 20px', // compensate for border
+                    flex: '1 1 120px', minWidth: 110,
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease, background 0.2s', cursor: 'pointer'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(13,13,13,0.08)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <div style={{ fontSize: 22 }}>{s.icon}</div>
+                  <div style={{ fontFamily: 'Fraunces', fontSize: 28, fontWeight: 700, color: s.color }}>{s.val}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>{s.label}</div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -550,20 +568,23 @@ export default function TaskCheckins() {
             <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
               ⏱️ Past Check-Ins
               <div style={{ flex: 1, height: 1, background: 'rgba(13,13,13,0.06)' }} />
-              <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', textTransform: 'none', letterSpacing: 0 }}>{checkins.length} saved</span>
+              <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)', textTransform: 'none', letterSpacing: 0 }}>
+                {filterVerdict ? `${checkins.filter(c => c.verdict === filterVerdict).length} ${filterVerdict}` : `${checkins.length} saved`}
+              </span>
             </div>
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 16 }} />)}
               </div>
-            ) : checkins.length === 0 ? (
+            ) : checkins.filter(c => !filterVerdict || c.verdict === filterVerdict).length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">⏱️</div>
-                <h3>No check-ins yet</h3>
-                <p>Start a new check-in to evaluate your current task with intention.</p>
+                <h3>{filterVerdict ? `No ${filterVerdict} check-ins` : 'No check-ins yet'}</h3>
+                <p>{filterVerdict ? 'Try selecting a different filter.' : 'Start a new check-in to evaluate your current task with intention.'}</p>
               </div>
             ) : (
-              checkins.map(c => <CheckInCard key={c.id} checkin={c} onDelete={handleDelete} />)
+              checkins.filter(c => !filterVerdict || c.verdict === filterVerdict)
+                .map(c => <CheckInCard key={c.id} checkin={c} onDelete={handleDelete} />)
             )}
           </div>
         )}
