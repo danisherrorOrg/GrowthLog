@@ -12,6 +12,7 @@ const NAV_GROUPS = [
       { to: '/dashboard', icon: '◈', label: 'Dashboard', shortcut: 'D' },
       { to: '/log', icon: '✦', label: 'Daily Log', shortcut: 'L' },
       { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
+      { to: '/checkins', icon: '⏱️', label: 'Task Check-In', shortcut: 'N' },
     ]
   },
   {
