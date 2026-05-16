@@ -663,7 +663,7 @@ export default function Todos() {
                 const visibleDone = showAll ? done : done.slice(0, DONE_LIMIT);
                 const hiddenCount = done.length - visibleDone.length;
                 return (
-                  <div style={{ opacity: 0.75, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {visibleDone.map(t => (
                       <TodoCard key={t.id} todo={t}
                         onComplete={() => setCompleteTarget(t)}
@@ -810,19 +810,37 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
       <div className="card card-sm" style={{
         borderLeft: `4px solid ${p.color}`,
         background: isDone ? 'var(--mist)' : 'white',
-        transition: 'box-shadow 0.2s',
+        transition: 'box-shadow 0.2s, background 0.15s',
         cursor: 'pointer',
         marginBottom: 0,
       }}
         onClick={() => setShowPreview(true)}
-        onMouseEnter={e => { if (!isDone) e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)'; }}
-        onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)'}
+        onMouseEnter={e => {
+          if (!isDone) {
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)';
+          } else {
+            e.currentTarget.style.boxShadow = '0 2px 10px rgba(13,13,13,0.07)';
+            e.currentTarget.style.background = 'rgba(13,13,13,0.04)';
+          }
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)';
+          if (isDone) e.currentTarget.style.background = 'var(--mist)';
+        }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           {/* Checkbox */}
           <input type="checkbox" checked={isDone}
-            onChange={e => { e.stopPropagation(); isDone ? onReopen() : onComplete(); }}
-            onClick={e => e.stopPropagation()}
+            onChange={e => e.stopPropagation()}
+            onClick={e => {
+              e.stopPropagation();
+              if (isDone) {
+                // For completed tasks, open the preview so reopen is deliberate
+                setShowPreview(true);
+              } else {
+                onComplete();
+              }
+            }}
             style={{ width: 18, height: 18, cursor: 'pointer', accentColor: p.color, marginTop: 2, flexShrink: 0 }} />
 
           <div style={{ flex: 1, minWidth: 0 }}>
