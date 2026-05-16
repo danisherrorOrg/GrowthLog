@@ -7,9 +7,9 @@ import { format, parseISO, isPast, isToday, isTomorrow, differenceInDays } from 
 
 // ── Priority config ─────────────────────────────────────────────────────────
 const PRIORITY = {
-  high:   { color: 'var(--rust)',  label: '🔴 High',   bg: 'rgba(196,98,58,0.06)'  },
-  medium: { color: 'var(--gold)',  label: '🟡 Medium', bg: 'rgba(201,168,76,0.06)' },
-  low:    { color: 'var(--sage)',  label: '🟢 Low',    bg: 'rgba(107,140,107,0.06)'},
+  high: { color: 'var(--rust)', label: '🔴 High', bg: 'rgba(196,98,58,0.06)' },
+  medium: { color: 'var(--gold)', label: '🟡 Medium', bg: 'rgba(201,168,76,0.06)' },
+  low: { color: 'var(--sage)', label: '🟢 Low', bg: 'rgba(107,140,107,0.06)' },
 };
 
 // ── Time helpers ────────────────────────────────────────────────────────────
@@ -25,10 +25,10 @@ function TimeAccuracy({ estimated, actual }) {
   if (!estimated || !actual) return null;
   const ratio = actual / estimated;
   let label, color, bg;
-  if (ratio <= 0.9)       { label = '🚀 Faster than expected'; color = '#2a7a2a'; bg = 'rgba(42,122,42,0.08)'; }
-  else if (ratio <= 1.1)  { label = '🎯 Right on time';       color = 'var(--sage)'; bg = 'rgba(107,140,107,0.1)'; }
-  else if (ratio <= 1.5)  { label = '⏱ Slightly over';       color = '#a07a10'; bg = 'rgba(201,168,76,0.1)'; }
-  else                    { label = '⚠️ Significantly over';  color = 'var(--rust)'; bg = 'rgba(196,98,58,0.08)'; }
+  if (ratio <= 0.9) { label = '🚀 Faster than expected'; color = '#2a7a2a'; bg = 'rgba(42,122,42,0.08)'; }
+  else if (ratio <= 1.1) { label = '🎯 Right on time'; color = 'var(--sage)'; bg = 'rgba(107,140,107,0.1)'; }
+  else if (ratio <= 1.5) { label = '⏱ Slightly over'; color = '#a07a10'; bg = 'rgba(201,168,76,0.1)'; }
+  else { label = '⚠️ Significantly over'; color = 'var(--rust)'; bg = 'rgba(196,98,58,0.08)'; }
 
   return (
     <div style={{
@@ -87,17 +87,17 @@ function DueBadge({ dateStr, isDone }) {
   let date;
   try { date = parseISO(dateStr); } catch { return null; }
 
-  const overdue  = !isDone && isPast(date) && !isToday(date);
+  const overdue = !isDone && isPast(date) && !isToday(date);
   const dueToday = !isDone && isToday(date);
-  const dueTmrw  = !isDone && isTomorrow(date);
+  const dueTmrw = !isDone && isTomorrow(date);
   const daysLeft = differenceInDays(date, new Date());
 
   let label, bg, color;
-  if (overdue)       { label = `${Math.abs(daysLeft)}d overdue`; bg = 'rgba(196,98,58,0.12)'; color = 'var(--rust)'; }
-  else if (dueToday) { label = 'Due today';    bg = 'rgba(201,168,76,0.15)'; color = '#a07a10'; }
-  else if (dueTmrw)  { label = 'Due tomorrow'; bg = 'rgba(201,168,76,0.08)'; color = '#a07a10'; }
-  else if (isDone)   { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.3)'; }
-  else               { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.4)'; }
+  if (overdue) { label = `${Math.abs(daysLeft)}d overdue`; bg = 'rgba(196,98,58,0.12)'; color = 'var(--rust)'; }
+  else if (dueToday) { label = 'Due today'; bg = 'rgba(201,168,76,0.15)'; color = '#a07a10'; }
+  else if (dueTmrw) { label = 'Due tomorrow'; bg = 'rgba(201,168,76,0.08)'; color = '#a07a10'; }
+  else if (isDone) { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.3)'; }
+  else { label = format(date, 'MMM d'); bg = 'rgba(13,13,13,0.04)'; color = 'rgba(13,13,13,0.4)'; }
 
   return (
     <span style={{
@@ -174,8 +174,10 @@ function CompleteModal({ todo, onConfirm, onCancel }) {
             </div>
           )}
 
-          <label style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
-            color: 'rgba(13,13,13,0.4)', fontWeight: 700, display: 'block', marginBottom: 10 }}>
+          <label style={{
+            fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+            color: 'rgba(13,13,13,0.4)', fontWeight: 700, display: 'block', marginBottom: 10
+          }}>
             How long did it actually take?
           </label>
 
@@ -259,8 +261,10 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
           {/* Description */}
           {todo.description?.trim() ? (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
-                color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 8 }}>Description</div>
+              <div style={{
+                fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+                color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 8
+              }}>Description</div>
               <div className="markdown-body" style={{
                 fontSize: 15, lineHeight: 1.75, color: 'rgba(13,13,13,0.75)',
                 padding: '14px 18px', background: 'var(--mist)', borderRadius: 10,
@@ -269,8 +273,10 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: 13, color: 'rgba(13,13,13,0.25)', fontStyle: 'italic',
-              textAlign: 'center', padding: '8px 0 16px' }}>
+            <div style={{
+              fontSize: 13, color: 'rgba(13,13,13,0.25)', fontStyle: 'italic',
+              textAlign: 'center', padding: '8px 0 16px'
+            }}>
               No description added.
             </div>
           )}
@@ -280,8 +286,10 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
             background: 'white', border: '1px solid rgba(13,13,13,0.07)',
             borderRadius: 12, padding: '16px 18px',
           }}>
-            <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
-              color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 12 }}>
+            <div style={{
+              fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5,
+              color: 'rgba(13,13,13,0.35)', fontWeight: 700, marginBottom: 12
+            }}>
               ⏱ Time Tracking
             </div>
             <div className="stack-grid-mobile" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 12 }}>
@@ -336,13 +344,13 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
 
 // ── Main component ──────────────────────────────────────────────────────────
 export default function Todos() {
-  const [todos, setTodos]             = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showAdd, setShowAdd]         = useState(false);
-  const [newTodo, setNewTodo]         = useState({ title: '', description: '', priority: 'medium', due_date: '', estimated_minutes: null });
-  const [filter, setFilter]           = useState('all');
-  const [search, setSearch]           = useState('');
-  const [deleteTarget, setDeleteTarget]   = useState(null);
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTodo, setNewTodo] = useState({ title: '', description: '', priority: 'medium', due_date: '', estimated_minutes: null });
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [completeTarget, setCompleteTarget] = useState(null); // for complete-with-time modal
   const addTitleRef = useRef(null);
 
@@ -420,10 +428,10 @@ export default function Todos() {
 
   // ── Filter + search ───────────────────────────────────────────────────────
   const applyFilter = (t) => {
-    if (filter === 'active')    return t.status === 'pending';
+    if (filter === 'active') return t.status === 'pending';
     if (filter === 'completed') return t.status === 'done';
-    if (filter === 'high')      return t.status === 'pending' && t.priority === 'high';
-    if (filter === 'overdue')   return t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
+    if (filter === 'high') return t.status === 'pending' && t.priority === 'high';
+    if (filter === 'overdue') return t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
     return true;
   };
 
@@ -433,9 +441,9 @@ export default function Todos() {
     return t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
   };
 
-  const visible  = todos.filter(t => applyFilter(t) && applySearch(t));
-  const pending  = visible.filter(t => t.status === 'pending');
-  const done     = visible.filter(t => t.status === 'done');
+  const visible = todos.filter(t => applyFilter(t) && applySearch(t));
+  const pending = visible.filter(t => t.status === 'pending');
+  const done = visible.filter(t => t.status === 'done');
   const overdueCount = todos.filter(t =>
     t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date))
   ).length;
@@ -479,10 +487,10 @@ export default function Todos() {
           <div className="toolbar-left" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10, flexWrap: 'wrap' }}>
               {[
-                { key: 'all',       label: 'All' },
-                { key: 'active',    label: 'Active' },
-                { key: 'high',      label: '🔴 High' },
-                { key: 'overdue',   label: '⚠️ Overdue' },
+                { key: 'all', label: 'All' },
+                { key: 'active', label: 'Active' },
+                { key: 'high', label: '🔴 High' },
+                { key: 'overdue', label: '⚠️ Overdue' },
                 { key: 'completed', label: 'Done' },
               ].map(f => (
                 <button key={f.key}
@@ -538,8 +546,10 @@ export default function Todos() {
                 placeholder="What needs to be done?"
                 value={newTodo.title}
                 onChange={e => setNewTodo({ ...newTodo, title: e.target.value })}
-                style={{ fontSize: 17, border: 'none', background: 'transparent', padding: 0,
-                  borderBottom: '1px solid rgba(13,13,13,0.12)', borderRadius: 0, fontWeight: 500 }}
+                style={{
+                  fontSize: 17, border: 'none', background: 'transparent', padding: 0,
+                  borderBottom: '1px solid rgba(13,13,13,0.12)', borderRadius: 0, fontWeight: 500
+                }}
               />
               <textarea
                 className="form-textarea"
@@ -603,8 +613,10 @@ export default function Todos() {
             {/* Pending column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
-                  color: 'var(--sage)', fontWeight: 700, margin: 0 }}>Upcoming Focus</h3>
+                <h3 style={{
+                  fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
+                  color: 'var(--sage)', fontWeight: 700, margin: 0
+                }}>Upcoming Focus</h3>
                 <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)' }}>
                   {pending.length} task{pending.length !== 1 ? 's' : ''}
                 </span>
@@ -630,28 +642,54 @@ export default function Todos() {
             {/* Done column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <h3 style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
-                  color: 'rgba(13,13,13,0.35)', fontWeight: 700, margin: 0 }}>Completed</h3>
+                <h3 style={{
+                  fontSize: 12, textTransform: 'uppercase', letterSpacing: 2,
+                  color: 'rgba(13,13,13,0.35)', fontWeight: 700, margin: 0
+                }}>Completed</h3>
                 <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.25)' }}>
                   {done.length} task{done.length !== 1 ? 's' : ''}
                 </span>
               </div>
               {done.length === 0 ? (
-                <div style={{ padding: '32px 0', textAlign: 'center', fontSize: 12,
-                  color: 'rgba(13,13,13,0.2)', fontStyle: 'italic' }}>
+                <div style={{
+                  padding: '32px 0', textAlign: 'center', fontSize: 12,
+                  color: 'rgba(13,13,13,0.2)', fontStyle: 'italic'
+                }}>
                   No completed tasks in current view.
                 </div>
-              ) : (
-                <div style={{ opacity: 0.75, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {done.map(t => (
-                    <TodoCard key={t.id} todo={t}
-                      onComplete={() => setCompleteTarget(t)}
-                      onReopen={() => handleReopen(t.id)}
-                      onDelete={() => confirmDelete(t.id)}
-                      onSave={handleEdit} />
-                  ))}
-                </div>
-              )}
+              ) : (() => {
+                const DONE_LIMIT = 5;
+                const showAll = filter === 'completed';
+                const visibleDone = showAll ? done : done.slice(0, DONE_LIMIT);
+                const hiddenCount = done.length - visibleDone.length;
+                return (
+                  <div style={{ opacity: 0.75, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {visibleDone.map(t => (
+                      <TodoCard key={t.id} todo={t}
+                        onComplete={() => setCompleteTarget(t)}
+                        onReopen={() => handleReopen(t.id)}
+                        onDelete={() => confirmDelete(t.id)}
+                        onSave={handleEdit} />
+                    ))}
+                    {hiddenCount > 0 && (
+                      <button
+                        onClick={() => setFilter('completed')}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: 12, color: 'rgba(13,13,13,0.35)',
+                          textAlign: 'center', padding: '6px 0',
+                          letterSpacing: 0.3,
+                          transition: 'color 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--sage)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'rgba(13,13,13,0.35)'}
+                      >
+                        + {hiddenCount} more completed · View all →
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -679,9 +717,9 @@ export default function Todos() {
 
 // ── TodoCard ────────────────────────────────────────────────────────────────
 function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
-  const [isEditing, setIsEditing]     = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [editForm, setEditForm]       = useState({
+  const [editForm, setEditForm] = useState({
     title: todo.title,
     description: todo.description || '',
     priority: todo.priority,
