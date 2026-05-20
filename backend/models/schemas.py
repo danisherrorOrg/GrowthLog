@@ -30,6 +30,8 @@ class ProfileUpdateModel(BaseModel):
     avatar_emoji: Optional[str] = Field(None, max_length=10)
     timezone: Optional[str] = Field(None, max_length=60)
     email_notifications: Optional[bool] = None
+    category_colors: Optional[List[str]] = None
+    category_icons: Optional[List[str]] = None
 
 class PasswordChangeModel(BaseModel):
     current_password: str = Field(..., max_length=128)

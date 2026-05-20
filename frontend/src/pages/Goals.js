@@ -6,6 +6,7 @@ import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 
 
 const SORT_OPTIONS = [
@@ -17,6 +18,9 @@ const SORT_OPTIONS = [
 
 export default function Goals() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const activeColors = user?.category_colors || ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
+  const activeIcons = user?.category_icons || ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
   const [goals, setGoals] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -56,6 +60,7 @@ export default function Goals() {
   const openCreate = () => {
     setEditGoal(null);
     setShowCreateCat(false);
+    setNewCatForm({ name: '', icon: activeIcons[0] || '🎯', color: activeColors[0] || '#6b8c6b', description: '' });
     setForm({ category_id: categories.length > 0 ? categories[0].id : '', title: '', description: '', deadline: '' });
     setShowModal(true);
   };
@@ -75,7 +80,7 @@ export default function Goals() {
       setCategories(updated.data);
       setForm(prev => ({ ...prev, category_id: r.data.id }));
       setShowCreateCat(false);
-      setNewCatForm({ name: '', icon: '🎯', color: '#6b8c6b', description: '' });
+      setNewCatForm({ name: '', icon: activeIcons[0] || '🎯', color: activeColors[0] || '#6b8c6b', description: '' });
       toast.success(`${r.data.icon} ${r.data.name} created!`);
       window.location.reload();
     } catch (e) { toast.error(getErrorMessage(e, 'Failed to create category')); }
@@ -180,8 +185,8 @@ export default function Goals() {
 
   const overdue = goals.filter(g => ['active', 'extended'].includes(g.status) && isPast(parseISO(g.current_deadline)));
 
-  const CAT_ICONS = ['🎯', '🧠', '💼', '❤️', '💪', '📚', '🌿', '💰', '🎨'];
-  const CAT_COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b'];
+  const CAT_ICONS = activeIcons;
+  const CAT_COLORS = activeColors;
 
   return (
     <div>

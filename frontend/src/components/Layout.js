@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
@@ -90,6 +90,89 @@ export default function Layout() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
+  // --- Notifications State & Logic ---
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('growthlog_read_notifications');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem('growthlog_dismissed_notifications');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const bellContainerRef = useRef(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await API.get('/notifications');
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem('growthlog_read_notifications', JSON.stringify(readNotificationIds));
+  }, [readNotificationIds]);
+
+  useEffect(() => {
+    localStorage.setItem('growthlog_dismissed_notifications', JSON.stringify(dismissedNotificationIds));
+  }, [dismissedNotificationIds]);
+
+  // Click outside to close notifications dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (bellContainerRef.current && !bellContainerRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  }, [showNotifications]);
+
+  const activeNotifications = notifications.filter(n => !dismissedNotificationIds.includes(n.id));
+  const unreadCount = activeNotifications.filter(n => !readNotificationIds.includes(n.id)).length;
+
+  const handleMarkAllAsRead = () => {
+    const allIds = activeNotifications.map(n => n.id);
+    setReadNotificationIds(prev => {
+      const next = [...prev];
+      allIds.forEach(id => {
+        if (!next.includes(id)) next.push(id);
+      });
+      return next;
+    });
+  };
+
+  const handleDismissNotification = (e, id) => {
+    e.stopPropagation();
+    setDismissedNotificationIds(prev => [...prev, id]);
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (!readNotificationIds.includes(notification.id)) {
+      setReadNotificationIds(prev => [...prev, notification.id]);
+    }
+    setShowNotifications(false);
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
+
   const handleVerifyEmail = async () => {
     setVerifying(true);
     try {
@@ -102,10 +185,13 @@ export default function Layout() {
     }
   };
 
-  // Refresh user data (streak, etc.) on every page navigation
+  // Refresh user data (streak, etc.) and notifications on every page navigation
   useEffect(() => {
     refreshUser().catch(() => { });
-  }, [location.pathname]);
+    if (user) {
+      fetchNotifications();
+    }
+  }, [location.pathname, user ? user._id : null]);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -291,6 +377,69 @@ export default function Layout() {
           </div>
         </div>
       </aside>
+
+      {/* Top Navbar with Notification Bell */}
+      <div className="top-navbar">
+        <div className="nav-bell-container" ref={bellContainerRef}>
+          <button
+            className="nav-bell-btn"
+            onClick={() => setShowNotifications(prev => !prev)}
+            title="Notifications"
+          >
+            🔔
+            {unreadCount > 0 && (
+              <span className="nav-bell-badge pulse">{unreadCount}</span>
+            )}
+          </button>
+          
+          {/* Notifications Dropdown Tray */}
+          {showNotifications && (
+            <div className="activity-tray-dropdown">
+              <div className="activity-tray-header">
+                <h4>Notifications</h4>
+                {unreadCount > 0 && (
+                  <button className="activity-tray-clear-btn" onClick={handleMarkAllAsRead}>
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+              <div className="activity-tray-body">
+                {activeNotifications.length === 0 ? (
+                  <div className="activity-tray-empty">
+                    No new notifications. You're all caught up! ✨
+                  </div>
+                ) : (
+                  activeNotifications.map(notification => {
+                    const isUnread = !readNotificationIds.includes(notification.id);
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`notification-item ${isUnread ? 'unread' : ''}`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className={`notification-icon-wrapper ${notification.type}`}>
+                          {notification.icon}
+                        </div>
+                        <div className="notification-content">
+                          <div className="notification-title">{notification.title}</div>
+                          <div className="notification-message">{notification.message}</div>
+                        </div>
+                        <button
+                          className="notification-dismiss-btn"
+                          onClick={(e) => handleDismissNotification(e, notification.id)}
+                          title="Dismiss"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <main className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
         {!user?.is_verified && (

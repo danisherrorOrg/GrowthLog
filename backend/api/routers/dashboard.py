@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from datetime import datetime, timedelta
 
 from core.database import db
 from utils.cache import utcnow, cache_get, cache_set
 from api.deps import get_current_user
 from prompts import QUOTES, CATEGORY_PROMPTS
+from core.rate_limit import limiter
+
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 prompts_router = APIRouter(prefix="/prompts", tags=["prompts"])
@@ -24,7 +26,8 @@ def get_daily_prompts():
     return prompts
 
 @router.get("")
-def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
+@limiter.limit("30/minute")
+def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_current_user)):
     days = min(max(days, 1), 365)
     uid = str(current_user["_id"])
     cache_key = f"dashboard:{uid}:{days}"
@@ -93,47 +96,54 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         }}
     ]
     
-    agg_result = list(db.daily_logs.aggregate(pipeline))[0]
+    agg_list = list(db.daily_logs.aggregate(pipeline))
+    if agg_list:
+        agg_result = agg_list[0]
+    else:
+        agg_result = {
+            "trends": [],
+            "category_stats": [],
+            "weekly_summary": [],
+            "emotions": [],
+            "totals": []
+        }
+        
     logs_count = db.daily_logs.count_documents({"user_id": uid, "date": {"$gte": since}})
     
-    heatmap = {t["date"]: {"rating": t["overall_rating"], "highlight": t["highlight"], "count": t["entry_count"]} for t in agg_result["trends"]}
-    mood_trend = [{"date": t["date"], "mood": round(t["avg_mood"] or 5, 1)} for t in agg_result["trends"]]
-    energy_trend = [{"date": t["date"], "energy": round(t["avg_energy"] or 5, 1)} for t in agg_result["trends"]]
-    time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result["trends"]]
+    heatmap = {t["date"]: {"rating": t["overall_rating"], "highlight": t["highlight"], "count": t["entry_count"]} for t in agg_result.get("trends", [])}
+    mood_trend = [{"date": t["date"], "mood": round((t["avg_mood"] or 5), 1)} for t in agg_result.get("trends", [])]
+    energy_trend = [{"date": t["date"], "energy": round((t["avg_energy"] or 5), 1)} for t in agg_result.get("trends", [])]
+    time_spent_trend = [{"date": t["date"], "time_spent": t["time_spent"]} for t in agg_result.get("trends", [])]
     
-    categories_agg = list(db.categories.aggregate([
-        {"$match": {"user_id": uid, "archived": {"$ne": True}}},
-        {"$lookup": {
-            "from": "daily_logs",
-            "let": {"cat_id": {"$toString": "$_id"}},
-            "pipeline": [
-                {"$match": {"user_id": uid, "date": {"$gte": since}}},
-                {"$unwind": "$entries"},
-                {"$match": {"$expr": {"$eq": ["$entries.category_id", "$$cat_id"]}}}
-            ],
-            "as": "logs"
-        }},
-        {"$project": {
-            "name": 1,
-            "icon": 1,
-            "color": 1,
-            "count": {"$size": "$logs"},
-            "avg_mood": {"$ifNull": [{"$avg": "$logs.entries.mood"}, 5.0]},
-            "time_spent": {"$ifNull": [{"$sum": "$logs.entries.time_spent"}, 0]}
-        }}
-    ]))
+    # Fast O(1) matching: Simple fast query on categories
+    categories = list(db.categories.find({"user_id": uid, "archived": {"$ne": True}}))
     
-    cat_consistency = [
-        {
-            "name": c.get("name", "Unknown"), "icon": c.get("icon", "📝"), "color": c.get("color", "#cccccc"), "id": str(c["_id"]),
-            "count": c.get("count", 0),
-            "percentage": round((c.get("count", 0) / max(logs_count, 1)) * 100),
-            "avg_mood": round(c.get("avg_mood", 5.0), 1),
-            "time_spent": c.get("time_spent", 0)
-        }
-        for c in categories_agg
-    ]
-    
+    # Map pre-computed category stats from the $facet pipeline
+    stats_map = {}
+    for item in agg_result.get("category_stats", []):
+        cat_id = item.get("_id")
+        if cat_id:
+            stats_map[str(cat_id)] = {
+                "count": item.get("count", 0),
+                "avg_mood": item.get("avg_mood", 5.0),
+                "time_spent": item.get("time_spent", 0)
+            }
+            
+    cat_consistency = []
+    for c in categories:
+        cat_id_str = str(c["_id"])
+        stat = stats_map.get(cat_id_str, {"count": 0, "avg_mood": 5.0, "time_spent": 0})
+        cat_consistency.append({
+            "name": c.get("name", "Unknown"),
+            "icon": c.get("icon", "📝"),
+            "color": c.get("color", "#cccccc"),
+            "id": cat_id_str,
+            "count": stat["count"],
+            "percentage": round((stat["count"] / max(logs_count, 1)) * 100),
+            "avg_mood": round(stat["avg_mood"] or 5.0, 1),
+            "time_spent": stat["time_spent"]
+        })
+        
     weekly_summary = [
         {
             "week": f"W{w['_id']}",
@@ -141,7 +151,7 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
             "avg_mood": round(w["mood_sum"] / max(w["logs"], 1), 1),
             "avg_energy": round(w["energy_sum"] / max(w["logs"], 1), 1)
         }
-        for w in agg_result["weekly_summary"]
+        for w in agg_result.get("weekly_summary", [])
     ]
     
     goals = list(db.goals.aggregate([
@@ -209,7 +219,7 @@ def get_dashboard(days: int = 30, current_user=Depends(get_current_user)):
         "time_spent_trend": time_spent_trend,
         "weekly_summary": weekly_summary,
         "category_consistency": cat_consistency,
-        "emotion_trends": [{"label": e["_id"], "count": e["count"]} for e in agg_result["emotions"]],
+        "emotion_trends": [{"label": e["_id"], "count": e["count"]} for e in agg_result.get("emotions", [])],
         "radar_data": radar_data,
         "insights": insights,
         "goals": {

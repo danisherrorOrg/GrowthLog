@@ -32,6 +32,8 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
         "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
         "is_verified": False, "verification_token": None,
         "email_notifications": True,
+        "category_colors": ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'],
+        "category_icons": ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡']
     })
 
     uid_str = str(result.inserted_id)
@@ -141,7 +143,9 @@ def me(current_user=Depends(get_current_user)):
         "created_at": u.get("created_at", utcnow()).isoformat(),
         "is_public": u.get("is_public", False),
         "is_verified": u.get("is_verified", False),
-        "pending_email": u.get("pending_email")
+        "pending_email": u.get("pending_email"),
+        "category_colors": u.get("category_colors", ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b']),
+        "category_icons": u.get("category_icons", ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'])
     }
 
 @router.put("/profile")

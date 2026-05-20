@@ -6,8 +6,8 @@ import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
-const ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
-const COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
+import { useAuth } from '../context/AuthContext';
+
 const DEFAULTS = [
   { name: 'Personality', icon: '🧠', color: '#6b8c6b', description: 'Who am I becoming as a person?' },
   { name: 'Career', icon: '💼', color: '#c9a84c', description: 'Professional growth and skills' },
@@ -18,6 +18,9 @@ const DEFAULTS = [
 
 export default function Categories() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const activeColors = user?.category_colors || ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
+  const activeIcons = user?.category_icons || ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
   const [categories, setCategories] = useState([]);
   const [archived, setArchived] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -317,7 +320,7 @@ export default function Categories() {
             <div className="form-group">
               <label className="form-label">Icon</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {ICONS.map((ic) => (
+                {activeIcons.map((ic) => (
                   <button key={ic} onClick={() => setForm({ ...form, icon: ic })}
                     style={{ width: 40, height: 40, borderRadius: 8, border: `2px solid ${form.icon === ic ? 'var(--sage)' : 'rgba(13,13,13,0.1)'}`, background: form.icon === ic ? 'rgba(107,140,107,0.1)' : 'white', cursor: 'pointer', fontSize: 20 }}>
                     {ic}
@@ -328,7 +331,7 @@ export default function Categories() {
             <div className="form-group">
               <label className="form-label">Color</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                {COLORS.map((c) => (
+                {activeColors.map((c) => (
                   <button key={c} onClick={() => setForm({ ...form, color: c })}
                     style={{ width: 32, height: 32, borderRadius: '50%', background: c, border: `3px solid ${form.color === c ? 'var(--ink)' : 'transparent'}`, cursor: 'pointer' }} />
                 ))}
