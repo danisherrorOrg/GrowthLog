@@ -21,6 +21,9 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         if payload.get("v") != user.get("token_version", 1):
              raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
              
+        from utils.streak import check_and_apply_streak_shields
+        user = check_and_apply_streak_shields(user)
+        
         return user
     except HTTPException:
         raise

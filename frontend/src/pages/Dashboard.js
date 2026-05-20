@@ -304,9 +304,32 @@ export default function Dashboard() {
         )}
 
         <div className="grid-4" style={{ marginBottom: 20 }}>
-          <div className="stat-card">
+          <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div className="stat-value" style={{ color: 'var(--gold)' }}>{data?.streak || 0}</div>
             <div className="stat-label">🔥 Current Streak</div>
+            {data?.streak_shields > 0 && (
+              <div 
+                className="dashboard-shield-badge" 
+                style={{
+                  marginTop: 6,
+                  fontSize: 10,
+                  color: 'var(--gold)',
+                  background: 'rgba(201, 168, 76, 0.08)',
+                  padding: '3px 8px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(201, 168, 76, 0.2)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase'
+                }}
+                title={`${data.streak_shields} Active Streak Shields protecting your streak!`}
+              >
+                🛡️ {data.streak_shields} Active
+              </div>
+            )}
           </div>
           <div className="stat-card">
             <div className="stat-value">{data?.total_logs || 0}</div>

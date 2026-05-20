@@ -14,71 +14,7 @@ from core.rate_limit import limiter
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
-def _get_local_now(user: dict):
-    tz_str = user.get("timezone", "UTC")
-    try:
-        tz = ZoneInfo(tz_str)
-    except Exception:
-        tz = ZoneInfo("UTC")
-    return utcnow().astimezone(tz)
-
-def recalculate_user_streak(uid: str):
-    """Accurately calculates the current and longest streak using a paginated query that stops on gaps."""
-    user = db.users.find_one({"_id": ObjectId(uid)})
-    if not user:
-        return 0
-
-    now_local = _get_local_now(user)
-    today = now_local.strftime("%Y-%m-%d")
-    yesterday = (now_local - timedelta(days=1)).strftime("%Y-%m-%d")
-
-    current_streak = 0
-    longest_streak = user.get("longest_streak", 0)
-    
-    skip = 0
-    limit = 30
-    check_date = None
-    last_log = None
-    streak_broken = False
-    
-    while not streak_broken:
-        logs = list(db.daily_logs.find({"user_id": uid}, {"date": 1}).sort("date", DESCENDING).skip(skip).limit(limit))
-        if not logs:
-            if skip == 0:
-                db.users.update_one({"_id": ObjectId(uid)}, {"$set": {"streak": 0, "last_log_date": None}})
-                return 0
-            break
-            
-        dates = []
-        for l in logs:
-            if not dates or dates[-1] != l["date"]:
-                dates.append(l["date"])
-                
-        if skip == 0:
-            last_log = dates[0]
-            if last_log < yesterday:
-                streak_broken = True
-                break
-            check_date = last_log
-            
-        for d in dates:
-            if d == check_date:
-                current_streak += 1
-                check_date = (datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
-            else:
-                streak_broken = True
-                break
-                
-        skip += limit
-
-    longest_streak = max(longest_streak, current_streak)
-
-    db.users.update_one({"_id": ObjectId(uid)}, {"$set": {
-        "streak": current_streak,
-        "longest_streak": longest_streak,
-        "last_log_date": last_log
-    }})
-    return current_streak
+from utils.streak import recalculate_user_streak, _get_local_now
 
 @router.get("")
 def get_logs(days: int = 30, limit: int = 20, skip: int = 0, current_user=Depends(get_current_user)):
