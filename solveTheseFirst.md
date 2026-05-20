@@ -46,6 +46,12 @@ These features build upon existing data models and frontend pages to boost daily
   * Users can earn a "shield" for consistency milestones (e.g., every 7 days), which automatically saves their streak if they miss a single day.
 * **Pomodoro Focus Timer**
   * Integrates a built-in focus countdown on the Action Board (Todos) that pre-fills actual time spent into the task completion modal once finished.
+
+----
+
+
+
+
 * **Intraday Mood & Energy Check-ins**
   * Supports up to 4 check-ins per day to capture intraday shifts (e.g., morning vs. evening) and charts them within the daily detailed view.
 
