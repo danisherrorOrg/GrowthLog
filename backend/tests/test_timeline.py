@@ -345,3 +345,31 @@ def test_get_timeline_multi_category_goal(client, auth_headers, test_user_data):
     goal_events = [e for e in events if e.get("source_id") == goal_id or e.get("id") == f"{goal_id}_created"]
     assert len(goal_events) > 0, f"Goal not found with multi-cat filter. Response: {data}"
     assert goal_events[0]["category"]["id"] == cat_id
+
+def test_get_timeline_search_escaping_redos(client, auth_headers, test_user_data):
+    """Verify that timeline search escapes regex special characters and searches for them literally."""
+    user = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(user["_id"])
+
+    # Clean up and insert logs with special characters
+    db.daily_logs.delete_many({"user_id": uid})
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-10-01",
+        "highlight": "Testing special (parentheses) and [brackets]!",
+        "entries": []
+    })
+
+    # Search with regex characters that would normally match everything if unescaped
+    response = client.get("/timeline?q=.*", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    # It should not match since ".*" is escaped to match the literal characters ".*"
+    assert len(data["events"]) == 0
+
+    # Search for a literal special character sequence that exists
+    response = client.get("/timeline?q=(parentheses)", headers=auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["events"]) == 1
+    assert data["events"][0]["description"] == "Testing special (parentheses) and [brackets]!"

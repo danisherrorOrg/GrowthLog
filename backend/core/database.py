@@ -1,5 +1,8 @@
+import logging
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from core.config import MONGO_URL, DB_NAME
+
+logger = logging.getLogger(__name__)
 
 client = MongoClient(
     MONGO_URL,
@@ -17,7 +20,7 @@ def create_indexes():
             unique=True
         )
     except Exception as e:
-        print(f"WARNING: Could not create unique index on categories: {e}. Please deduplicate manually.")
+        logger.warning(f"Could not create unique index on categories: {e}. Please deduplicate manually.")
     db.categories.create_index([("user_id", ASCENDING), ("archived", ASCENDING)])
 
     # ── Goals ─────────────────────────────────────────────────────────────────
@@ -41,7 +44,7 @@ def create_indexes():
             unique=True
         )
     except Exception as e:
-        print(f"WARNING: Could not create unique index on health_metrics: {e}. Please deduplicate manually.")
+        logger.warning(f"Could not create unique index on health_metrics: {e}. Please deduplicate manually.")
 
     # ── Exercise goals ────────────────────────────────────────────────────────
     db.exercise_goals.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
@@ -54,7 +57,7 @@ def create_indexes():
             unique=True
         )
     except Exception as e:
-        print(f"WARNING: Could not create unique index on custom_exercises: {e}. Please deduplicate manually.")
+        logger.warning(f"Could not create unique index on custom_exercises: {e}. Please deduplicate manually.")
 
     # ── Mind Garden & Cognitive Reframing ─────────────────────────────────────
     db.thoughts.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
@@ -98,7 +101,7 @@ def create_indexes():
     try:
         db.users.create_index("email", unique=True)
     except Exception as e:
-        print(f"WARNING: Could not create unique index on users.email: {e}")
+        logger.warning(f"Could not create unique index on users.email: {e}")
     db.activity_logs.create_index([("user_id", ASCENDING), ("timestamp", DESCENDING)])
 
     # ── Cache & Sessions ──────────────────────────────────────────────────────
