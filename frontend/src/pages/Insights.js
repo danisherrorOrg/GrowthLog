@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
 
 const TABS = [
   { id: 'anti-goals', label: 'Anti-Goals', icon: '🚫', color: 'var(--rust)' },
@@ -22,8 +23,9 @@ const TODAY = new Date().toISOString().slice(0, 10);
 
 // ── palette for categories ──────────────────────────────────────────────────
 const PALETTE = ['#6b8c6b', '#5b8ba8', '#c9a84c', '#8b6bc4', '#c4623a', '#5b9e8f', '#c46b8b', '#7a8fa6', '#a89b6b'];
-const catColor = (name, pool) => {
-  if (!pool[name]) pool[name] = PALETTE[Object.keys(pool).length % PALETTE.length];
+const catColor = (name, pool, palette) => {
+  const currentPalette = palette || PALETTE;
+  if (!pool[name]) pool[name] = currentPalette[Object.keys(pool).length % currentPalette.length];
   return pool[name];
 };
 
@@ -36,7 +38,7 @@ const dateLabel = (d) => { try { return format(parseISO(d), 'MMM d, yyyy'); } ca
 const dayLabel = (d) => { try { return format(parseISO(d), 'EEEE, MMM d'); } catch { return d || '—'; } };
 
 // ── 24h breakdown bar ────────────────────────────────────────────────────────
-function HoursBar({ entries, colorMap, keyField = 'category' }) {
+function HoursBar({ entries, colorMap, keyField = 'category', palette }) {
   const total = entries.reduce((s, e) => s + +e.hours, 0);
   const pct = Math.min(total / 24, 1);
   return (
@@ -48,13 +50,13 @@ function HoursBar({ entries, colorMap, keyField = 'category' }) {
       {/* segmented bar */}
       <div style={{ height: 10, borderRadius: 6, background: 'rgba(13,13,13,0.06)', overflow: 'hidden', display: 'flex' }}>
         {entries.map((e, i) => (
-          <div key={i} title={`${e[keyField]}: ${e.hours}h`} style={{ width: `${(+e.hours / 24) * 100}%`, background: catColor(e[keyField], colorMap), transition: 'width 0.4s' }} />
+          <div key={i} title={`${e[keyField]}: ${e.hours}h`} style={{ width: `${(+e.hours / 24) * 100}%`, background: catColor(e[keyField], colorMap, palette), transition: 'width 0.4s' }} />
         ))}
       </div>
       {/* legend chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
         {entries.map((e, i) => (
-          <span key={i} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: catColor(e[keyField], colorMap) + '22', color: catColor(e[keyField], colorMap), fontWeight: 700, border: `1px solid ${catColor(e[keyField], colorMap)}44` }}>
+          <span key={i} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: catColor(e[keyField], colorMap, palette) + '22', color: catColor(e[keyField], colorMap, palette), fontWeight: 700, border: `1px solid ${catColor(e[keyField], colorMap, palette)}44` }}>
             {e[keyField]} · {e.hours}h
           </span>
         ))}
@@ -98,6 +100,8 @@ function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color }) {
 }
 
 export default function Insights() {
+  const { user } = useAuth();
+  const palette = user?.category_colors || ['#6b8c6b', '#5b8ba8', '#c9a84c', '#8b6bc4', '#c4623a', '#5b9e8f', '#c46b8b', '#7a8fa6', '#a89b6b'];
   const [activeTab, setActiveTab] = useState('anti-goals');
 
   // ── Anti-Goals ─────────────────────────────────────────────────────────
@@ -545,13 +549,13 @@ export default function Insights() {
                       </div>
 
                       {/* Stacked bar */}
-                      <HoursBar entries={entries} colorMap={teColorMap} keyField="category" />
+                      <HoursBar entries={entries} colorMap={teColorMap} keyField="category" palette={palette} />
 
                       {/* Entry rows */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                         {entries.map(e => (
                           <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 10, background: 'rgba(13,13,13,0.02)', border: '1px solid rgba(13,13,13,0.04)' }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: catColor(e.category, teColorMap), flexShrink: 0 }} />
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: catColor(e.category, teColorMap, palette), flexShrink: 0 }} />
                             <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{e.category}</span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--sage)' }}>{+e.hours}h</span>
                             {e.notes && <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.notes}</span>}
@@ -594,12 +598,12 @@ export default function Insights() {
                         <button className="btn btn-sm btn-outline" onClick={() => openStAdd(date)} style={{ borderRadius: 20, fontSize: 11 }}>+ Add more</button>
                       </div>
 
-                      <HoursBar entries={entries} colorMap={stColorMap} keyField="app_category" />
+                      <HoursBar entries={entries} colorMap={stColorMap} keyField="app_category" palette={palette} />
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                         {entries.map(e => (
                           <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 10, background: 'rgba(13,13,13,0.02)', border: '1px solid rgba(13,13,13,0.04)' }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: catColor(e.app_category, stColorMap), flexShrink: 0 }} />
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: catColor(e.app_category, stColorMap, palette), flexShrink: 0 }} />
                             <span style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{e.app_category}</span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: '#5b8ba8' }}>{+e.hours}h</span>
                             {e.notes && <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.notes}</span>}

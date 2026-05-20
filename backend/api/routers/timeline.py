@@ -1,19 +1,23 @@
 import re
 import logging
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from typing import Optional, List
 from datetime import datetime
 from bson import ObjectId
 
 from core.database import db
 from api.deps import get_current_user
+from core.rate_limit import limiter
+
 
 router = APIRouter(prefix="/timeline", tags=["timeline"])
 
 logger = logging.getLogger(__name__)
 
 @router.get("")
+@limiter.limit("30/minute")
 def get_timeline(
+    request: Request,
     start_date: Optional[str] = Query(None, description="Start date in YYYY-MM-DD format"),
     end_date: Optional[str] = Query(None, description="End date in YYYY-MM-DD format"),
     q: Optional[str] = Query(None, description="Search query"),

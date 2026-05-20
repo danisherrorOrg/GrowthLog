@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from bson import ObjectId
 from pymongo import DESCENDING
 from datetime import datetime, timedelta
@@ -9,6 +9,8 @@ from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list
 from api.deps import get_current_user, validate_user_owns_category
 from models.schemas import DailyLogModel
+from core.rate_limit import limiter
+
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
@@ -101,7 +103,8 @@ def get_log_by_date(date: str, current_user=Depends(get_current_user)):
     return serialize(log) if log else None
 
 @router.post("")
-def create_log(data: DailyLogModel, current_user=Depends(get_current_user)):
+@limiter.limit("10/minute")
+def create_log(request: Request, data: DailyLogModel, current_user=Depends(get_current_user)):
     """
     Creates or updates a daily log.
     NOTE: 'date' is always stored as the user's local timezone string (e.g. '2026-04-15') 

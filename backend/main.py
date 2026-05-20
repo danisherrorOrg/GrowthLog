@@ -49,6 +49,7 @@ from api.routers.lotus import router as lotus_router
 from api.routers.reviews import router as reviews_router
 from api.routers.export import router as export_router
 from api.routers.checkins import router as checkins_router
+from api.routers.notifications import router as notifications_router
 
 from contextlib import asynccontextmanager
 
@@ -155,6 +156,7 @@ app.include_router(lotus_router)
 app.include_router(reviews_router)
 app.include_router(export_router)
 app.include_router(checkins_router)
+app.include_router(notifications_router)
 
 
 

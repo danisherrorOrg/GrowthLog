@@ -83,13 +83,24 @@ export default function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [pwMode, setPwMode] = useState(false);
   const [emailMode, setEmailMode] = useState(false);
-  const [form, setForm] = useState({ name: '', bio: '', avatar_emoji: '🌱', timezone: 'UTC', email_notifications: true });
+  const [form, setForm] = useState({
+    name: '',
+    bio: '',
+    avatar_emoji: '🌱',
+    timezone: 'UTC',
+    email_notifications: true,
+    category_colors: [],
+    category_icons: []
+  });
+  const [newColorInput, setNewColorInput] = useState('#6b8c6b');
+  const [newIconInput, setNewIconInput] = useState('');
   const [pwForm, setPwForm] = useState({ current_password: '', new_password: '', confirm: '' });
   const [emailForm, setEmailForm] = useState({ new_email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [prompt, setPrompt] = useState(null);
-  const [exportLoading, setExportLoading] = useState(null); // 'json' | 'zip' | 'pdf' | null
+  const [exportLoading, setExportLoading] = useState(null); // 'json' | 'zip' | 'pdf' | 'md' | null
+
 
   useEffect(() => {
     if (user) {
@@ -98,7 +109,9 @@ export default function Profile() {
         bio: user.bio || '',
         avatar_emoji: user.avatar_emoji || '🌱',
         timezone: user.timezone || 'UTC',
-        email_notifications: user.email_notifications !== false
+        email_notifications: user.email_notifications !== false,
+        category_colors: user.category_colors || ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'],
+        category_icons: user.category_icons || ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡']
       });
     }
     API.get('/auth/stats').then(r => {
@@ -145,7 +158,9 @@ export default function Profile() {
         bio: form.bio,
         avatar_emoji: form.avatar_emoji,
         timezone: form.timezone,
-        email_notifications: form.email_notifications
+        email_notifications: form.email_notifications,
+        category_colors: form.category_colors,
+        category_icons: form.category_icons
       });
       await refreshUser();
       toast.success('Profile updated!');
@@ -293,6 +308,198 @@ export default function Profile() {
       setExportLoading(null);
     }
   };
+
+  const handleExportMD = async () => {
+    setExportLoading('md');
+    try {
+      const res = await API.get('/export/all');
+      const data = res.data || {};
+      const formatSafeDate = (dateStr, fmt) => {
+        if (!dateStr) return 'N/A';
+        try {
+          return format(parseISO(dateStr), fmt);
+        } catch {
+          return dateStr;
+        }
+      };
+
+      const categories = data.categories || [];
+      const categoryMap = {};
+      categories.forEach(c => {
+        categoryMap[c.id || c._id] = c;
+      });
+
+      const getCatName = (catId) => {
+        const cat = categoryMap[catId];
+        return cat ? `${cat.icon} ${cat.name}` : 'General';
+      };
+
+      let md = '';
+
+      // Header & Profile Section
+      const profile = data.profile || {};
+      md += `# GrowthLog Journal: ${profile.name || 'User'}\n\n`;
+      md += `- **Email:** ${profile.email || 'N/A'}\n`;
+      md += `- **Current Streak:** ${profile.streak || 0} days (Best: ${profile.longest_streak || 0} days)\n`;
+      md += `- **Timezone:** ${profile.timezone || 'UTC'}\n`;
+      md += `- **Bio:** ${profile.bio || 'No bio set.'}\n`;
+      if (profile.created_at) {
+        md += `- **Member Since:** ${formatSafeDate(profile.created_at, 'MMMM d, yyyy')}\n`;
+      }
+      md += `- **Export Date:** ${format(new Date(), 'MMMM d, yyyy')}\n\n`;
+      md += `---\n\n`;
+
+      // Goals Section
+      md += `## 🎯 Goals Tracker\n\n`;
+      const goals = data.goals || [];
+      if (goals.length === 0) {
+        md += `*No goals recorded yet.*\n\n`;
+      } else {
+        const activeGoals = goals.filter(g => ['active', 'extended'].includes(g.status));
+        const completedGoals = goals.filter(g => g.status === 'completed');
+        const otherGoals = goals.filter(g => !['active', 'extended', 'completed'].includes(g.status));
+
+        if (activeGoals.length > 0) {
+          md += `### 🟢 Active Goals\n\n`;
+          activeGoals.forEach(g => {
+            md += `- [ ] **${g.title}** (Category: ${getCatName(g.category_id)} · Due: ${formatSafeDate(g.current_deadline, 'MMM d, yyyy')})\n`;
+            if (g.description) {
+              md += `  > ${g.description.split('\n').join('\n  > ')}\n`;
+            }
+            if (g.micro_goals && g.micro_goals.length > 0) {
+              md += `  * **Steps:**\n`;
+              g.micro_goals.forEach(mg => {
+                const estTime = mg.time_spent ? ` (${mg.time_spent} min)` : '';
+                md += `    - [${mg.completed ? 'x' : ' '}] ${mg.text}${estTime}\n`;
+              });
+            }
+            if (g.notes && g.notes.length > 0) {
+              md += `  * **Field Notes:**\n`;
+              g.notes.forEach(n => {
+                md += `    - *${formatSafeDate(n.date, 'MMM d, yyyy · p')}:* ${n.text}\n`;
+              });
+            }
+            if (g.reflections && g.reflections.length > 0) {
+              md += `  * **Evolution Track:**\n`;
+              g.reflections.forEach(r => {
+                const statusChange = r.status_change ? ` [${r.status_change}]` : '';
+                md += `    - *${formatSafeDate(r.date, 'MMM d, yyyy')}${statusChange}:* ${r.text}\n`;
+              });
+            }
+            md += `\n`;
+          });
+        }
+
+        if (completedGoals.length > 0) {
+          md += `### ✅ Completed Goals\n\n`;
+          completedGoals.forEach(g => {
+            md += `- [x] **${g.title}** (Category: ${getCatName(g.category_id)} · Completed: ${formatSafeDate(g.current_deadline, 'MMM d, yyyy')})\n`;
+            if (g.reflection) {
+              md += `  > *Reflection:* ${g.reflection}\n`;
+            }
+            md += `\n`;
+          });
+        }
+
+        if (otherGoals.length > 0) {
+          md += `### 🔘 Other Goals\n\n`;
+          otherGoals.forEach(g => {
+            md += `- [ ] ~~**${g.title}**~~ (${g.status})\n`;
+            if (g.reflection) {
+              md += `  > *Outcome:* ${g.reflection}\n`;
+            }
+            md += `\n`;
+          });
+        }
+      }
+      md += `---\n\n`;
+
+      // Daily Journal Logs Section
+      md += `## ✦ Daily Journal Logs\n\n`;
+      const logs = data.daily_logs || [];
+      if (logs.length === 0) {
+        md += `*No daily logs recorded yet.*\n\n`;
+      } else {
+        const sortedLogs = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+        sortedLogs.forEach(log => {
+          md += `### ${formatSafeDate(log.date, 'EEEE, MMMM d, yyyy')}\n\n`;
+          md += `- **Overall Rating:** ${log.overall_rating ? `${log.overall_rating}/10` : 'N/A'}\n`;
+          if (log.highlight) {
+            md += `- **The Day's Peak:** ${log.highlight}\n`;
+          }
+          if (log.gratitude && log.gratitude.some(g => g && g.trim())) {
+            md += `- **Gratitude:**\n`;
+            log.gratitude.filter(g => g && g.trim()).forEach((g, idx) => {
+              md += `  ${idx + 1}. ${g}\n`;
+            });
+          }
+          if (log.regret) {
+            md += `- **Regret & Insight:** ${log.regret}\n`;
+          }
+
+          const entries = log.entries || [];
+          if (entries.length > 0) {
+            md += `\n#### Dimensions:\n`;
+            entries.forEach(e => {
+              md += `- **${getCatName(e.category_id)}**\n`;
+              md += `  - Mood: ${e.mood || 'N/A'}/10 · Energy: ${e.energy || 'N/A'}/10 · Time Spent: ${e.time_spent || 0}m\n`;
+              if (e.emotions && e.emotions.length > 0) {
+                md += `  - Emotions: *${e.emotions.join(', ')}*\n`;
+              }
+              if (e.text) {
+                md += `  - Notes: ${e.text.split('\n').join('\n    ')}\n`;
+              }
+            });
+          }
+          md += `\n---\n\n`;
+        });
+      }
+
+      // Todos Section
+      md += `## ☑ To-Dos Checklist\n\n`;
+      const todos = data.todos || [];
+      if (todos.length === 0) {
+        md += `*No to-dos recorded yet.*\n\n`;
+      } else {
+        const activeTodos = todos.filter(t => t.status === 'pending');
+        const completedTodos = todos.filter(t => t.status === 'done');
+
+        if (activeTodos.length > 0) {
+          md += `### 🔴 Pending To-Dos\n\n`;
+          activeTodos.forEach(t => {
+            const dueStr = t.due_date ? ` · Due: ${formatSafeDate(t.due_date, 'MMM d, yyyy')}` : '';
+            const estStr = t.estimated_minutes ? ` (Est: ${t.estimated_minutes}m)` : '';
+            const prioStr = t.priority ? ` [Priority: ${t.priority.toUpperCase()}]` : '';
+            md += `- [ ] **${t.title}**${prioStr}${estStr}${dueStr}\n`;
+            if (t.description) {
+              md += `  > ${t.description.split('\n').join('\n  > ')}\n`;
+            }
+          });
+          md += `\n`;
+        }
+
+        if (completedTodos.length > 0) {
+          md += `### ✅ Completed To-Dos\n\n`;
+          completedTodos.forEach(t => {
+            const compStr = t.completed_at ? ` · Completed: ${formatSafeDate(t.completed_at, 'MMM d, yyyy')}` : '';
+            const actStr = t.actual_minutes ? ` (Took: ${t.actual_minutes}m)` : '';
+            md += `- [x] **${t.title}**${actStr}${compStr}\n`;
+          });
+          md += `\n`;
+        }
+      }
+
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+      triggerDownload(blob, 'growthlog_journal.md');
+      toast.success('Markdown export downloaded!');
+    } catch (e) {
+      console.error(e);
+      toast.error('Export failed. Please try again.');
+    } finally {
+      setExportLoading(null);
+    }
+  };
+
 
   const memberSince = user?.created_at ? format(parseISO(user?.created_at), 'MMMM d, yyyy') : 'Recently';
   const completionRate = stats?.total_goals > 0
@@ -673,6 +880,40 @@ export default function Profile() {
                 {exportLoading === 'pdf' ? '⏳ Generating…' : '⬇ Download PDF'}
               </button>
             </div>
+
+            {/* Markdown card */}
+            <div style={{
+              background: 'white',
+              border: '1px solid rgba(107,140,107,0.2)',
+              borderRadius: 12,
+              padding: '20px 20px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{
+                  width: 40, height: 40, borderRadius: 10, background: 'rgba(107,140,107,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+                }}>📝</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>Markdown Journal</div>
+                  <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)' }}>Obsidian & Notion ready</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', lineHeight: 1.5, margin: 0 }}>
+                A beautifully structured markdown journal of all your logs, goals, and daily reflections.
+              </p>
+              <button
+                id="btn-export-md"
+                className="btn btn-outline btn-sm"
+                onClick={handleExportMD}
+                disabled={exportLoading !== null}
+                style={{ marginTop: 4, borderColor: 'var(--sage)', color: 'var(--sage)', fontWeight: 600 }}
+              >
+                {exportLoading === 'md' ? '⏳ Preparing…' : '⬇ Download MD'}
+              </button>
+            </div>
           </div>
 
           <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 14, fontStyle: 'italic' }}>
@@ -786,6 +1027,257 @@ export default function Profile() {
                 <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4, marginLeft: 26 }}>
                   If enabled, we'll send a gentle nudge if you haven't logged your growth by evening.
                 </p>
+              </div>
+
+              {/* Design Tokens & Theme Customization */}
+              <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
+                <h4 style={{ fontFamily: 'Fraunces', fontSize: 18, marginBottom: 4, color: 'var(--sage)' }}>Design Tokens & Theme</h4>
+                <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', marginBottom: 20 }}>
+                  Customize the colors and emoji icons available across your category choices.
+                </p>
+
+                {/* Color Palette Builder */}
+                <div className="form-group" style={{ marginBottom: 24 }}>
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, display: 'block' }}>
+                    Color Palette ({form.category_colors?.length || 0})
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                    {form.category_colors?.map((color, index) => (
+                      <div
+                        key={`${color}-${index}`}
+                        style={{
+                          position: 'relative',
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          backgroundColor: color,
+                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.05)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s ease',
+                        }}
+                        title="Click to remove color"
+                        onClick={() => {
+                          const updated = form.category_colors.filter((_, i) => i !== index);
+                          setForm({ ...form, category_colors: updated });
+                        }}
+                      >
+                        <span style={{
+                          color: '#fff',
+                          fontSize: 14,
+                          fontWeight: 'bold',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+                          opacity: 0,
+                          transition: 'opacity 0.15s ease',
+                        }}
+                        className="color-chip-delete"
+                        >✕</span>
+                        {/* CSS to show '✕' on hover inside the chip */}
+                        <style dangerouslySetInnerHTML={{__html: `
+                          div:hover > .color-chip-delete { opacity: 1 !important; }
+                          div:hover { transform: scale(1.1); }
+                        `}} />
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Add Color Selector row */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(13,13,13,0.15)',
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'white',
+                      flexShrink: 0
+                    }}>
+                      <input
+                        type="color"
+                        value={newColorInput}
+                        onChange={e => setNewColorInput(e.target.value)}
+                        style={{
+                          position: 'absolute',
+                          width: '150%',
+                          height: '150%',
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          cursor: 'pointer'
+                        }}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ flex: 1, margin: 0, fontSize: 13, textTransform: 'uppercase', fontFamily: 'monospace' }}
+                      value={newColorInput}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val.startsWith('#') && val.length <= 7) {
+                          setNewColorInput(val);
+                        } else if (!val.startsWith('#') && val.length <= 6) {
+                          setNewColorInput('#' + val);
+                        }
+                      }}
+                      placeholder="#HEXCODE"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      style={{ height: 38, whiteSpace: 'nowrap', borderColor: 'var(--sage)', color: 'var(--sage)', fontWeight: 600 }}
+                      onClick={() => {
+                        if (!/^#[0-9A-Fa-f]{6}$/.test(newColorInput)) {
+                          return toast.error('Please enter a valid 6-character hex color (e.g. #FF00FF)');
+                        }
+                        if (form.category_colors.includes(newColorInput)) {
+                          return toast.error('This color is already in your palette');
+                        }
+                        setForm({
+                          ...form,
+                          category_colors: [...form.category_colors, newColorInput]
+                        });
+                        toast.success(`Color ${newColorInput} added!`);
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category Icon Manager */}
+                <div className="form-group" style={{ marginBottom: 24 }}>
+                  <label className="form-label" style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, display: 'block' }}>
+                    Emoji Icons ({form.category_icons?.length || 0})
+                  </label>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(6, 1fr)',
+                    gap: 8,
+                    marginBottom: 12,
+                    background: 'var(--mist)',
+                    padding: 12,
+                    borderRadius: 12,
+                    border: '1px solid rgba(13,13,13,0.05)'
+                  }}>
+                    {form.category_icons?.map((icon, index) => (
+                      <div
+                        key={`${icon}-${index}`}
+                        style={{
+                          position: 'relative',
+                          height: 38,
+                          background: 'white',
+                          border: '1px solid rgba(13,13,13,0.06)',
+                          borderRadius: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 20,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title="Click to remove icon"
+                        onClick={() => {
+                          const updated = form.category_icons.filter((_, i) => i !== index);
+                          setForm({ ...form, category_icons: updated });
+                        }}
+                      >
+                        {icon}
+                        <span style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          width: 14,
+                          height: 14,
+                          borderRadius: '50%',
+                          background: 'var(--rust)',
+                          color: 'white',
+                          fontSize: 9,
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0,
+                          transition: 'opacity 0.15s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                        }}
+                        className="icon-delete-badge"
+                        >✕</span>
+                        <style dangerouslySetInnerHTML={{__html: `
+                          div:hover > .icon-delete-badge { opacity: 1 !important; }
+                          div:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+                        `}} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Icon Row */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ flex: 1, margin: 0, fontSize: 13 }}
+                      value={newIconInput}
+                      onChange={e => setNewIconInput(e.target.value)}
+                      placeholder="Paste an emoji here..."
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      style={{ height: 38, whiteSpace: 'nowrap', borderColor: 'var(--sage)', color: 'var(--sage)', fontWeight: 600 }}
+                      onClick={() => {
+                        const emoji = newIconInput.trim();
+                        if (!emoji) return toast.error('Please input a valid emoji or character');
+                        if (emoji.length > 8) {
+                          return toast.error('Icon should be a single emoji or short symbol');
+                        }
+                        if (form.category_icons.includes(emoji)) {
+                          return toast.error('This icon is already in your list');
+                        }
+                        setForm({
+                          ...form,
+                          category_icons: [...form.category_icons, emoji]
+                        });
+                        setNewIconInput('');
+                        toast.success(`Icon ${emoji} added!`);
+                      }}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reset to Defaults */}
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{
+                    width: '100%',
+                    borderColor: 'var(--gold)',
+                    color: 'var(--gold)',
+                    background: 'rgba(201, 168, 76, 0.05)',
+                    fontWeight: 600,
+                    height: 38,
+                    borderRadius: 10,
+                    marginTop: 8
+                  }}
+                  onClick={() => {
+                    setForm({
+                      ...form,
+                      category_colors: ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'],
+                      category_icons: ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡']
+                    });
+                    toast.success('Reset colors and icons to default sets! Save changes to persist.');
+                  }}
+                >
+                  ↺ Reset Theme Defaults
+                </button>
               </div>
             </div>
 
