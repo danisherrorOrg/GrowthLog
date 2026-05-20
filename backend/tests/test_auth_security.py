@@ -147,3 +147,22 @@ def test_user_analytics_stats(client, auth_headers):
     assert "total_manifestations" in stats
     assert "total_snapshots" in stats
     assert "streak" in stats
+
+def test_security_csp_headers(client):
+    """Security Test: Verify that API endpoints return proper Content-Security-Policy and X-Request-ID headers."""
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "Content-Security-Policy" in resp.headers
+    csp = resp.headers["Content-Security-Policy"]
+    assert "default-src 'self'" in csp
+    assert "object-src 'none'" in csp
+    assert "frame-ancestors 'none'" in csp
+    assert "X-Request-ID" in resp.headers
+
+def test_security_csp_bypass_docs(client):
+    """Security Test: Verify that FastAPI docs routes do NOT get the Content-Security-Policy header."""
+    resp = client.get("/docs")
+    # Swagger docs page is returned
+    assert resp.status_code == 200
+    assert "Content-Security-Policy" not in resp.headers
+
