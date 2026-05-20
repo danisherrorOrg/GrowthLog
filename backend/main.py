@@ -72,6 +72,19 @@ async def add_request_id_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
+        if not any(path in request.url.path for path in ["/docs", "/redoc", "/openapi.json"]):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "font-src 'self' https://fonts.gstatic.com; "
+                "img-src 'self' data: https:; "
+                "connect-src 'self' http://localhost:8000 ws://localhost:3000 ws://localhost:5173 http://localhost:3000 http://localhost:5173; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "form-action 'self'; "
+                "frame-ancestors 'none';"
+            )
         return response
     except Exception as e:
         logger.error(f"Request ID: {request_id} - UNHANDLED ERROR: {str(e)}", exc_info=True)

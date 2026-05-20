@@ -1,3 +1,5 @@
+import re
+import logging
 from fastapi import APIRouter, Depends, Query
 from typing import Optional, List
 from datetime import datetime
@@ -7,6 +9,8 @@ from core.database import db
 from api.deps import get_current_user
 
 router = APIRouter(prefix="/timeline", tags=["timeline"])
+
+logger = logging.getLogger(__name__)
 
 @router.get("")
 def get_timeline(
@@ -21,6 +25,9 @@ def get_timeline(
     uid = str(current_user["_id"])
     events = []
 
+    # Escape search query for regex safety to prevent ReDoS
+    escaped_q = re.escape(q) if q else None
+
     # Parse category_ids
     cat_list = None
     if category_ids:
@@ -30,9 +37,9 @@ def get_timeline(
     uid_obj = ObjectId(uid) if ObjectId.is_valid(uid) else None
     uid_query = {"user_id": {"$in": [uid, uid_obj]}}
     db_categories = list(db.categories.find(uid_query))
-    print(f"DEBUG BACKEND: uid={uid}, uid_obj={uid_obj}, found_cats={len(db_categories)}")
+    logger.debug(f"uid={uid}, uid_obj={uid_obj}, found_cats={len(db_categories)}")
     for c in db_categories:
-        print(f"DEBUG BACKEND: cat_id={str(c['_id'])}, user_id_in_db={c.get('user_id')}, type={type(c.get('user_id'))}")
+        logger.debug(f"cat_id={str(c['_id'])}, user_id_in_db={c.get('user_id')}, type={type(c.get('user_id'))}")
 
     cat_map = {str(c["_id"]): {
         "id": str(c["_id"]),
@@ -53,8 +60,8 @@ def get_timeline(
     
     if q:
         log_query["$or"] = [
-            {"highlight": {"$regex": q, "$options": "i"}},
-            {"entries.text": {"$regex": q, "$options": "i"}}
+            {"highlight": {"$regex": escaped_q, "$options": "i"}},
+            {"entries.text": {"$regex": escaped_q, "$options": "i"}}
         ]
         
     logs = db.daily_logs.find(log_query)
@@ -122,8 +129,8 @@ def get_timeline(
     ]}
     if q:
         goal_query["$or"] = [
-            {"title": {"$regex": q, "$options": "i"}},
-            {"description": {"$regex": q, "$options": "i"}}
+            {"title": {"$regex": escaped_q, "$options": "i"}},
+            {"description": {"$regex": escaped_q, "$options": "i"}}
         ]
     if cat_list:
         goal_query["category_id"] = {"$in": cat_list}
@@ -197,8 +204,8 @@ def get_timeline(
     ]}
     if q:
         manif_query["$or"] = [
-            {"vision": {"$regex": q, "$options": "i"}},
-            {"notes": {"$regex": q, "$options": "i"}}
+            {"vision": {"$regex": escaped_q, "$options": "i"}},
+            {"notes": {"$regex": escaped_q, "$options": "i"}}
         ]
     if cat_list:
         manif_query["categories"] = {"$in": cat_list}
@@ -213,7 +220,7 @@ def get_timeline(
                 m_cats.append(cat_map[cid_str])
             else:
                 # Log but add a fallback to show SOMETHING
-                print(f"DEBUG: Category {cid_str} not found in cat_map for user {uid}")
+                logger.warning(f"Category {cid_str} not found in cat_map for user {uid}")
         
         if not m_cats:
             m_cats = [{"id": "manifestation", "name": "Manifestation", "icon": "💫", "color": "#e76f51"}]
@@ -245,7 +252,7 @@ def get_timeline(
                 "category": m_cats[0],
                 "categories": m_cats
             })
-
+ 
     # 4. Snapshots
     if not cat_list: # Snapshots don't have categories in schema yet
         snap_query = {"user_id": uid}
@@ -254,7 +261,7 @@ def get_timeline(
             if start_date: snap_query["date"]["$gte"] = start_date
             if end_date: snap_query["date"]["$lte"] = end_date
         if q:
-            snap_query["description"] = {"$regex": q, "$options": "i"}
+            snap_query["description"] = {"$regex": escaped_q, "$options": "i"}
         
         snapshots = db.snapshots.find(snap_query)
         for snap in snapshots:
