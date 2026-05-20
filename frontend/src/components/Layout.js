@@ -337,6 +337,11 @@ export default function Layout() {
           <div className="streak-badge">
             <span className="streak-num">{user?.streak || 0}</span>
             <span className="streak-label">Day Streak</span>
+            {user?.streak_shields > 0 && (
+              <div className="streak-shields-indicator" title={`${user.streak_shields} Active Streak Shields`}>
+                🛡️ {user.streak_shields} Active
+              </div>
+            )}
           </div>
           <button
             onClick={() => navigate('/profile')}

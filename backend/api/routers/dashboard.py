@@ -211,6 +211,7 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
     result = {
         "streak": current_user.get("streak", 0),
         "longest_streak": current_user.get("longest_streak", 0),
+        "streak_shields": current_user.get("streak_shields", 0),
         "total_logs": logs_count,
         "total_time_spent": sum(c["time_spent"] for c in cat_consistency),
         "heatmap": heatmap,

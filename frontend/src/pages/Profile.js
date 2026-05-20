@@ -579,6 +579,26 @@ export default function Profile() {
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)' }}>Day Streak</div>
               <div style={{ fontFamily: 'Fraunces', fontSize: 20, color: 'var(--sage)', marginTop: 8, lineHeight: 1 }}>{user?.longest_streak || 0}</div>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: 'rgba(13,13,13,0.4)' }}>Best Streak</div>
+              {user?.streak_shields > 0 && (
+                <div style={{
+                  marginTop: 12,
+                  fontSize: 10,
+                  color: 'var(--gold)',
+                  background: 'rgba(201, 168, 76, 0.08)',
+                  padding: '3px 8px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(201, 168, 76, 0.2)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  letterSpacing: '0.5px',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap'
+                }}>
+                  🛡️ {user.streak_shields} Active
+                </div>
+              )}
             </div>
           </div>
         </div>

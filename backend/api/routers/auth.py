@@ -70,7 +70,7 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
     background_tasks.add_task(send_email, data.email, "Verify your GrowthLog ✦", email_body)
 
     return {"token": create_token(uid_str, 1),
-            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False}}
+            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": []}}
 
 @router.post("/verify/send")
 @limiter.limit("3/minute")
@@ -121,7 +121,7 @@ def login(request: Request, data: LoginModel):
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
-            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat()}}
+            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", [])}}
 
 @router.post("/logout")
 def logout(current_user=Depends(get_current_user)):
@@ -138,6 +138,7 @@ def me(current_user=Depends(get_current_user)):
     return {
         "id": str(u["_id"]), "name": u["name"], "email": u["email"],
         "streak": u.get("streak", 0), "longest_streak": u.get("longest_streak", 0),
+        "streak_shields": u.get("streak_shields", 0), "shield_milestones": u.get("shield_milestones", []),
         "bio": u.get("bio", ""), "avatar_emoji": u.get("avatar_emoji", "🌱"),
         "timezone": u.get("timezone", "UTC"),
         "created_at": u.get("created_at", utcnow()).isoformat(),
@@ -301,6 +302,7 @@ def get_user_stats(current_user=Depends(get_current_user)):
         "days_since_join": (utcnow() - (created_at.replace(tzinfo=timezone.utc) if created_at.tzinfo is None else created_at)).days,
         "streak": current_user.get("streak", 0),
         "longest_streak": current_user.get("longest_streak", 0),
+        "streak_shields": current_user.get("streak_shields", 0),
     }
     cache_set(cache_key, result, ttl=300)
     return result

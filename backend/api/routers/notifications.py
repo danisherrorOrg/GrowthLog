@@ -6,16 +6,9 @@ from core.database import db
 from utils.cache import utcnow
 from api.deps import get_current_user
 from utils.helpers import serialize
+from utils.streak import _get_local_now
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
-
-def _get_local_now(user: dict):
-    tz_str = user.get("timezone", "UTC")
-    try:
-        tz = ZoneInfo(tz_str)
-    except Exception:
-        tz = ZoneInfo("UTC")
-    return utcnow().astimezone(tz)
 
 @router.get("")
 def get_notifications(current_user=Depends(get_current_user)):
@@ -33,13 +26,15 @@ def get_notifications(current_user=Depends(get_current_user)):
     today_log = db.daily_logs.find_one({"user_id": uid, "date": today_str})
     if not today_log:
         streak = current_user.get("streak", 0)
+        shields = current_user.get("streak_shields", 0)
         if streak > 0:
+            shield_suffix = f" (You have {shields} active Streak Shield{'s' if shields > 1 else ''} to protect you! 🛡️)" if shields > 0 else ""
             notifications.append({
                 "id": f"streak-warning-{today_str}",
                 "type": "streak_warning",
                 "title": "Streak Alert! 🔥",
-                "message": f"Protect your {streak}-day streak! Write today's daily log to keep your momentum going.",
-                "urgency": "high",
+                "message": f"Protect your {streak}-day streak! Write today's daily log to keep your momentum going.{shield_suffix}",
+                "urgency": "high" if shields == 0 else "medium",
                 "icon": "🔥",
                 "link": "/log",
                 "created_at": now_local.isoformat()
@@ -135,6 +130,20 @@ def get_notifications(current_user=Depends(get_current_user)):
             "urgency": "high",
             "icon": "🎯",
             "link": f"/goals/{goal_id}",
+            "created_at": now_local.isoformat()
+        })
+        
+    # 5. Streak Shields Status
+    shields = current_user.get("streak_shields", 0)
+    if shields > 0:
+        notifications.append({
+            "id": f"streak-shield-status-{uid}",
+            "type": "streak_shield_status",
+            "title": "Streak Shield Active 🛡️",
+            "message": f"You are currently protected by {shields} Streak Shield{'s' if shields > 1 else ''}. If you miss a day, a shield will automatically save your streak!",
+            "urgency": "info",
+            "icon": "🛡️",
+            "link": "/profile",
             "created_at": now_local.isoformat()
         })
         

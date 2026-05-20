@@ -143,8 +143,12 @@ function ConfirmModal({ title, body, onConfirm, onCancel }) {
 }
 
 // ── Complete-with-time modal ────────────────────────────────────────────────
-function CompleteModal({ todo, onConfirm, onCancel }) {
-  const [actualMinutes, setActualMinutes] = useState(todo.estimated_minutes || null);
+function CompleteModal({ todo, defaultMinutes, onConfirm, onCancel }) {
+  const [actualMinutes, setActualMinutes] = useState(
+    defaultMinutes !== undefined && defaultMinutes !== null
+      ? defaultMinutes
+      : (todo.estimated_minutes || null)
+  );
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
@@ -343,6 +347,44 @@ function TodoPreviewModal({ todo, onClose, onComplete, onReopen, onDelete, onEdi
 }
 
 // ── Main component ──────────────────────────────────────────────────────────
+function playZenChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
+    
+    // E5 Note (~659.25 Hz)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(659.25, now);
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.25, now + 0.08);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    // A5 Note (~880.00 Hz) with soft delay
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880.00, now + 0.12);
+    gain2.gain.setValueAtTime(0, now + 0.12);
+    gain2.gain.linearRampToValueAtTime(0.18, now + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, now + 1.5);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    
+    osc1.start(now);
+    osc1.stop(now + 1.3);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 1.6);
+  } catch (e) {
+    console.warn("Failed to play chime:", e);
+  }
+}
+
 export default function Todos() {
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -352,7 +394,62 @@ export default function Todos() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [completeTarget, setCompleteTarget] = useState(null); // for complete-with-time modal
+  const [completeDefaultMinutes, setCompleteDefaultMinutes] = useState(null);
   const addTitleRef = useRef(null);
+
+  // ── Pomodoro Focus Timer States ────────────────────────────────────────────
+  const [focusTodo, setFocusTodo] = useState(null);
+  const [timerSeconds, setTimerSeconds] = useState(1500); // 25 mins
+  const [timerDuration, setTimerDuration] = useState(1500); // chosen preset
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [focusSecondsSpent, setFocusSecondsSpent] = useState(0);
+
+  // ── Timer Effect ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let interval = null;
+    if (isTimerRunning && timerSeconds > 0) {
+      interval = setInterval(() => {
+        setTimerSeconds(s => s - 1);
+        setFocusSecondsSpent(s => s + 1);
+      }, 1000);
+    } else if (timerSeconds === 0 && isTimerRunning) {
+      setIsTimerRunning(false);
+      playZenChime();
+      toast.success('⏱️ Focus session completed! Outstanding job.');
+      
+      if (focusTodo) {
+        const minutesSpent = Math.max(1, Math.round(focusSecondsSpent / 60));
+        setCompleteDefaultMinutes(minutesSpent);
+        setCompleteTarget(focusTodo);
+      }
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timerSeconds, focusTodo, focusSecondsSpent]);
+
+  const handleStartFocus = (todo) => {
+    setFocusTodo(todo);
+    setFocusSecondsSpent(0);
+    setTimerSeconds(timerDuration);
+    setIsTimerRunning(true);
+    toast.success(`⏱️ Focus session started for: ${todo.title}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleClearFocus = () => {
+    setFocusTodo(null);
+    setIsTimerRunning(false);
+    setFocusSecondsSpent(0);
+  };
+
+  const handleOpenCompleteModal = (todo) => {
+    if (focusTodo && focusTodo.id === todo.id && focusSecondsSpent > 5) {
+      const minutesSpent = Math.max(1, Math.round(focusSecondsSpent / 60));
+      setCompleteDefaultMinutes(minutesSpent);
+    } else {
+      setCompleteDefaultMinutes(null);
+    }
+    setCompleteTarget(todo);
+  };
 
   const fetchTodos = async () => {
     try {
@@ -389,6 +486,17 @@ export default function Todos() {
       const res = await API.patch(`/todos/${id}/complete`, { actual_minutes: actualMinutes || null });
       setTodos(todos.map(t => t.id === id ? res.data : t));
       setCompleteTarget(null);
+      setCompleteDefaultMinutes(null);
+
+      // If the completed task was our active focus task, reset focus
+      if (focusTodo && focusTodo.id === id) {
+        setFocusTodo(null);
+        setIsTimerRunning(false);
+        setFocusSecondsSpent(0);
+        toast.success('✦ Focus task completed! Great job!');
+      } else {
+        toast.success('✦ Task completed');
+      }
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to complete task'));
     }
@@ -450,12 +558,239 @@ export default function Todos() {
 
   return (
     <div>
+      {/* Style injection for pulse animation */}
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(0.95); opacity: 0.5; }
+          50% { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(0.95); opacity: 0.5; }
+        }
+      `}</style>
+
       <div className="page-header">
         <h2>Action Board 🎯</h2>
         <p>Capture intentions. Ship them. Reflect on the effort.</p>
       </div>
 
       <div className="page-body">
+        {/* Pomodoro Focus Timer Widget */}
+        <div className="card" style={{
+          marginBottom: 32,
+          padding: '24px',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(248,249,250,0.8) 100%)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: focusTodo ? '1px solid rgba(201,168,76,0.3)' : '1px dashed rgba(13,13,13,0.12)',
+          boxShadow: focusTodo ? '0 10px 30px rgba(201,168,76,0.06), inset 0 1px 0 rgba(255,255,255,0.6)' : 'none',
+          borderRadius: 16,
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}>
+          {/* Top accent line if active */}
+          {focusTodo && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 4,
+              background: 'linear-gradient(90deg, var(--gold) 0%, var(--sage) 100%)',
+            }} />
+          )}
+
+          {!focusTodo ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 0', color: 'rgba(13,13,13,0.45)' }}>
+              <span style={{ fontSize: 20 }}>⏱️</span>
+              <span style={{ fontSize: 13, fontWeight: 500, letterSpacing: 0.2 }}>
+                Select a task below and click <strong>Focus</strong> to start a Pomodoro session.
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Widget Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: 2,
+                    color: 'var(--gold)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    <span className="pulse-dot" style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'var(--gold)',
+                      display: isTimerRunning ? 'inline-block' : 'none',
+                      animation: 'pulse 1.5s infinite',
+                    }} />
+                    {isTimerRunning ? 'Focus Mode Active' : 'Focus Session Paused'}
+                  </div>
+                  <h3 style={{
+                    fontSize: 16,
+                    fontFamily: 'Fraunces',
+                    fontWeight: 600,
+                    color: 'var(--ink)',
+                    margin: 0,
+                    fontStyle: 'italic',
+                  }}>
+                    "{focusTodo.title}"
+                  </h3>
+                </div>
+
+                {/* Presets */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { label: '25m', sec: 1500 },
+                    { label: '50m', sec: 3000 },
+                    { label: '15m', sec: 900 },
+                    { label: '5m', sec: 300 },
+                  ].map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      className={`btn btn-sm ${timerDuration === p.sec ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => {
+                        setTimerDuration(p.sec);
+                        setTimerSeconds(p.sec);
+                        setIsTimerRunning(false);
+                      }}
+                      style={{ fontSize: 10, padding: '4px 10px', borderRadius: 20 }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Central Countdown & Controls */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 20,
+                padding: '8px 0',
+              }}>
+                {/* Large Timer Display */}
+                <div style={{
+                  fontSize: 56,
+                  fontFamily: 'Fraunces',
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  letterSpacing: -1,
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 8,
+                }}>
+                  {(() => {
+                    const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+                    const s = (timerSeconds % 60).toString().padStart(2, '0');
+                    return `${m}:${s}`;
+                  })()}
+                  <span style={{ fontSize: 12, fontWeight: 500, fontFamily: 'sans-serif', color: 'rgba(13,13,13,0.4)' }}>
+                    / {timerDuration / 60}m
+                  </span>
+                </div>
+
+                {/* Control Actions */}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  {/* Play / Pause */}
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setIsTimerRunning(!isTimerRunning)}
+                    style={{
+                      borderRadius: 30,
+                      padding: '10px 24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: isTimerRunning ? 'rgba(13,13,13,0.8)' : 'var(--sage)',
+                      borderColor: 'transparent',
+                    }}
+                  >
+                    {isTimerRunning ? '⏸ Pause' : '▶ Start Focus'}
+                  </button>
+
+                  {/* Reset */}
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => {
+                      setTimerSeconds(timerDuration);
+                      setIsTimerRunning(false);
+                    }}
+                    style={{
+                      borderRadius: 30,
+                      padding: '10px 18px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 12,
+                    }}
+                    title="Reset Timer"
+                  >
+                    ↺ Reset
+                  </button>
+
+                  {/* Complete Task */}
+                  <button
+                    className="btn"
+                    onClick={() => handleOpenCompleteModal(focusTodo)}
+                    style={{
+                      borderRadius: 30,
+                      padding: '10px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'rgba(107,140,107,0.1)',
+                      color: 'var(--sage)',
+                      border: '1px solid rgba(107,140,107,0.2)',
+                    }}
+                  >
+                    ✓ Complete Task
+                  </button>
+
+                  {/* Clear Focus */}
+                  <button
+                    className="btn btn-ghost"
+                    onClick={handleClearFocus}
+                    style={{
+                      color: 'rgba(196,98,58,0.7)',
+                      padding: '10px',
+                      fontSize: 12,
+                    }}
+                    title="Exit Focus Mode"
+                  >
+                    ✕ Cancel
+                  </button>
+                </div>
+              </div>
+
+              {/* Sleek Progress Bar */}
+              <div style={{
+                height: 4,
+                width: '100%',
+                background: 'rgba(13,13,13,0.06)',
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${((timerDuration - timerSeconds) / timerDuration) * 100}%`,
+                  background: 'var(--gold)',
+                  transition: 'width 1s linear',
+                }} />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Overdue alert */}
         {overdueCount > 0 && (
           <div className="card" style={{
@@ -631,7 +966,9 @@ export default function Todos() {
               ) : (
                 pending.map(t => (
                   <TodoCard key={t.id} todo={t}
-                    onComplete={() => setCompleteTarget(t)}
+                    focusTodo={focusTodo}
+                    onFocus={handleStartFocus}
+                    onComplete={() => handleOpenCompleteModal(t)}
                     onReopen={() => handleReopen(t.id)}
                     onDelete={() => confirmDelete(t.id)}
                     onSave={handleEdit} />
@@ -666,7 +1003,9 @@ export default function Todos() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {visibleDone.map(t => (
                       <TodoCard key={t.id} todo={t}
-                        onComplete={() => setCompleteTarget(t)}
+                        focusTodo={focusTodo}
+                        onFocus={handleStartFocus}
+                        onComplete={() => handleOpenCompleteModal(t)}
                         onReopen={() => handleReopen(t.id)}
                         onDelete={() => confirmDelete(t.id)}
                         onSave={handleEdit} />
@@ -707,8 +1046,12 @@ export default function Todos() {
       {completeTarget && (
         <CompleteModal
           todo={completeTarget}
+          defaultMinutes={completeDefaultMinutes}
           onConfirm={(actualMinutes) => handleComplete(completeTarget.id, actualMinutes)}
-          onCancel={() => setCompleteTarget(null)}
+          onCancel={() => {
+            setCompleteTarget(null);
+            setCompleteDefaultMinutes(null);
+          }}
         />
       )}
     </div>
@@ -716,7 +1059,7 @@ export default function Todos() {
 }
 
 // ── TodoCard ────────────────────────────────────────────────────────────────
-function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
+function TodoCard({ todo, focusTodo, onFocus, onComplete, onReopen, onDelete, onSave }) {
   const [isEditing, setIsEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -808,24 +1151,31 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
         />
       )}
       <div className="card card-sm" style={{
-        borderLeft: `4px solid ${p.color}`,
-        background: isDone ? 'var(--mist)' : 'white',
-        transition: 'box-shadow 0.2s, background 0.15s',
+        borderLeft: focusTodo && focusTodo.id === todo.id ? '4px solid var(--gold)' : `4px solid ${p.color}`,
+        boxShadow: focusTodo && focusTodo.id === todo.id ? '0 4px 14px rgba(201,168,76,0.18)' : '0 2px 8px rgba(13,13,13,0.04)',
+        background: isDone ? 'var(--mist)' : focusTodo && focusTodo.id === todo.id ? 'rgba(201,168,76,0.02)' : 'white',
+        transition: 'all 0.2s ease-in-out',
         cursor: 'pointer',
         marginBottom: 0,
       }}
         onClick={() => setShowPreview(true)}
         onMouseEnter={e => {
           if (!isDone) {
-            e.currentTarget.style.boxShadow = '0 4px 16px rgba(13,13,13,0.08)';
+            e.currentTarget.style.boxShadow = focusTodo && focusTodo.id === todo.id
+              ? '0 6px 20px rgba(201,168,76,0.25)'
+              : '0 4px 16px rgba(13,13,13,0.08)';
           } else {
             e.currentTarget.style.boxShadow = '0 2px 10px rgba(13,13,13,0.07)';
             e.currentTarget.style.background = 'rgba(13,13,13,0.04)';
           }
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,13,13,0.04)';
+          e.currentTarget.style.boxShadow = focusTodo && focusTodo.id === todo.id
+            ? '0 4px 14px rgba(201,168,76,0.18)'
+            : '0 2px 8px rgba(13,13,13,0.04)';
           if (isDone) e.currentTarget.style.background = 'var(--mist)';
+          else if (focusTodo && focusTodo.id === todo.id) e.currentTarget.style.background = 'rgba(201,168,76,0.02)';
+          else e.currentTarget.style.background = 'white';
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -890,6 +1240,34 @@ function TodoCard({ todo, onComplete, onReopen, onDelete, onSave }) {
                 <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.3)' }}>
                   ✓ {format(parseISO(todo.completed_at), 'MMM d')}
                 </span>
+              )}
+
+              {/* Focus Badge Button */}
+              {!isDone && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    onFocus(todo);
+                  }}
+                  className="btn btn-sm"
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    borderRadius: 20,
+                    border: '1px solid',
+                    borderColor: focusTodo && focusTodo.id === todo.id ? 'var(--gold)' : 'rgba(13,13,13,0.12)',
+                    background: focusTodo && focusTodo.id === todo.id ? 'rgba(201,168,76,0.1)' : 'transparent',
+                    color: focusTodo && focusTodo.id === todo.id ? 'var(--gold)' : 'rgba(13,13,13,0.5)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    transition: 'all 0.2s',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ⏱️ {focusTodo && focusTodo.id === todo.id ? 'Focusing...' : 'Focus'}
+                </button>
               )}
             </div>
           </div>
