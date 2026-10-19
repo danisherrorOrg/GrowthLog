@@ -5,6 +5,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
 import QuickCheckModal from './focus/QuickCheckModal';
+import CommandPalette from './CommandPalette';
 import { OPEN_EVENT, localDate, markPlanPrompted, shouldPromptPlan } from './focus/quickCheck';
 
 const NAV_GROUPS = [
@@ -94,6 +95,7 @@ export default function Layout() {
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showQuickCheck, setShowQuickCheck] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   // --- Notifications State & Logic ---
   const [notifications, setNotifications] = useState([]);
@@ -253,6 +255,18 @@ export default function Layout() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
+
+  // ⌘K / Ctrl+K opens global search from anywhere, even while typing in a field
+  useEffect(() => {
+    const handleSearchKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setShowSearch(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleSearchKey);
+    return () => window.removeEventListener('keydown', handleSearchKey);
+  }, []);
   // ────────────────────────────────────────────────────────────
 
   // Once a day (mornings), opening the app lands on the Morning Plan if today isn't planned yet
@@ -414,6 +428,14 @@ export default function Layout() {
 
       {/* Top Navbar with Notification Bell */}
       <div className="top-navbar">
+        <button
+          className="nav-bell-btn nav-search-btn"
+          onClick={() => setShowSearch(true)}
+          title="Search (⌘K / Ctrl+K)"
+          aria-label="Search"
+        >
+          ⌕
+        </button>
         <div className="nav-bell-container" ref={bellContainerRef}>
           <button
             className="nav-bell-btn"
@@ -522,6 +544,7 @@ export default function Layout() {
         🧭
       </button>
       {showQuickCheck && <QuickCheckModal onClose={() => setShowQuickCheck(false)} />}
+      {showSearch && <CommandPalette pages={NAV} onClose={() => setShowSearch(false)} />}
 
       {/* ── Mobile bottom nav ─────────────────────────────────── */}
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
@@ -595,6 +618,17 @@ export default function Layout() {
                   color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
                 }}>Q</span>
                 <span style={{ fontSize: 14 }}>🧭 Should I do this? (quick check)</span>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)'
+              }}>
+                <span style={{
+                  fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)',
+                  borderRadius: 6, padding: '3px 8px', fontWeight: 700,
+                  color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
+                }}>⌘K</span>
+                <span style={{ fontSize: 14 }}>⌕ Search everything (Ctrl+K)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
                 <span style={{

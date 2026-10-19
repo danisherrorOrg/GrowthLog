@@ -49,7 +49,8 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 ## 🚀 Features to Build Next (in order)
 
 1. ✅ **Completed — Password reset.** It's the gap that actually locks users out.
-2. **Global search (⌘K).** With 20+ modules, finding an old entry is hard. The escaped timeline search is a ready base.
+2. ✅ **Completed — Global search (⌘K).** With 20+ modules, finding an old entry is hard.
+   * **Done:** ⌘K / Ctrl+K (or the ⌕ button by the bell) opens a palette that jumps to pages and searches logs, goals, to-dos, thoughts, decisions, reframes, reviews, manifestations, snapshots, books, quotes, lotus boards and categories through `GET /search`. The input is escaped before it's used as a regex.
 3. **"On this day" card on the dashboard.** Shows a log from 1 or 2 years ago on today's date. Cheap to build, the data is already there, and it's a strong habit hook.
 4. **Weekly review ritual.** One end-of-week flow that ties together reviews, quick checks and decisions (wins, struggles, next week's focus).
 5. **PWA / installable app.** People log daily from their phones; make it installable, later with offline sync.
