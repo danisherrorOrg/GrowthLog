@@ -6,6 +6,10 @@ from unittest.mock import patch, MagicMock
 
 # Use a separate test database
 os.environ["DB_NAME"] = "growthlog_test"
+# Always point at the throwaway test Mongo (docker compose --profile test up -d mongo-test), never the
+# MONGO_URL from backend/.env, which may be a real cluster. Set TEST_MONGO_URL to use a different one.
+os.environ["MONGO_URL"] = os.getenv("TEST_MONGO_URL", "mongodb://localhost:27018")
+os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-not-for-production")
 
 # CRITICAL: Mock send_email BEFORE any other imports to prevent real emails in tests
 # (Other modules import this from utils.email, so we must patch it before they do)

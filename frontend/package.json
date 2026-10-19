@@ -18,7 +18,8 @@
   },
   "scripts": {
     "start": "REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000} react-scripts start",
-    "build": "INLINE_RUNTIME_CHUNK=false REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000} react-scripts build"
+    "build": "INLINE_RUNTIME_CHUNK=false REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000} react-scripts build",
+    "test": "react-scripts test"
   },
   "browserslist": {
     "production": [
@@ -32,5 +33,14 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:8000"
+  "proxy": "http://localhost:8000",
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^axios$": "axios/dist/node/axios.cjs"
+    }
+  }
 }

@@ -30,10 +30,10 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * Users in other timezones get the next day's content early or late.
    * **Done:** `/prompts/quote` and `/prompts/daily` now require login and pick the day from the user's timezone.
 
-6. **Tests can't run with one command**
+6. ✅ **Completed — Tests can't run with one command**
    * `pytest` fails at import if `MONGO_URL` isn't set, and it needs a live MongoDB.
    * There are no frontend tests at all.
-   * **Fix:** add a `.env.test` with a docker-compose test target (or use `mongomock`), and add a few frontend smoke tests.
+   * **Done:** `./test.sh` starts a throwaway `mongo-test` compose service and runs the backend and frontend suites; no `.env` needed. Added frontend smoke tests (API client, auth session, login page) and fixed tests that had fallen behind the app.
 
 ---
 

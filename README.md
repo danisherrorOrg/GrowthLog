@@ -81,7 +81,15 @@ npm start
 ```
 
 ### 4. Running Tests
-You can run the full suite using standard `pytest`, or use our specialized stress-tester:
+Run everything (backend + frontend) with one command. It needs Docker for the throwaway test MongoDB on port 27018, which it starts for you; no `.env` is required:
+```bash
+./test.sh            # backend + frontend
+./test.sh backend    # backend only (extra args go to pytest, e.g. ./test.sh backend -k auth)
+./test.sh frontend   # frontend only
+docker compose --profile test down   # stop the test MongoDB when you're done
+```
+
+The backend tests always use the test MongoDB, never the `MONGO_URL` in `backend/.env`; set `TEST_MONGO_URL` to point them somewhere else. To check for flaky tests, use the stress-tester:
 ```bash
 cd backend
 ./run_tests.sh 1 # Run once with full logs (-v -s)
