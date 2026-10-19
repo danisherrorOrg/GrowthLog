@@ -44,7 +44,8 @@ def test_deep_unprocessable_entity_mapping(client, auth_headers):
     })
     
     assert bad_put.status_code == 422
-    assert "body" in str(bad_put.json()) # Pydantic path usually includes 'body'
+    # The global handler flattens Pydantic errors into one readable message for toasts
+    assert bad_put.json()["detail"].startswith("Text: ")
 
 
 def test_invalid_object_id_global_handler(client, auth_headers):

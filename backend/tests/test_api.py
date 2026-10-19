@@ -306,8 +306,9 @@ def test_prompts_follow_user_timezone(client, auth_headers):
 
     assert client.get("/prompts/quote").status_code == 401
 
-def test_admin_nudge_logic(client):
+def test_admin_nudge_logic(client, monkeypatch):
     """Verify that the nudge endpoint identifies a silent (unlogged) user."""
+    monkeypatch.setenv("ADMIN_TOKEN", "test-admin-token")
     from core.database import db
     import os
     
@@ -316,8 +317,9 @@ def test_admin_nudge_logic(client):
     client.post("/auth/register", json={"name": "Silent User", "email": email, "password": "Password123!"})
     db.users.update_one({"email": email}, {"$set": {"is_verified": True}})
     
-    # 2. Call Nudge
-    resp = client.post("/admin/nudge-silent-users")
+    # 2. Call Nudge (admin-only)
+    assert client.post("/admin/nudge-silent-users", headers={"X-Admin-Token": "wrong"}).status_code == 403
+    resp = client.post("/admin/nudge-silent-users", headers={"X-Admin-Token": "test-admin-token"})
     assert resp.status_code == 200
     assert resp.json()["nudge_count"] >= 1
 
