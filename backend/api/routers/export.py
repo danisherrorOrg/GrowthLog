@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from api.deps import get_current_user
 from core.database import db
+from utils.user_data import USER_DATA_COLLECTIONS
 
 router = APIRouter(prefix="/export", tags=["Export"])
 
@@ -18,16 +19,15 @@ router = APIRouter(prefix="/export", tags=["Export"])
 # Helpers
 # ---------------------------------------------------------------------------
 
-COLLECTIONS = [
-    "categories", "goals", "daily_logs", "manifestations", "snapshots",
-    "sleep_logs", "workouts", "meal_logs", "health_metrics", "exercise_goals",
-    "custom_exercises", "thoughts", "reframes", "books", "quotes",
-    "anti_goals", "habit_graveyard", "time_entries", "screen_time",
-    "procrastination_log", "not_to_do", "regrets", "future_advice",
-    "past_advice", "life_lessons", "project_ideas", "creative_sessions",
-    "meaning_log", "travel_log", "bucket_list", "skills", "courses",
-    "failure_log", "skills_gap", "feedback", "todos", "lotus_boards", "quick_checks", "day_plans", "decisions",
-]
+# Same list account deletion wipes, so everything a user can delete they can also export
+COLLECTIONS = USER_DATA_COLLECTIONS
+
+# Account secrets on the user document that don't belong in an export
+PRIVATE_PROFILE_FIELDS = (
+    "password", "token_version",
+    "verification_token", "verification_token_expires",
+    "password_reset_token_hash", "password_reset_expires", "password_reset_sent_at",
+)
 
 
 class _Encoder(json.JSONEncoder):
@@ -56,7 +56,8 @@ def _fetch_user_data(user_id: str) -> dict:
 
     profile = db.users.find_one({"_id": ObjectId(user_id)})
     if profile:
-        profile.pop("password", None)
+        for field in PRIVATE_PROFILE_FIELDS:
+            profile.pop(field, None)
         data["profile"] = _serialize(profile)
 
     return data
