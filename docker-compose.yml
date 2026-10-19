@@ -14,6 +14,20 @@ services:
       retries: 5
       start_period: 10s
 
+  # Throwaway database for the backend tests (./test.sh starts it). Only runs with --profile test.
+  mongo-test:
+    image: mongo:7
+    profiles: ["test"]
+    ports:
+      - "27018:27017"
+    tmpfs:
+      - /data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   backend:
     build: ./backend
     restart: unless-stopped
@@ -25,6 +39,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
       ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_COOKIE_SAMESITE: ${AUTH_COOKIE_SAMESITE:-lax}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

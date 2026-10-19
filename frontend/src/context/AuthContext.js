@@ -8,40 +8,34 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      API.get('/auth/me')
-        .then((res) => setUser(res.data))
-        .catch(() => localStorage.removeItem('token'))
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    // Tokens used to live in localStorage; drop any left over from before the cookie switch
+    try { localStorage.removeItem('token'); } catch { /* storage unavailable */ }
+    // The httpOnly session cookie is invisible to JS, so ask the API whether we're signed in
+    API.get('/auth/me', { skipAuthRedirect: true })
+      .then((res) => setUser(res.data))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (email, password) => {
     const res = await API.post('/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
     return res.data;
   };
 
   const register = async (name, email, password) => {
     const res = await API.post('/auth/register', { name, email, password });
-    localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
     return res.data;
   };
 
   const logout = async () => {
     try {
-      if (localStorage.getItem('token')) {
-        await API.post('/auth/logout');
-      }
+      // Clears the httpOnly cookie server-side; works even if the session already expired
+      await API.post('/auth/logout', null, { skipAuthRedirect: true });
     } catch (err) {
       console.error("Logout error", err);
     } finally {
-      localStorage.removeItem('token');
       setUser(null);
     }
   };

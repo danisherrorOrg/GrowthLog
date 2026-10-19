@@ -6,6 +6,10 @@ from unittest.mock import patch, MagicMock
 
 # Use a separate test database
 os.environ["DB_NAME"] = "growthlog_test"
+# Always point at the throwaway test Mongo (docker compose --profile test up -d mongo-test), never the
+# MONGO_URL from backend/.env, which may be a real cluster. Set TEST_MONGO_URL to use a different one.
+os.environ["MONGO_URL"] = os.getenv("TEST_MONGO_URL", "mongodb://localhost:27018")
+os.environ.setdefault("JWT_SECRET", "test-only-jwt-secret-not-for-production")
 
 # CRITICAL: Mock send_email BEFORE any other imports to prevent real emails in tests
 # (Other modules import this from utils.email, so we must patch it before they do)
@@ -13,6 +17,12 @@ mock_send_email = patch("utils.email.send_email").start()
 
 from main import app
 from core.database import db, client as mongo_client
+from core.rate_limit import limiter
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Every test client request shares one address, so limits would otherwise carry across tests."""
+    limiter.reset()
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
@@ -51,6 +61,8 @@ def auth_headers(client, test_user_data):
         "password": test_user_data["password"]
     })
     token = response.json()["token"]
+    # Tests authenticate with explicit headers; don't let the login cookie leak into other requests
+    client.cookies.clear()
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture
@@ -67,6 +79,8 @@ def other_user_headers(client):
         "password": data["password"]
     })
     token = response.json()["token"]
+    # Tests authenticate with explicit headers; don't let the login cookie leak into other requests
+    client.cookies.clear()
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture

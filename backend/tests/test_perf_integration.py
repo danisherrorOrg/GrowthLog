@@ -30,9 +30,9 @@ def test_full_user_journey_integration(client):
     # 3b. Edit Auth Setup (Update Email & Password)
     client.put("/auth/email", headers=h, json={"new_email": f"new_{email}", "password": "SecurePassword123!"})
     client.put("/auth/password", headers=h, json={"current_password": "SecurePassword123!", "new_password": "RealSecret456!"})
-    # Remember to use the new password if needing another login, but our token is still valid for this session
-    # Actually, token versioning might invalidate it on password change! Let's get a new token.
-    login_resp2 = client.post("/auth/login", json={"email": f"new_{email}", "password": "RealSecret456!"})
+    # The new email only takes effect once verified, and the password change invalidates the old token,
+    # so log in again with the original email and the new password.
+    login_resp2 = client.post("/auth/login", json={"email": email, "password": "RealSecret456!"})
     h = {"Authorization": f"Bearer {login_resp2.json()['token']}"}
 
     # 4. Create Custom Category

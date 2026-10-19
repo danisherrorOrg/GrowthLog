@@ -4,9 +4,8 @@ from core.database import db
 
 def test_get_timeline_unauthorized(client):
     """Verify that unauthorized requests are rejected."""
-    # FastAPI's HTTPBearer returns 403 Forbidden by default for missing credentials
     response = client.get("/timeline")
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 def test_get_timeline_empty(client, auth_headers):
     """Verify that a new user starts with an empty timeline."""

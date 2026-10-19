@@ -4,6 +4,12 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from utils.cache import utcnow
 
+
+def _without_weekly_review(notifications):
+    # The weekly review nudge depends on the weekday; it has its own tests in test_reviews.py
+    return [n for n in notifications if n["type"] != "weekly_review"]
+
+
 def test_notifications_endpoint(client, auth_headers, test_user_data):
     # Get current user from db
     user = db.users.find_one({"email": test_user_data["email"]})
@@ -13,7 +19,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     # Should have a "consistency nudge" since streak is 0 and no log today
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 1
     assert notifications[0]["type"] == "consistency"
     assert "Self-Reflection Nudge" in notifications[0]["title"]
@@ -22,7 +28,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     db.users.update_one({"_id": user["_id"]}, {"$set": {"streak": 3}})
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 1
     assert notifications[0]["type"] == "streak_warning"
     assert "Protect your 3-day streak" in notifications[0]["message"]
@@ -45,7 +51,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     # Now there should be NO log consistency notifications
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 0
 
     # 4. Overdue to-dos
@@ -59,7 +65,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 1
     assert notifications[0]["type"] == "overdue_todos"
     assert "1 overdue task" in notifications[0]["message"]
@@ -78,7 +84,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 1
     assert notifications[0]["type"] == "upcoming_todo"
     assert "Upcoming task" in notifications[0]["message"]
@@ -97,7 +103,7 @@ def test_notifications_endpoint(client, auth_headers, test_user_data):
     
     resp = client.get("/notifications", headers=auth_headers)
     assert resp.status_code == 200
-    notifications = resp.json()
+    notifications = _without_weekly_review(resp.json())
     assert len(notifications) == 1
     assert notifications[0]["type"] == "upcoming_goal"
     assert "Upcoming goal" in notifications[0]["message"]

@@ -112,7 +112,7 @@ def test_api_activity_history(client, auth_headers):
 def test_activity_unauthorized(client):
     """Verify that unauthorized requests to /activity are rejected."""
     resp = client.get("/activity")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 def test_activity_pagination(client, auth_headers):
     """Verify pagination on activity logs."""

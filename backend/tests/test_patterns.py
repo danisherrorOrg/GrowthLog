@@ -69,3 +69,48 @@ def test_patterns_validate_params(client, auth_headers):
 def test_hour_is_validated(client, auth_headers):
     resp = client.post("/quick-checks", headers=auth_headers, json={"text": "x", "date": TODAY, "hour": 24, **GO})
     assert resp.status_code == 422
+
+
+def test_time_insights(client, auth_headers, test_user_data):
+    from core.database import db
+    # Enough checks on enough days to unlock patterns: 3 "quick" things that ran long this week
+    for day in DAYS[4:7]:
+        check(client, auth_headers, day, 10, GO, action="doing", expected_minutes=10, actual_minutes=45)
+    for day in DAYS[:4]:
+        check(client, auth_headers, day, 10, GO)
+    for day in ("2026-10-08", "2026-10-09", "2026-10-10"):
+        check(client, auth_headers, day, 10, GO, action="doing", actual_minutes=20)
+
+    # Logged time: Reading grew by an hour, Work barely moved
+    uid = str(db.users.find_one({"email": test_user_data["email"]})["_id"])
+    reading = client.post("/categories", headers=auth_headers, json={"name": "Reading", "icon": "📚", "color": "#6b8c6b"}).json()["id"]
+    work = client.post("/categories", headers=auth_headers, json={"name": "Work", "icon": "💼", "color": "#c9a84c"}).json()["id"]
+    db.daily_logs.insert_many([
+        {"user_id": uid, "date": "2026-10-18", "entries": [
+            {"category_id": reading, "time_spent": 90}, {"category_id": work, "time_spent": 100}]},
+        {"user_id": uid, "date": "2026-10-10", "entries": [
+            {"category_id": reading, "time_spent": 30}, {"category_id": work, "time_spent": 110}]},
+        {"user_id": uid, "date": "2026-10-01", "entries": [{"category_id": work, "time_spent": 999}]},  # too old
+    ])
+
+    by_id = {i["id"]: i["text"] for i in patterns(client, auth_headers)["insights"]}
+    assert "took 45 min on average (you expected 10 min) — budget more time" in by_id["quick_fixes"]
+    assert "2h 15m on unplanned things in the last 7 days, up from 1h" in by_id["unplanned_time"]
+    assert by_id["category_shift"] == "You spent more time on Reading in the last 7 days than the week before (1h 30m vs 30 min)."
+
+
+def test_time_insights_need_enough_data(client, auth_headers):
+    for day in DAYS:
+        check(client, auth_headers, day, 10, GO)
+    for day in DAYS[:2]:
+        check(client, auth_headers, day, 10, GO, action="doing", expected_minutes=5, actual_minutes=60)
+    ids = {i["id"] for i in patterns(client, auth_headers)["insights"]}
+    assert not ids & {"quick_fixes", "unplanned_time", "category_shift"}
+
+
+def test_minutes_are_validated(client, auth_headers):
+    c = check(client, auth_headers, TODAY, 10, GO)
+    for bad in ({"actual_minutes": 0}, {"expected_minutes": 2000}, {"actual_minutes": "lots"}):
+        assert client.put(f"/quick-checks/{c['id']}", headers=auth_headers, json=bad).status_code == 422
+    res = client.put(f"/quick-checks/{c['id']}", headers=auth_headers, json={"actual_minutes": 25})
+    assert res.json()["actual_minutes"] == 25

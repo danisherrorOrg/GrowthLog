@@ -26,6 +26,15 @@ export const ACTION_LABELS = {
   skipped: '↩ Skipped',
 };
 
+// Minute choices for "how long will / did it take?"
+export const MINUTE_OPTIONS = [
+  { value: 5, label: '5m' },
+  { value: 15, label: '15m' },
+  { value: 30, label: '30m' },
+  { value: 60, label: '1h' },
+  { value: 120, label: '2h+' },
+];
+
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
 const PLAN_RANK = { do_now: 0, minimum: 1 };
 

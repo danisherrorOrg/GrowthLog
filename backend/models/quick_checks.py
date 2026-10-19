@@ -29,3 +29,6 @@ class QuickCheckModel(BaseModel):
 class QuickCheckUpdateModel(BaseModel):
     action: Optional[Literal["doing", "parked", "skipped"]] = None
     worth_it: Optional[bool] = None
+    # Minutes the user expected it to take (when starting it) and what it really took (evening review)
+    expected_minutes: Optional[int] = Field(None, ge=1, le=1440)
+    actual_minutes: Optional[int] = Field(None, ge=1, le=1440)

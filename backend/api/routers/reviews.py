@@ -1,14 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from bson import ObjectId
 from pymongo import DESCENDING
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime, timedelta, timezone
+from typing import Optional, Literal
+from zoneinfo import ZoneInfo
 
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
 from models.schemas import ReviewModel, ReviewUpdateModel
+from models.quick_checks import DATE_PATTERN
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -25,18 +27,79 @@ def get_reviews(
     return serialize_list(db.reviews.find(q).sort("start_date", DESCENDING))
 
 
+def _utc_bounds(user, start_date: str, end_date: str):
+    """The user's local [start_date 00:00, end_date + 1 day 00:00) as UTC datetimes."""
+    try:
+        tz = ZoneInfo(user.get("timezone") or "UTC")
+    except Exception:
+        tz = timezone.utc
+    start = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=tz)
+    end = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=tz) + timedelta(days=1)
+    return start.astimezone(timezone.utc), end.astimezone(timezone.utc)
+
+
+def _quick_check_summary(uid: str, start_date: str, end_date: str):
+    checks = list(db.quick_checks.find(
+        {"user_id": uid, "date": {"$gte": start_date, "$lte": end_date}},
+        {"verdict": 1, "action": 1, "worth_it": 1},
+    ))
+    not_now = [c for c in checks if c.get("verdict") == "not_now"]
+    return {
+        "total": len(checks),
+        "go": len(checks) - len(not_now),
+        "not_now": len(not_now),
+        "caught": sum(1 for c in not_now if c.get("action") in ("skipped", "parked")),
+        "done_anyway": sum(1 for c in not_now if c.get("action") == "doing"),
+        "worth_it": sum(1 for c in checks if c.get("worth_it") is True),
+        "not_worth_it": sum(1 for c in checks if c.get("worth_it") is False),
+    }
+
+
+def _decisions_in_range(uid: str, start, end):
+    cursor = db.decisions.find(
+        {"user_id": uid, "created_at": {"$gte": start, "$lt": end}},
+        {"task": 1, "verdict": 1, "verdict_title": 1, "worth_it": 1},
+    ).sort("created_at", DESCENDING).limit(10)
+    return [{
+        "id": str(d["_id"]), "task": d.get("task", ""), "verdict": d.get("verdict"),
+        "verdict_title": d.get("verdict_title", ""), "worth_it": d.get("worth_it"),
+    } for d in cursor]
+
+
+def _previous_intentions(uid: str, period_type: Optional[str], start_date: str):
+    """What the user said they'd focus on in the review just before this period."""
+    if not period_type:
+        return None
+    prev = db.reviews.find_one(
+        {"user_id": uid, "period_type": period_type, "start_date": {"$lt": start_date},
+         "intentions": {"$nin": [None, ""]}},
+        sort=[("start_date", DESCENDING)],
+    )
+    if not prev:
+        return None
+    return {"period_label": prev.get("period_label", ""), "intentions": prev["intentions"]}
+
+
 @router.get("/stats")
 def get_review_stats(
-    start_date: str,
-    end_date: str,
+    start_date: str = Query(..., pattern=DATE_PATTERN),
+    end_date: str = Query(..., pattern=DATE_PATTERN),
+    period_type: Optional[Literal["weekly", "monthly", "yearly"]] = None,
     current_user=Depends(get_current_user)
 ):
     """
     Aggregate stats for all daily_logs in the given date range.
     Returns mood avg, energy avg, time invested, top category, top emotions,
-    log count, goal completions, highlights, and gratitude items.
+    log count, goal completions, highlights, gratitude items, the period's
+    quick checks and decisions, and the previous review's intentions.
     """
     uid = str(current_user["_id"])
+    utc_start, utc_end = _utc_bounds(current_user, start_date, end_date)
+    extras = {
+        "quick_checks": _quick_check_summary(uid, start_date, end_date),
+        "decisions": _decisions_in_range(uid, utc_start, utc_end),
+        "previous_intentions": _previous_intentions(uid, period_type, start_date),
+    }
 
     # ── Daily log aggregation ──────────────────────────────────────────────
     pipeline = [
@@ -81,7 +144,7 @@ def get_review_stats(
 
     agg = list(db.daily_logs.aggregate(pipeline))
     if not agg:
-        return _empty_stats()
+        return {**_empty_stats(), **extras}
 
     result = agg[0]
     overview = result["overview"][0] if result["overview"] else {}
@@ -144,11 +207,11 @@ def get_review_stats(
             })
     category_breakdown.sort(key=lambda x: x["time_spent"], reverse=True)
 
-    # Goals
+    # Goals finished during the period, and those still open now
     goals_completed = db.goals.count_documents({
         "user_id": uid,
         "status": "completed",
-        "reflected_at": {"$exists": True}
+        "reflected_at": {"$gte": utc_start, "$lt": utc_end},
     })
     goals_active = db.goals.count_documents({
         "user_id": uid,
@@ -178,12 +241,15 @@ def get_review_stats(
         "top_emotions": [{"label": e["_id"], "count": e["count"]} for e in result["emotions"]],
         "goals_completed": goals_completed,
         "goals_active": goals_active,
+        **extras,
     }
 
 
 @router.post("")
 def create_review(data: ReviewModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    if db.reviews.find_one({"user_id": uid, "period_type": data.period_type, "start_date": data.start_date}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail="You already reviewed this period. Edit that review instead.")
     doc = {
         "user_id": uid,
         "period_type": data.period_type,

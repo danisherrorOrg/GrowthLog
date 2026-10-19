@@ -277,15 +277,38 @@ def test_snapshots_full_cycle(client, auth_headers):
 # --- 11. Prompts & Admin ---
 
 def test_prompts_availability(client, auth_headers):
-    resp = client.get("/prompts/quote")
+    resp = client.get("/prompts/quote", headers=auth_headers)
     assert resp.status_code == 200
     
     resp = client.get("/prompts/daily", headers=auth_headers)
     assert resp.status_code == 200
     assert len(resp.json()) > 0
 
-def test_admin_nudge_logic(client):
+def test_prompts_follow_user_timezone(client, auth_headers):
+    """At 23:30 UTC on Jan 1 it's already Jan 2 in Tokyo, so a Tokyo user gets the next day's quote."""
+    from datetime import datetime, timezone
+    from unittest.mock import patch
+    from core.database import db
+    from prompts import QUOTES, CATEGORY_PROMPTS
+
+    me = client.get("/auth/me", headers=auth_headers).json()
+    fixed_now = datetime(2026, 1, 1, 23, 30, tzinfo=timezone.utc)
+
+    with patch("utils.streak.utcnow", return_value=fixed_now):
+        db.users.update_one({"email": me["email"]}, {"$set": {"timezone": "UTC"}})
+        assert client.get("/prompts/quote", headers=auth_headers).json() == QUOTES[1 % len(QUOTES)]
+
+        db.users.update_one({"email": me["email"]}, {"$set": {"timezone": "Asia/Tokyo"}})
+        assert client.get("/prompts/quote", headers=auth_headers).json() == QUOTES[2 % len(QUOTES)]
+        daily = client.get("/prompts/daily", headers=auth_headers).json()
+        for cat, p_list in CATEGORY_PROMPTS.items():
+            assert daily[cat] == p_list[2 % len(p_list)]
+
+    assert client.get("/prompts/quote").status_code == 401
+
+def test_admin_nudge_logic(client, monkeypatch):
     """Verify that the nudge endpoint identifies a silent (unlogged) user."""
+    monkeypatch.setenv("ADMIN_TOKEN", "test-admin-token")
     from core.database import db
     import os
     
@@ -294,8 +317,9 @@ def test_admin_nudge_logic(client):
     client.post("/auth/register", json={"name": "Silent User", "email": email, "password": "Password123!"})
     db.users.update_one({"email": email}, {"$set": {"is_verified": True}})
     
-    # 2. Call Nudge
-    resp = client.post("/admin/nudge-silent-users")
+    # 2. Call Nudge (admin-only)
+    assert client.post("/admin/nudge-silent-users", headers={"X-Admin-Token": "wrong"}).status_code == 403
+    resp = client.post("/admin/nudge-silent-users", headers={"X-Admin-Token": "test-admin-token"})
     assert resp.status_code == 200
     assert resp.json()["nudge_count"] >= 1
 

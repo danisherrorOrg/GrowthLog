@@ -13,6 +13,9 @@ client = MongoClient(
 db = client[DB_NAME]
 
 def create_indexes():
+    # ── Users: password reset lookups ─────────────────────────────────────────
+    db.users.create_index("password_reset_token_hash", sparse=True)
+
     # ── Categories ────────────────────────────────────────────────────────────
     try:
         db.categories.create_index(
@@ -63,9 +66,14 @@ def create_indexes():
     db.thoughts.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     db.reframes.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
 
+    # ── To-Dos: filtered by status, overdue/upcoming by due date, listed newest first
+    db.todos.create_index([("user_id", ASCENDING), ("status", ASCENDING), ("due_date", ASCENDING)])
+    db.todos.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+
     # ── Quick Checks ("Should I do this?") ────────────────────────────────────
     db.quick_checks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("created_at", DESCENDING)])
     db.decisions.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+    db.reviews.create_index([("user_id", ASCENDING), ("period_type", ASCENDING), ("start_date", DESCENDING)])
     try:
         db.day_plans.create_index([("user_id", ASCENDING), ("date", ASCENDING)], unique=True)
     except Exception as e:
@@ -115,4 +123,3 @@ def create_indexes():
     # ── Cache & Sessions ──────────────────────────────────────────────────────
     db.server_cache.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)
     db.server_cache.create_index("prefix")
-    db.jwt_blocklist.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)

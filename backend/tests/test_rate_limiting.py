@@ -50,3 +50,35 @@ def test_logs_write_rate_limiting(client, auth_headers):
     resp = client.post("/logs", headers=auth_headers, json=payload)
     assert resp.status_code == 429
     assert "Rate limit exceeded" in resp.json().get("error", "")
+
+
+def _fake_request(peer, headers):
+    from starlette.requests import Request
+    scope = {
+        "type": "http",
+        "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()],
+        "client": (peer, 12345),
+    }
+    return Request(scope)
+
+
+def test_forwarding_headers_ignored_from_untrusted_peer(monkeypatch):
+    """A client can't pick its own rate-limit key by faking IP headers."""
+    from core import rate_limit
+    monkeypatch.setattr(rate_limit, "TRUSTED_PROXIES", [])
+    req = _fake_request("203.0.113.5", {
+        "CF-Connecting-IP": "1.1.1.1",
+        "X-Forwarded-For": "2.2.2.2",
+        "X-Real-IP": "3.3.3.3",
+    })
+    assert rate_limit.get_real_ip(req) == "203.0.113.5"
+
+
+def test_forwarding_headers_used_from_trusted_proxy(monkeypatch):
+    from core import rate_limit
+    monkeypatch.setattr(rate_limit, "TRUSTED_PROXIES", rate_limit._parse_trusted_proxies("10.0.0.0/8"))
+    # Client-supplied "6.6.6.6" is skipped; the proxy-appended hop is the real client
+    req = _fake_request("10.0.0.2", {"X-Forwarded-For": "6.6.6.6, 198.51.100.7, 10.0.0.9"})
+    assert rate_limit.get_real_ip(req) == "198.51.100.7"
+    req = _fake_request("10.0.0.2", {"X-Real-IP": "198.51.100.8"})
+    assert rate_limit.get_real_ip(req) == "198.51.100.8"
