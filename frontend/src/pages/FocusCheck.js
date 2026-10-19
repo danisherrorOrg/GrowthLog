@@ -6,7 +6,7 @@ import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import {
-  ACTION_LABELS, CHANGED_EVENT, localDate, openQuickCheck, parseServerTime,
+  ACTION_LABELS, CHANGED_EVENT, MINUTE_OPTIONS, localDate, openQuickCheck, parseServerTime,
 } from '../components/focus/quickCheck';
 
 const EVENING_HOUR = 17;
@@ -73,6 +73,23 @@ function CheckRow({ check, onUpdate, onDelete }) {
             onClick={() => onUpdate(check, { worth_it: false })} aria-pressed={check.worth_it === false}
           >👎</button>
         </div>
+
+        {check.action === 'doing' && (
+          <div className="qc-minutes" role="radiogroup" aria-label="How long did it take?">
+            <span className="qc-row-action" style={{ opacity: 0.6 }}>
+              How long did it take?{check.expected_minutes ? ` (you expected ${check.expected_minutes} min)` : ''}
+            </span>
+            {MINUTE_OPTIONS.map(o => (
+              <button
+                key={o.value} type="button" role="radio" aria-checked={check.actual_minutes === o.value}
+                className={`btn btn-sm ${check.actual_minutes === o.value ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => onUpdate(check, { actual_minutes: o.value })}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -205,7 +222,7 @@ export default function FocusCheck() {
 
         {showEvening && (
           <div className="qc-evening">
-            <strong>🌙 Evening review</strong> — {toReview} check{toReview === 1 ? '' : 's'} left to review. Tap 👍 or 👎 on each one below.
+            <strong>🌙 Evening review</strong> — {toReview} check{toReview === 1 ? '' : 's'} left to review. Tap 👍 or 👎 on each one below, and how long the things you did took.
           </div>
         )}
 

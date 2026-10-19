@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import API from '../../utils/api';
 import { getErrorMessage } from '../../utils/errors';
-import { QUESTIONS, fetchTopTask, localDate, notifyQuickCheckChanged } from './quickCheck';
+import { MINUTE_OPTIONS, QUESTIONS, fetchTopTask, localDate, notifyQuickCheckChanged } from './quickCheck';
 
 const EMPTY = { helps_today: null, matters_week: null, giving_up: null };
 
@@ -16,6 +16,7 @@ export default function QuickCheckModal({ onClose }) {
   const [topTask, setTopTask] = useState(null);
   const [check, setCheck] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [expected, setExpected] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function QuickCheckModal({ onClose }) {
   const choose = async (action) => {
     setBusy(true);
     try {
-      await API.put(`/quick-checks/${check.id}`, { action });
+      const timed = action === 'doing' && expected;
+      await API.put(`/quick-checks/${check.id}`, timed ? { action, expected_minutes: expected } : { action });
       notifyQuickCheckChanged();
       if (action === 'parked') toast.success('Parked in your To-Dos for later.');
       else if (action === 'skipped') toast.success(topTask ? `Back to: ${topTask.title}` : 'Skipped. Nice catch.');
@@ -120,7 +122,20 @@ export default function QuickCheckModal({ onClose }) {
               <div className="qc-verdict-score">Score {check.score}/100 · “{check.text}”</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
+            <div className="qc-minutes" role="radiogroup" aria-label="How long do you expect it to take?">
+              <span className="qc-row-action">If you do it, how long will it take?</span>
+              {MINUTE_OPTIONS.map(o => (
+                <button
+                  key={o.value} type="button" role="radio" aria-checked={expected === o.value}
+                  className={`btn btn-sm ${expected === o.value ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setExpected(e => (e === o.value ? null : o.value))}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
               {go ? (
                 <>
                   <button className="btn btn-primary" disabled={busy} onClick={() => choose('doing')} style={{ justifyContent: 'center' }}>▶ Start it</button>

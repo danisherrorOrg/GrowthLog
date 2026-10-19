@@ -3363,3 +3363,17 @@ h4 {
   font-size: 13px;
   color: rgba(13, 13, 13, 0.5);
 }
+
+/* "How long will / did it take?" chips */
+.qc-minutes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  margin-top: 16px;
+}
+
+.qc-row-actions .qc-minutes {
+  margin-top: 0;
+}
