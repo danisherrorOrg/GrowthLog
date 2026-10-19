@@ -174,6 +174,11 @@ export default function Login() {
                   <span>⚠</span> {passwordError}
                 </div>
               )}
+              <div style={{ textAlign: 'right', marginTop: 8 }}>
+                <Link to="/forgot-password" style={{ fontSize: 13, color: 'var(--sage)', textDecoration: 'none' }}>
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             <button

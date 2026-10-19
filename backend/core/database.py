@@ -13,6 +13,9 @@ client = MongoClient(
 db = client[DB_NAME]
 
 def create_indexes():
+    # ── Users: password reset lookups ─────────────────────────────────────────
+    db.users.create_index("password_reset_token_hash", sparse=True)
+
     # ── Categories ────────────────────────────────────────────────────────────
     try:
         db.categories.create_index(

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
 from core.rate_limit import limiter
 from bson import ObjectId, errors as bson_errors
 from datetime import timedelta, timezone
+import hashlib
 import secrets
 
 from core.database import db
@@ -14,13 +15,14 @@ from utils.user_data import wipe_user_data, default_categories, USER_PROGRESS_RE
 from api.deps import get_current_user
 from models.schemas import (
     RegisterModel, LoginModel, ProfileUpdateModel, PasswordChangeModel,
-    EmailChangeModel, PublicToggleModel
+    EmailChangeModel, PublicToggleModel, ForgotPasswordModel, ResetPasswordModel
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 public_router = APIRouter(prefix="/public", tags=["public"])
 
 VERIFICATION_TTL = timedelta(hours=24)
+PASSWORD_RESET_TTL = timedelta(hours=1)
 
 
 def _queue_verification_email(background_tasks: BackgroundTasks, to_email: str, name: str, token: str, new_address: bool = False):
@@ -133,6 +135,67 @@ def login(request: Request, data: LoginModel):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
             "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", [])}}
+
+def _hash_reset_token(token: str) -> str:
+    # Only the hash is stored, so a leaked database can't be used to reset passwords
+    return hashlib.sha256(token.encode()).hexdigest()
+
+@router.post("/password/forgot")
+@limiter.limit("3/minute")
+def forgot_password(request: Request, data: ForgotPasswordModel, background_tasks: BackgroundTasks):
+    # Same response whether or not the account exists, so this can't be used to probe emails
+    response = {"success": True}
+    user = db.users.find_one({"email": data.email})
+    if not user:
+        return response
+
+    last_sent = user.get("password_reset_sent_at")
+    if last_sent:
+        if last_sent.tzinfo is None: last_sent = last_sent.replace(tzinfo=timezone.utc)
+        if (utcnow() - last_sent).total_seconds() < 60:
+            return response
+
+    token = secrets.token_urlsafe(32)
+    db.users.update_one({"_id": user["_id"]}, {"$set": {
+        "password_reset_token_hash": _hash_reset_token(token),
+        "password_reset_expires": utcnow() + PASSWORD_RESET_TTL,
+        "password_reset_sent_at": utcnow(),
+    }})
+    link = f"{ALLOWED_ORIGINS[0]}/reset-password/{token}"
+    body = render_email(
+        "Reset your password",
+        [f"Hi {user.get('name', 'there')}, we received a request to reset your GrowthLog password.",
+         "Click below to choose a new one. This link expires in 1 hour and can only be used once."],
+        "Reset Password", link,
+        note="If you didn't ask for this, you can ignore this email; your password won't change.",
+    )
+    background_tasks.add_task(send_email, user["email"], "Reset your GrowthLog password ✦", body)
+    return response
+
+@router.post("/password/reset")
+@limiter.limit("5/minute")
+def reset_password(request: Request, data: ResetPasswordModel):
+    user = db.users.find_one({"password_reset_token_hash": _hash_reset_token(data.token)})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    expires = user.get("password_reset_expires")
+    if expires and expires.tzinfo is None: expires = expires.replace(tzinfo=timezone.utc)
+    if not expires or utcnow() > expires:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+
+    # Bumping token_version signs out every existing session
+    db.users.update_one({"_id": user["_id"]}, {
+        "$set": {
+            "password": hash_password(data.new_password),
+            "token_version": user.get("token_version", 1) + 1,
+        },
+        "$unset": {"password_reset_token_hash": "", "password_reset_expires": ""},
+    })
+    uid = str(user["_id"])
+    from utils.activity import log_activity
+    log_activity(uid, "update", "profile", uid, "Reset password")
+    return {"success": True}
 
 @router.post("/logout")
 def logout(current_user=Depends(get_current_user)):

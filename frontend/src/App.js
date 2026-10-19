@@ -6,6 +6,8 @@ import './styles/markdown.css';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import HistoryHub from './pages/HistoryHub';
 import TemporalHub from './pages/TemporalHub';
 import KnowledgeVault from './pages/KnowledgeVault';
@@ -68,6 +70,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" />} />
