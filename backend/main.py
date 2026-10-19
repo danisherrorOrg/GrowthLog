@@ -52,6 +52,7 @@ from api.routers.checkins import router as checkins_router
 from api.routers.notifications import router as notifications_router
 from api.routers.quick_checks import router as quick_checks_router
 from api.routers.day_plans import router as day_plans_router
+from api.routers.decisions import router as decisions_router
 
 from contextlib import asynccontextmanager
 
@@ -161,6 +162,7 @@ app.include_router(checkins_router)
 app.include_router(notifications_router)
 app.include_router(quick_checks_router)
 app.include_router(day_plans_router)
+app.include_router(decisions_router)
 
 
 

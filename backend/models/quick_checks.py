@@ -14,6 +14,8 @@ class QuickCheckModel(BaseModel):
     giving_up: int = Field(..., ge=1, le=5)
     # The user's local date (YYYY-MM-DD), so "today" matches their day, not UTC
     date: str = Field(..., pattern=DATE_PATTERN)
+    # The user's local hour (0-23), for "when do I get distracted?" patterns
+    hour: Optional[int] = Field(None, ge=0, le=23)
 
     @field_validator("text")
     @classmethod

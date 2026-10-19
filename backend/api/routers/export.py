@@ -26,7 +26,7 @@ COLLECTIONS = [
     "procrastination_log", "not_to_do", "regrets", "future_advice",
     "past_advice", "life_lessons", "project_ideas", "creative_sessions",
     "meaning_log", "travel_log", "bucket_list", "skills", "courses",
-    "failure_log", "skills_gap", "feedback", "todos", "lotus_boards", "quick_checks", "day_plans",
+    "failure_log", "skills_gap", "feedback", "todos", "lotus_boards", "quick_checks", "day_plans", "decisions",
 ]
 
 

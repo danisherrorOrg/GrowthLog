@@ -37,7 +37,7 @@ export default function QuickCheckModal({ onClose }) {
     if (!ready || busy) return;
     setBusy(true);
     try {
-      const res = await API.post('/quick-checks', { text: text.trim(), ...answers, date: localDate() });
+      const res = await API.post('/quick-checks', { text: text.trim(), ...answers, date: localDate(), hour: new Date().getHours() });
       setCheck(res.data);
       notifyQuickCheckChanged();
     } catch (err) {

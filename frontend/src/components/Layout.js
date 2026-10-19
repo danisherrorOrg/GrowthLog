@@ -16,7 +16,7 @@ const NAV_GROUPS = [
       { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
       { to: '/plan', icon: '☀️', label: 'Morning Plan', shortcut: 'A' },
       { to: '/focus', icon: '🧭', label: 'Should I Do This?', shortcut: 'S' },
-      { to: '/checkins', icon: '⏱️', label: 'Task Check-In', shortcut: 'N' },
+      { to: '/decisions', icon: '⚖️', label: 'Decision Matrix', shortcut: 'N' },
     ]
   },
   {

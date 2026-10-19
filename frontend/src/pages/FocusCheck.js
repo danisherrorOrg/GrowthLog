@@ -23,7 +23,7 @@ function summaryLine(s, isToday) {
   if (!s.total) return null;
   const parts = [`${isToday ? 'Today' : 'That day'}: ${s.total} check${s.total === 1 ? '' : 's'}`];
   if (s.caught) parts.push(`you caught ${s.caught} time-waster${s.caught === 1 ? '' : 's'} before starting`);
-  if (s.didReviewed) parts.push(`${s.didWorth} of ${s.didReviewed} thing${s.didReviewed === 1 ? '' : 's'} you did were worth it`);
+  if (s.didReviewed) parts.push(`${s.didWorth} of ${s.didReviewed} thing${s.didReviewed === 1 ? '' : 's'} you did ${s.didReviewed === 1 ? 'was' : 'were'} worth it`);
   return parts.join(' · ') + '.';
 }
 
@@ -82,6 +82,7 @@ export default function FocusCheck() {
   const [date, setDate] = useState(localDate());
   const [checks, setChecks] = useState([]);
   const [planned, setPlanned] = useState([]);
+  const [patterns, setPatterns] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
 
@@ -107,6 +108,15 @@ export default function FocusCheck() {
     setLoading(true);
     load();
   }, [load]);
+
+  // Patterns always look back from today, whichever day is being viewed
+  useEffect(() => {
+    const loadPatterns = () => API.get('/quick-checks/patterns', { params: { today: localDate() } })
+      .then(res => setPatterns(res.data)).catch(() => { });
+    loadPatterns();
+    window.addEventListener(CHANGED_EVENT, loadPatterns);
+    return () => window.removeEventListener(CHANGED_EVENT, loadPatterns);
+  }, []);
 
   // Refresh when a check is made from the floating button / shortcut
   useEffect(() => {
@@ -212,6 +222,24 @@ export default function FocusCheck() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {checks.map(c => <CheckRow key={c.id} check={c} onUpdate={update} onDelete={remove} />)}
           </div>
+        )}
+
+        {patterns && (
+          <section className="card qc-patterns">
+            <h3>📈 Your patterns <span className="qc-row-meta">· last 30 days</span></h3>
+            {patterns.ready ? (
+              patterns.insights.length ? (
+                <ul>{patterns.insights.map(i => <li key={i.id}><span aria-hidden="true">{i.icon}</span> {i.text}</li>)}</ul>
+              ) : (
+                <p className="qc-row-meta">Nothing stands out yet. Keep reviewing your checks with 👍/👎 — that's what patterns are built from.</p>
+              )
+            ) : (
+              <p className="qc-row-meta">
+                Patterns unlock after {patterns.progress.need_checks} checks on {patterns.progress.need_days} different days.
+                You're at {patterns.progress.checks} check{patterns.progress.checks === 1 ? '' : 's'} on {patterns.progress.days} day{patterns.progress.days === 1 ? '' : 's'}.
+              </p>
+            )}
+          </section>
         )}
       </div>
 

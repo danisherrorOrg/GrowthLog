@@ -140,6 +140,13 @@ This is the real value: **you stop guessing and start seeing your own habits cle
 
 We'll build it in small phases so you can start using it quickly and we only keep what you actually use.
 
+> **Status:** all three phases are built.
+> - Phase 1: 🧭 button / `Q` key, `/focus` page
+> - Phase 2: `/plan` (Morning Plan, shortcut `A`)
+> - Phase 3: `/decisions` (Decision Matrix, shortcut `N`) and "Your patterns" on `/focus`
+>
+> Not built yet: the *"quick fixes take 40+ minutes"* and *"more time on Growth tasks than last week"* insights. They need actual time spent per task, which quick checks don't record.
+
 ### Phase 1 — Catch time-wasters (start here)
 - Floating **"?"** button + keyboard shortcut on every page
 - 3-question quick check → "Go ahead" / "Not now"

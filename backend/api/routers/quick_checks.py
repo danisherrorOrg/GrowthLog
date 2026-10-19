@@ -5,6 +5,7 @@ from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list, clean_update
 from utils.activity import log_activity
+from utils.patterns import compute_patterns
 from api.deps import get_current_user
 from models.quick_checks import QuickCheckModel, QuickCheckUpdateModel, DATE_PATTERN
 
@@ -50,6 +51,15 @@ def get_quick_checks(
     uid = str(current_user["_id"])
     cursor = db.quick_checks.find({"user_id": uid, "date": date}).sort("created_at", -1)
     return serialize_list(cursor)
+
+
+@router.get("/patterns")
+def get_patterns(
+    today: str = Query(..., pattern=DATE_PATTERN),
+    days: int = Query(30, ge=7, le=365),
+    current_user=Depends(get_current_user),
+):
+    return compute_patterns(str(current_user["_id"]), today, days)
 
 
 @router.post("")
