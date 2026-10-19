@@ -82,7 +82,11 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ### Found in a second browser pass on 2026-10-20
 
-Checked and working: Mind Garden (plant, pin, search with highlighting, edit, delete with in-app confirmations), the Reframing studio including the distortion filter chip, and "Should I do this?" (the Q shortcut, verdict, parking an activity as a to-do, and the 👍/👎 rating).
+Checked and working: Mind Garden (plant, pin, search with highlighting, edit, delete with in-app confirmations), the Reframing studio including the distortion filter chip, "Should I do this?" (the Q shortcut, verdict, parking an activity as a to-do, and the 👍/👎 rating), Morning Plan (quick-add, triage, skip, "Done planning" into To-Dos), the Decision Matrix (example, save, first step to To-Dos, worth-it rating), Task Check-ins with custom questions, and all 9 Insight Lab tabs (the browser form's 24-hour limit and empty-input checks work).
+
+Ownership checks hold everywhere except the timeline (#7): signed in as a second user, every `/{id}` route was tried with all 56 of the first user's object ids (GET, PUT, PATCH, DELETE), and none reached that user's data. Daily logs and goals also reject another user's category id.
+
+Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review ritual, Knowledge Vault (books, courses, quotes), Health (5 tabs), Growth Hub, Life Canvas, category edit/delete, goal detail (milestones, extend) and Manifestations, Profile (edit, export, change password, public profile), the notifications panel, keyboard shortcuts, and History's Daily Logs and Audit Trail tabs.
 
 17. **Insight Lab time entries aren't checked on the server**
     * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit exists only in the browser form, and the `"not-a-date"` entry now shows up as a day heading in Time Tracking.
@@ -97,7 +101,7 @@ Checked and working: Mind Garden (plant, pin, search with highlighting, edit, de
 
 19. **More of the UTC-date bug (see #9)**
     * In Mind Garden, a thought planted seconds earlier says "About 6 hours ago"; all Mind Garden times show 6 hours too old.
-    * Several date pickers default to Oct 19 instead of today (Oct 20 local): Insight Lab's "Log Today" for time, procrastination and trigger entries, and the check-in date.
+    * Several date pickers default to Oct 19 instead of today (Oct 20 local): Insight Lab's "Log Today" for time, procrastination, trigger and bad-decision entries, the "Take a Snapshot" date, and the check-in date.
     * **Fix:** comes with #9; default the pickers to the local date, not the UTC one.
 
 20. **Leaving the To-Dos page ends a running focus session without warning**
@@ -140,6 +144,7 @@ Checked and working: Mind Garden (plant, pin, search with highlighting, edit, de
 * **After saving a log, the dashboard opens scrolled halfway down.**
 * **Empty gratitude fields are saved** as `['', '', '']`.
 * **Duplicate "Goal not found" toasts** when opening a missing goal (an effect that runs twice).
+* **Deleting a category template always reports success.** `DELETE /categories/templates/{id}` (`backend/api/routers/categories.py:67`) returns `{"success": true}` and logs a "Deleted a category template" activity even when no template matched. Return 404 when nothing was deleted.
 
 ---
 
