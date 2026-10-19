@@ -12,7 +12,7 @@ ALGORITHM = "HS256"
 def test_missing_auth_header(client):
     """Authorization Test: Ensure protected endpoints reject totally unauthenticated requests."""
     resp = client.get("/auth/me")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
     assert "Not authenticated" in resp.json().get("detail", "")
 
 def test_malformed_auth_header(client):

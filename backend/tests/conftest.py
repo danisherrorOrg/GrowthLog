@@ -51,6 +51,8 @@ def auth_headers(client, test_user_data):
         "password": test_user_data["password"]
     })
     token = response.json()["token"]
+    # Tests authenticate with explicit headers; don't let the login cookie leak into other requests
+    client.cookies.clear()
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture
@@ -67,6 +69,8 @@ def other_user_headers(client):
         "password": data["password"]
     })
     token = response.json()["token"]
+    # Tests authenticate with explicit headers; don't let the login cookie leak into other requests
+    client.cookies.clear()
     return {"Authorization": f"Bearer {token}"}
 
 @pytest.fixture

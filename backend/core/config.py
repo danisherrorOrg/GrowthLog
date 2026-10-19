@@ -22,3 +22,16 @@ SMTP_PASS = os.getenv("SMTP_PASS")
 SMTP_SENDER = os.getenv("SMTP_SENDER", "noreply@growthlog.app")
 
 DB_NAME = os.getenv("DB_NAME", "growthlog")
+
+# Auth cookie. Secure needs HTTPS (browsers make an exception for http://localhost).
+# If the frontend and API are on different sites (e.g. app.vercel.app + api.onrender.com),
+# set AUTH_COOKIE_SAMESITE=none so the browser sends the cookie on cross-site API calls.
+AUTH_COOKIE_NAME = "growthlog_session"
+AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true").lower() != "false"
+AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax").lower()
+if AUTH_COOKIE_SAMESITE not in ("lax", "strict", "none"):
+    raise RuntimeError("AUTH_COOKIE_SAMESITE must be lax, strict or none")
+if AUTH_COOKIE_SAMESITE == "none" and not AUTH_COOKIE_SECURE:
+    raise RuntimeError("AUTH_COOKIE_SAMESITE=none requires AUTH_COOKIE_SECURE=true")
+# Unsafe requests authenticated by cookie must carry this header (CSRF defense)
+CSRF_HEADER = "X-Requested-With"

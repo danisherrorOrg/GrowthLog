@@ -4,6 +4,8 @@ from datetime import timedelta
 from utils.cache import utcnow
 from core.config import JWT_SECRET
 
+TOKEN_TTL = timedelta(days=30)
+
 def hash_password(p: str) -> str:
     return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
 
@@ -12,6 +14,6 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_token(uid: str, version: int = 1) -> str:
     return jwt.encode(
-        {"user_id": uid, "v": version, "exp": utcnow() + timedelta(days=30)},
+        {"user_id": uid, "v": version, "exp": utcnow() + TOKEN_TTL},
         JWT_SECRET, algorithm="HS256"
     )

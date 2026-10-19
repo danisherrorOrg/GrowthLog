@@ -22,8 +22,6 @@ export default function ResetPassword() {
     setLoading(true);
     try {
       await API.post('/auth/password/reset', { token, new_password: password });
-      // Every session was signed out server-side, so drop any stale local token too
-      localStorage.removeItem('token');
       setDone(true);
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not reset password'));

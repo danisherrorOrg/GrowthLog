@@ -14,14 +14,14 @@ from utils.email import send_email, render_email
 # ==============================================================================
 # Security Documentation: CSRF Protection
 # ==============================================================================
-# Authentication in this API exclusively uses JWT Bearer tokens passed in the
-# Authorization header. Because tokens are sent via headers and managed
-# explicitly by the client (localStorage/memory), classic Cross-Site Request
-# Forgery (CSRF) attacks are mitigated by default.
+# The browser app authenticates with an httpOnly session cookie (see api/deps.py).
+# Because browsers attach cookies to cross-site requests, every non-GET request
+# authenticated by cookie must carry the X-Requested-With header. A cross-site
+# page can't add that header without a CORS preflight, and CORS only allows
+# ALLOWED_ORIGINS, so forged requests are rejected. Requests using an explicit
+# Authorization: Bearer header are not exposed to CSRF and skip this check.
 #
-# WARNING: If this application ever migrates to using cookies for session
-# management or auth tokens, YOU MUST add CSRF protection middleware immediately
-# (e.g., using `fastapi-csrf-protect`) to prevent vulnerability.
+# Keep allow_origins an explicit list: never "*" with credentials.
 # ==============================================================================
 
 # Routers

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request, Response
 from core.rate_limit import limiter
 from bson import ObjectId, errors as bson_errors
 from datetime import timedelta, timezone
@@ -6,13 +6,13 @@ import hashlib
 import secrets
 
 from core.database import db
-from core.security import hash_password, verify_password, create_token
+from core.security import hash_password, verify_password, create_token, TOKEN_TTL
 from core.config import ALLOWED_ORIGINS
 from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.email import send_email, render_email
 from utils.helpers import clean_update
 from utils.user_data import wipe_user_data, default_categories, USER_PROGRESS_RESET
-from api.deps import get_current_user
+from api.deps import get_current_user, set_auth_cookie, clear_auth_cookie
 from models.schemas import (
     RegisterModel, LoginModel, ProfileUpdateModel, PasswordChangeModel,
     EmailChangeModel, PublicToggleModel, ForgotPasswordModel, ResetPasswordModel
@@ -48,7 +48,7 @@ def _queue_verification_email(background_tasks: BackgroundTasks, to_email: str, 
 
 @router.post("/register")
 @limiter.limit("5/minute")
-def register(request: Request, data: RegisterModel, background_tasks: BackgroundTasks):
+def register(request: Request, response: Response, data: RegisterModel, background_tasks: BackgroundTasks):
     if db.users.find_one({"email": data.email}):
         raise HTTPException(status_code=400, detail="Email already exists")
     result = db.users.insert_one({
@@ -76,7 +76,9 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
     }})
     _queue_verification_email(background_tasks, data.email, data.name, verify_token)
 
-    return {"token": create_token(uid_str, 1),
+    token = create_token(uid_str, 1)
+    set_auth_cookie(response, token)
+    return {"token": token,
             "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": []}}
 
 @router.post("/verify/send")
@@ -129,11 +131,13 @@ def verify_email(token: str):
 
 @router.post("/login")
 @limiter.limit("5/minute")
-def login(request: Request, data: LoginModel):
+def login(request: Request, response: Response, data: LoginModel):
     user = db.users.find_one({"email": data.email})
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"token": create_token(str(user["_id"]), user.get("token_version", 1)),
+    token = create_token(str(user["_id"]), user.get("token_version", 1))
+    set_auth_cookie(response, token)
+    return {"token": token,
             "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", [])}}
 
 def _hash_reset_token(token: str) -> str:
@@ -198,7 +202,13 @@ def reset_password(request: Request, data: ResetPasswordModel):
     return {"success": True}
 
 @router.post("/logout")
-def logout(current_user=Depends(get_current_user)):
+def logout(request: Request, response: Response):
+    # Always clear the cookie, even if the session is already invalid, so the browser can't get stuck
+    clear_auth_cookie(response)
+    try:
+        current_user = get_current_user(request)
+    except HTTPException:
+        return {"success": True}
     new_version = current_user.get("token_version", 1) + 1
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {"token_version": new_version}})
     uid = str(current_user["_id"])
@@ -235,7 +245,7 @@ def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_us
     return {"success": True}
 
 @router.put("/password")
-def change_password(data: PasswordChangeModel, current_user=Depends(get_current_user)):
+def change_password(data: PasswordChangeModel, response: Response, current_user=Depends(get_current_user)):
     if not verify_password(data.current_password, current_user["password"]):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     
@@ -245,6 +255,8 @@ def change_password(data: PasswordChangeModel, current_user=Depends(get_current_
         "token_version": new_version
     }})
     uid = str(current_user["_id"])
+    # Other sessions are signed out by the version bump; keep this one signed in
+    set_auth_cookie(response, create_token(uid, new_version))
     from utils.activity import log_activity
     log_activity(uid, "update", "profile", uid, "Changed password")
     return {"success": True}
@@ -312,13 +324,14 @@ def delete_all_data(current_user=Depends(get_current_user)):
     return {"success": True, "deleted": deleted}
 
 @router.delete("/me")
-def delete_account(current_user=Depends(get_current_user)):
+def delete_account(response: Response, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     wipe_user_data(uid)
     db.users.delete_one({"_id": current_user["_id"]})
 
     # Invalidate token explicitly for its entire 30-day lifetime
-    db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + timedelta(days=30)})
+    db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + TOKEN_TTL})
+    clear_auth_cookie(response)
     return {"success": True, "action": "logout"}
 
 @router.get("/stats")
