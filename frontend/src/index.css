@@ -923,6 +923,35 @@ h4 {
   }
 }
 
+/* Profile theme editor: removable color and icon chips */
+.color-chip {
+  transition: transform 0.15s ease;
+}
+
+.color-chip:hover {
+  transform: scale(1.1);
+}
+
+.icon-chip {
+  transition: all 0.15s ease;
+}
+
+.icon-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.color-chip-delete,
+.icon-delete-badge {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.color-chip:hover .color-chip-delete,
+.icon-chip:hover .icon-delete-badge {
+  opacity: 1;
+}
+
 @keyframes pulse {
 
   0%,

@@ -49,14 +49,11 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 8. ✅ **Weekly review ritual.** On the Reviews page's Weekly tab, "Start weekly review" opens a 5-step flow: a look back (last week's focus, days logged, mood, highlights, quick checks and decisions), then wins, struggles, learnings and next week's focus. A week's existing review opens for editing, and the API rejects a second review for the same period. A notification nudges for it from Saturday, and on Monday for the week just ended. "Goals completed" in review stats now counts only goals finished in that period.
 9. ✅ **"Should I do this?" time insights.** Quick checks can now record an expected time when you start something and the real time in the evening review (both optional, one tap). "Your patterns" on `/focus` adds: how long "quick" things (≤15 min expected) really take, unplanned time in the last 7 days vs. the week before, and the category whose logged time changed most week over week.
 10. ✅ **Dashboard speed measured.** With a 3-year heavy user (about 1,100 logs, 6 entries each) among 300 other users (61k logs total), `/dashboard` takes 14 ms for 30 days and 29 ms for 365 days uncached, and the other dashboard endpoints take 3–10 ms. No caching changes were needed. The one problem was that `todos` had no index, so every to-do query scanned all users' to-dos; it now has `(user_id, status, due_date)` and `(user_id, created_at)` indexes.
+11. ✅ **Large page files split.** `Profile.js` (1,424 → 333 lines), `Todos.js` (1,313 → 410) and `Insights.js` (1,043 → 62) now live mostly in `components/profile/`, `components/todos/` and `components/insights/`. Each Insight Lab tab is its own file sharing a `useInsightList` hook, and Time Tracking and Screen Time share one `HoursLogTab`. Each tab now loads its data when opened instead of all nine at once. Along the way: the theme editor's inline `<style>` tags, which made every hovered element on the page grow or shift, became scoped CSS classes, and failed Insight Lab deletes now show an error. Added tests for all three pages and the Markdown export.
 
 ---
 
 ## 🧭 What to Do Next (in order)
-
-### Maintenance
-
-1. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 
