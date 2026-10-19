@@ -13,6 +13,12 @@ mock_send_email = patch("utils.email.send_email").start()
 
 from main import app
 from core.database import db, client as mongo_client
+from core.rate_limit import limiter
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Every test client request shares one address, so limits would otherwise carry across tests."""
+    limiter.reset()
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_db():
