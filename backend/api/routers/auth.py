@@ -6,7 +6,7 @@ import hashlib
 import secrets
 
 from core.database import db
-from core.security import hash_password, verify_password, create_token, TOKEN_TTL
+from core.security import hash_password, verify_password, create_token
 from core.config import ALLOWED_ORIGINS
 from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.email import send_email, render_email
@@ -328,9 +328,6 @@ def delete_account(response: Response, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     wipe_user_data(uid)
     db.users.delete_one({"_id": current_user["_id"]})
-
-    # Invalidate token explicitly for its entire 30-day lifetime
-    db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + TOKEN_TTL})
     clear_auth_cookie(response)
     return {"success": True, "action": "logout"}
 

@@ -118,4 +118,3 @@ def create_indexes():
     # ── Cache & Sessions ──────────────────────────────────────────────────────
     db.server_cache.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)
     db.server_cache.create_index("prefix")
-    db.jwt_blocklist.create_index([("expire_at", ASCENDING)], expireAfterSeconds=0)

@@ -4,6 +4,7 @@ from bson import ObjectId
 from core.config import JWT_SECRET, AUTH_COOKIE_NAME, AUTH_COOKIE_SECURE, AUTH_COOKIE_SAMESITE, CSRF_HEADER
 from core.database import db
 from core.security import TOKEN_TTL
+from utils.streak import check_and_apply_streak_shields
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -48,17 +49,15 @@ def get_current_user(request: Request):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = db.users.find_one({"_id": ObjectId(payload["user_id"])})
+        # A deleted account has no user doc, so its old tokens stop here (ObjectIds are never reused)
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
-
-        if db.jwt_blocklist.find_one({"user_id": payload["user_id"]}):
-            raise HTTPException(status_code=401, detail="Account deleted. Session permanently invalidated.")
 
         # Security: Invalidate tokens if the password was changed (version mismatch)
         if payload.get("v") != user.get("token_version", 1):
              raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
 
-        from utils.streak import check_and_apply_streak_shields
+        # No DB calls unless a missed day actually needs a shield
         user = check_and_apply_streak_shields(user)
 
         return user
