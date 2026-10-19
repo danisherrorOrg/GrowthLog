@@ -52,18 +52,14 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ## 🧭 What to Do Next (in order)
 
-### Next features
-
-1. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
-
 ### Needs some design first
 
-2. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
-3. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
+1. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
+2. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
 
 ### Maintenance
 
-4. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
+3. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 
@@ -85,3 +81,7 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 * **AI features.** A weekly growth letter, a coach that answers questions about your own logs, and free-text logging that fills in categories. Needs an LLM provider chosen first.
 * **Engineering.** CI that runs `./test.sh` on every PR, Playwright tests for the log → dashboard flow, and translations (English/Hindi).
 * **Bring Your Own Database.** Power users save their own encrypted MongoDB URI.
+
+### Not needed
+
+* **PWA / installable app.** Decided against on 2026-10-20; not planned.
