@@ -10,6 +10,7 @@ from core.config import ALLOWED_ORIGINS
 from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.email import send_email, render_email
 from utils.helpers import clean_update
+from utils.user_data import wipe_user_data, default_categories, USER_PROGRESS_RESET
 from api.deps import get_current_user
 from models.schemas import (
     RegisterModel, LoginModel, ProfileUpdateModel, PasswordChangeModel,
@@ -63,14 +64,7 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
     uid_str = str(result.inserted_id)
     db.users.update_one({"_id": result.inserted_id}, {"$set": {"token_version": 1}})
 
-    default_categories = [
-        {"user_id": uid_str, "name": "Mind", "icon": "🧠", "color": "#c9a84c", "description": "Learning, intellect, and mental health", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Body", "icon": "💪", "color": "#6b8c6b", "description": "Physical health, fitness, and nutrition", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Career", "icon": "💼", "color": "#5b8ba8", "description": "Professional growth and work tasks", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Finance", "icon": "💰", "color": "#8b6bc4", "description": "Wealth, savings, and investments", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Spirit", "icon": "🌿", "color": "#c46b8b", "description": "Peace, philosophy, and connection", "archived": False, "created_at": utcnow()}
-    ]
-    db.categories.insert_many(default_categories)
+    db.categories.insert_many(default_categories(uid_str))
 
     verify_token = secrets.token_urlsafe(32)
     db.users.update_one({"_id": ObjectId(uid_str)}, {"$set": {
@@ -245,33 +239,23 @@ def get_public_stats(user_id: str):
         "total_snapshots": db.snapshots.count_documents({"user_id": user_id})
     }
 
+@router.delete("/me/data")
+def delete_all_data(current_user=Depends(get_current_user)):
+    """Erase everything the user has logged but keep the account, login and profile settings."""
+    uid = str(current_user["_id"])
+    deleted = wipe_user_data(uid)
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": USER_PROGRESS_RESET})
+    db.categories.insert_many(default_categories(uid))
+    return {"success": True, "deleted": deleted}
+
 @router.delete("/me")
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    
-    collections_to_delete = [
-        "categories", "category_templates", "goals", "manifestations", "snapshots", "daily_logs",
-        "sleep_logs", "workouts", "meal_logs", "health_metrics", "exercise_goals", "custom_exercises",
-        "thoughts", "reframes", "books", "quotes", "todos",
-        "anti_goals", "habit_graveyard", "time_entries", "screen_time", "procrastination_log", "not_to_do",
-        "regrets", "future_advice", "past_advice", "life_lessons",
-        "project_ideas", "creative_sessions",
-        "meaning_log", "travel_log", "bucket_list",
-        "skills", "courses", "failure_log", "skills_gap", "feedback",
-        "quick_checks", "day_plans", "decisions", "activity_logs"
-    ]
-    
-    for coll in collections_to_delete:
-        db[coll].delete_many({"user_id": uid})
-        
+    wipe_user_data(uid)
     db.users.delete_one({"_id": current_user["_id"]})
-    
+
     # Invalidate token explicitly for its entire 30-day lifetime
-    from datetime import timedelta
     db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + timedelta(days=30)})
-    cache_invalidate_prefix(f"dashboard:{uid}:")
-    cache_invalidate_exact(f"categories:{uid}")
-    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True, "action": "logout"}
 
 @router.get("/stats")
