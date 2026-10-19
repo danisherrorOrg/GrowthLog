@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
@@ -10,6 +11,7 @@ import {
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, PolarRadiusAxis, BarChart, Bar, XAxis, Tooltip, Cell } from 'recharts';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import WeeklyRitual from '../components/reviews/WeeklyRitual';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmt(d) { return format(d, 'yyyy-MM-dd'); }
@@ -141,14 +143,17 @@ export default function Reviews() {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [pastReviews, setPastReviews] = useState([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
   const [form, setForm] = useState({ wins: '', challenges: '', learnings: '', intentions: '', rating: 7, tags: '' });
   const [saving, setSaving] = useState(false);
   const [editingReview, setEditingReview] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [ritual, setRitual] = useState(null); // the week being reviewed in the guided flow
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const period = getPeriodRange(activeType, offset);
+  const periodReview = pastReviews.find(r => r.start_date === period.start);
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
@@ -185,6 +190,17 @@ export default function Reviews() {
 
   // Reset offset when changing period type
   useEffect(() => { setOffset(0); }, [activeType]);
+
+  // The weekly review notification links here with ?ritual=this (or last, on Mondays)
+  useEffect(() => {
+    const which = searchParams.get('ritual');
+    if (!which) return;
+    const weekOffset = which === 'last' ? -1 : 0;
+    setActiveType('weekly');
+    setOffset(weekOffset);
+    setRitual(getPeriodRange('weekly', weekOffset));
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -467,6 +483,15 @@ export default function Reviews() {
               ✍️ Write Your Review
               <div style={{ flex: 1, height: 1, background: 'rgba(13,13,13,0.06)', minWidth: 40 }} />
             </div>
+            {activeType === 'weekly' ? (
+              <button
+                onClick={() => { setShowForm(false); setRitual(period); }}
+                className="btn btn-primary"
+                style={{ borderRadius: 30, padding: '10px 24px' }}
+              >
+                {periodReview ? "✎ Edit this week's review" : '☀ Start weekly review'}
+              </button>
+            ) : (
             <button
               onClick={() => {
                 if (showForm && !editingReview) {
@@ -482,6 +507,7 @@ export default function Reviews() {
             >
               {showForm && !editingReview ? '× Cancel' : '+ Write Review'}
             </button>
+            )}
           </div>
 
           {showForm && (
@@ -593,6 +619,14 @@ export default function Reviews() {
         </div>
       </div>
 
+      {ritual && !reviewsLoading && activeType === 'weekly' && (
+        <WeeklyRitual
+          period={ritual}
+          existing={pastReviews.find(r => r.period_type === 'weekly' && r.start_date === ritual.start)}
+          onClose={() => setRitual(null)}
+          onSaved={() => { setRitual(null); loadReviews(); }}
+        />
+      )}
       <ConfirmModal config={confirm} onClose={() => setConfirm(null)} />
     </div>
   );

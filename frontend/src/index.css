@@ -3286,3 +3286,80 @@ h4 {
   margin-top: 14px;
   font-size: 14px;
 }
+
+/* ── Weekly review ritual ─────────────────────────────────────── */
+.ritual-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: rgba(13, 13, 13, 0.4);
+  margin-bottom: 6px;
+}
+
+.ritual-progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.ritual-progress span {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--mist);
+}
+
+.ritual-progress span.done {
+  background: var(--sage);
+}
+
+.ritual-look {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ritual-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.6);
+}
+
+.ritual-stats > div {
+  background: var(--mist);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.ritual-stats strong {
+  color: var(--ink);
+}
+
+.ritual-block {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ritual-block ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.ritual-block p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ritual-previous {
+  border-left: 3px solid var(--gold);
+  padding-left: 14px;
+}
+
+.ritual-muted {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
+}

@@ -46,6 +46,7 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 5. ✅ **Morning Plan on the dashboard.** A "Today's plan" card shows how many to-dos are waiting to be triaged, or, once the day is planned, how many "do now" tasks are done and the open ones. It links to `/plan`.
 6. ✅ **Category colors and icons are validated.** The Profile editor for them already existed. The backend now only accepts 1–24 six-digit hex colors and 1–24 short icons, and the editor won't remove the last one or go past the limit.
 7. ✅ **Old planning notes merged here.** `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/` (about 1,700 lines, mostly repeats of each other or already built) are folded into "Other ideas" below, and the stray `backend/fix_schemas.py` and `backend/test_traceback.txt` are gone.
+8. ✅ **Weekly review ritual.** On the Reviews page's Weekly tab, "Start weekly review" opens a 5-step flow: a look back (last week's focus, days logged, mood, highlights, quick checks and decisions), then wins, struggles, learnings and next week's focus. A week's existing review opens for editing, and the API rejects a second review for the same period. A notification nudges for it from Saturday, and on Monday for the week just ended. "Goals completed" in review stats now counts only goals finished in that period.
 
 ---
 
@@ -53,17 +54,16 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ### Next features
 
-1. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
-2. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
+1. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
 
 ### Needs some design first
 
-3. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
-4. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
+2. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
+3. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
 
 ### Maintenance
 
-5. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
+4. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 

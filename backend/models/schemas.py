@@ -602,8 +602,8 @@ class LotusBlossomUpdateModel(BaseModel):
 class ReviewModel(BaseModel):
     period_type: Literal["weekly", "monthly", "yearly"]
     period_label: str = Field(..., max_length=100)  # e.g. "Week of Apr 14, 2026"
-    start_date: str = Field(..., max_length=30)      # yyyy-MM-dd
-    end_date: str = Field(..., max_length=30)        # yyyy-MM-dd
+    start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")  # yyyy-MM-dd
+    end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")    # yyyy-MM-dd
     rating: Optional[int] = Field(5)
     wins: Optional[str] = Field("", max_length=5000)
     challenges: Optional[str] = Field("", max_length=5000)

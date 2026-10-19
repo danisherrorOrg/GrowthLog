@@ -69,6 +69,7 @@ def create_indexes():
     # ── Quick Checks ("Should I do this?") ────────────────────────────────────
     db.quick_checks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("created_at", DESCENDING)])
     db.decisions.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
+    db.reviews.create_index([("user_id", ASCENDING), ("period_type", ASCENDING), ("start_date", DESCENDING)])
     try:
         db.day_plans.create_index([("user_id", ASCENDING), ("date", ASCENDING)], unique=True)
     except Exception as e:

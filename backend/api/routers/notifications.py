@@ -10,6 +10,28 @@ from utils.streak import _get_local_now
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
+
+def weekly_review_notification(uid: str, now_local: datetime):
+    """From Saturday, nudge for this week's review; on Monday, for last week's if it was skipped."""
+    weekday = now_local.weekday()  # Monday = 0
+    if weekday not in (0, 5, 6):
+        return None
+    last_week = weekday == 0
+    week_start = (now_local - timedelta(days=weekday + (7 if last_week else 0))).strftime("%Y-%m-%d")
+    if db.reviews.find_one({"user_id": uid, "period_type": "weekly", "start_date": week_start}, {"_id": 1}):
+        return None
+    return {
+        "id": f"weekly-review-{week_start}",
+        "type": "weekly_review",
+        "title": "Weekly Review 📅",
+        "message": f"Take ten minutes to look back on {'last week' if last_week else 'your week'}: wins, struggles and next week's focus.",
+        "urgency": "medium",
+        "icon": "📅",
+        "link": f"/reviews?ritual={'last' if last_week else 'this'}",
+        "created_at": now_local.isoformat()
+    }
+
+
 @router.get("")
 def get_notifications(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
@@ -133,7 +155,12 @@ def get_notifications(current_user=Depends(get_current_user)):
             "created_at": now_local.isoformat()
         })
         
-    # 5. Streak Shields Status
+    # 5. Weekly review nudge at the end of the week
+    weekly = weekly_review_notification(uid, now_local)
+    if weekly:
+        notifications.append(weekly)
+
+    # 6. Streak Shields Status
     shields = current_user.get("streak_shields", 0)
     if shields > 0:
         notifications.append({
