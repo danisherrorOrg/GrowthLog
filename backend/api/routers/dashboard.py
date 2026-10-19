@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
+import calendar
 
 from core.database import db
 from utils.cache import utcnow, cache_get, cache_set
@@ -243,6 +244,63 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
 
     cache_set(cache_key, result, ttl=300)
     return result
+
+ON_THIS_DAY_YEARS = 10
+ON_THIS_DAY_ENTRIES = 3
+
+
+def on_this_day_dates(today: date) -> dict:
+    """Same calendar day in each earlier year, mapped to how many years ago it was.
+    Feb 29 falls back to Feb 28 in other years, and Feb 28 in a common year also picks up Feb 29."""
+    dates = {}
+    for years_ago in range(1, ON_THIS_DAY_YEARS + 1):
+        year = today.year - years_ago
+        day = today.day
+        if today.month == 2 and today.day == 29 and not calendar.isleap(year):
+            day = 28
+        dates[date(year, today.month, day).isoformat()] = years_ago
+        if today.month == 2 and today.day == 28 and not calendar.isleap(today.year) and calendar.isleap(year):
+            dates[date(year, 2, 29).isoformat()] = years_ago
+    return dates
+
+
+@router.get("/on-this-day")
+def get_on_this_day(current_user=Depends(get_current_user)):
+    """Daily logs written on today's date (in the user's timezone) in earlier years, newest first."""
+    uid = str(current_user["_id"])
+    dates = on_this_day_dates(_get_local_now(current_user).date())
+
+    logs = list(db.daily_logs.find(
+        {"user_id": uid, "date": {"$in": list(dates)}},
+        {"date": 1, "highlight": 1, "overall_rating": 1, "entries": 1, "gratitude": 1},
+    ).sort("date", -1))
+    if not logs:
+        return []
+
+    cat_ids = {str(e.get("category_id")) for log in logs for e in log.get("entries", [])}
+    cats = {
+        str(c["_id"]): {"name": c.get("name", "General"), "icon": c.get("icon", "📁"), "color": c.get("color", "#888")}
+        for c in db.categories.find({"user_id": uid})
+        if str(c["_id"]) in cat_ids
+    }
+
+    memories = []
+    for log in logs:
+        entries = [e for e in log.get("entries", []) if (e.get("text") or "").strip()]
+        memories.append({
+            "date": log["date"],
+            "years_ago": dates[log["date"]],
+            "highlight": log.get("highlight", ""),
+            "overall_rating": log.get("overall_rating"),
+            "gratitude": [g for g in log.get("gratitude", []) if g][:3],
+            "entry_count": len(log.get("entries", [])),
+            "entries": [
+                {"text": e["text"], "category": cats.get(str(e.get("category_id")))}
+                for e in entries[:ON_THIS_DAY_ENTRIES]
+            ],
+        })
+    return memories
+
 
 @router.get("/consistency-alerts")
 def get_consistency_alerts(current_user=Depends(get_current_user)):

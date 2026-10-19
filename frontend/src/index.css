@@ -3188,3 +3188,73 @@ h4 {
   .cmdk-overlay { padding-top: 16px; }
   .cmdk-footer { display: none; }
 }
+
+/* ── Dashboard: On this day ──────────────────────────────── */
+.on-this-day {
+  border-left: 3px solid var(--gold);
+}
+
+.on-this-day-years {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.on-this-day-meta {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
+  margin-bottom: 16px;
+}
+
+.on-this-day-highlight {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--ink);
+  border-left: 2px solid var(--gold-light);
+  padding-left: 14px;
+  margin-bottom: 16px;
+}
+
+.on-this-day-entries {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.on-this-day-entries li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.on-this-day-cat {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--cloud);
+  border: 1.5px solid #888;
+}
+
+.on-this-day-more {
+  font-size: 12px;
+  color: rgba(13, 13, 13, 0.45);
+  padding-left: 34px;
+}
+
+.on-this-day-gratitude {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.6);
+  margin-bottom: 16px;
+}

@@ -12,6 +12,7 @@ import {
   BarChart, Bar
 } from 'recharts';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
+import OnThisDay from '../components/dashboard/OnThisDay';
 
 const hoverStyles = () => ({
   boxShadow: 'none',
@@ -358,6 +359,7 @@ export default function Dashboard() {
           </div>
         )}
 
+        <OnThisDay />
 
         <div className="grid-2" style={{ marginBottom: 28 }}>
           {/* Heatmap */}
