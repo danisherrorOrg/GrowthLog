@@ -4,6 +4,13 @@ import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import { format, parseISO, isPast, isToday, isTomorrow, differenceInDays } from 'date-fns';
+import { localDate, todayRank } from '../components/focus/quickCheck';
+
+// Badges for tasks picked in today's Morning Plan (see pages/MorningPlan.js)
+const PLAN_BADGES = {
+  do_now: { label: '☀ Do now', color: 'var(--sage)', bg: 'rgba(107,140,107,0.12)' },
+  minimum: { label: '⚡ Minimum', color: '#a07a10', bg: 'rgba(201,168,76,0.15)' },
+};
 
 // ── Priority config ─────────────────────────────────────────────────────────
 const PRIORITY = {
@@ -550,7 +557,9 @@ export default function Todos() {
   };
 
   const visible = todos.filter(t => applyFilter(t) && applySearch(t));
-  const pending = visible.filter(t => t.status === 'pending');
+  // Today's Morning Plan picks float to the top; otherwise keep the existing order
+  const pending = visible.filter(t => t.status === 'pending')
+    .sort((a, b) => todayRank(a)[0] - todayRank(b)[0]);
   const done = visible.filter(t => t.status === 'done');
   const overdueCount = todos.filter(t =>
     t.status === 'pending' && t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date))
@@ -1223,6 +1232,22 @@ function TodoCard({ todo, focusTodo, onFocus, onComplete, onReopen, onDelete, on
                 {todo.priority}
               </span>
               <DueBadge dateStr={todo.due_date} isDone={isDone} />
+              {!isDone && todo.plan_date === localDate() && PLAN_BADGES[todo.plan_verdict] && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                  background: PLAN_BADGES[todo.plan_verdict].bg, color: PLAN_BADGES[todo.plan_verdict].color,
+                }}>
+                  {PLAN_BADGES[todo.plan_verdict].label}
+                </span>
+              )}
+              {!isDone && todo.delegated && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                  background: 'rgba(201,168,76,0.15)', color: '#a07a10',
+                }}>
+                  🤝 Hand off
+                </span>
+              )}
 
               {/* Time estimate badge on card */}
               {todo.estimated_minutes && (

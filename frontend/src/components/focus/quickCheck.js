@@ -27,18 +27,41 @@ export const ACTION_LABELS = {
 };
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
+const PLAN_RANK = { do_now: 0, minimum: 1 };
 
-/** Today's most important pending To-Do: overdue/due-today first, then by priority. */
+/** Rank for "today's list": morning-plan picks first, then overdue/due today, then priority. */
+export function todayRank(todo, today = localDate()) {
+  const planned = todo.plan_date === today ? PLAN_RANK[todo.plan_verdict] : undefined;
+  let due = 1;
+  if (todo.due_date) {
+    const d = parseISO(todo.due_date);
+    due = isToday(d) || isPast(d) ? 0 : 2;
+  }
+  return [planned ?? 9, due, PRIORITY_RANK[todo.priority] ?? 1];
+}
+
+export const compareTodayRank = (a, b) => {
+  const ra = todayRank(a);
+  const rb = todayRank(b);
+  return ra[0] - rb[0] || ra[1] - rb[1] || ra[2] - rb[2];
+};
+
+/** Today's most important pending To-Do (a morning "Do now" pick when there is one). */
 export async function fetchTopTask() {
   const res = await API.get('/todos', { params: { status: 'pending' } });
-  const dueRank = (t) => {
-    if (!t.due_date) return 1;
-    const d = parseISO(t.due_date);
-    return isToday(d) || isPast(d) ? 0 : 2;
-  };
-  const sorted = [...res.data].sort((a, b) =>
-    dueRank(a) - dueRank(b) ||
-    (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1)
-  );
+  const sorted = res.data.filter(t => !t.delegated).sort(compareTodayRank);
   return sorted[0] || null;
+}
+
+// ── Morning plan prompt: shown once per day, before 2pm ─────────────────────
+const PLAN_PROMPT_KEY = 'growthlog_plan_prompted';
+const PLAN_PROMPT_UNTIL_HOUR = 14;
+
+export function markPlanPrompted() {
+  try { localStorage.setItem(PLAN_PROMPT_KEY, localDate()); } catch { /* storage unavailable */ }
+}
+
+export function shouldPromptPlan() {
+  if (new Date().getHours() >= PLAN_PROMPT_UNTIL_HOUR) return false;
+  try { return localStorage.getItem(PLAN_PROMPT_KEY) !== localDate(); } catch { return false; }
 }

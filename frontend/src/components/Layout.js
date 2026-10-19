@@ -5,7 +5,7 @@ import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
 import QuickCheckModal from './focus/QuickCheckModal';
-import { OPEN_EVENT } from './focus/quickCheck';
+import { OPEN_EVENT, localDate, markPlanPrompted, shouldPromptPlan } from './focus/quickCheck';
 
 const NAV_GROUPS = [
   {
@@ -14,6 +14,7 @@ const NAV_GROUPS = [
       { to: '/dashboard', icon: '◈', label: 'Dashboard', shortcut: 'D' },
       { to: '/log', icon: '✦', label: 'Daily Log', shortcut: 'L' },
       { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
+      { to: '/plan', icon: '☀️', label: 'Morning Plan', shortcut: 'A' },
       { to: '/focus', icon: '🧭', label: 'Should I Do This?', shortcut: 'S' },
       { to: '/checkins', icon: '⏱️', label: 'Task Check-In', shortcut: 'N' },
     ]
@@ -253,6 +254,18 @@ export default function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
   // ────────────────────────────────────────────────────────────
+
+  // Once a day (mornings), opening the app lands on the Morning Plan if today isn't planned yet
+  useEffect(() => {
+    if (!user || !shouldPromptPlan() || !['/', '/dashboard'].includes(location.pathname)) return;
+    markPlanPrompted();
+    API.get('/day-plan', { params: { date: localDate() } })
+      .then(res => {
+        if (res.data.items.length === 0 && res.data.candidates.length > 0) navigate('/plan');
+      })
+      .catch(() => { });
+    // Only on first load: later navigation shouldn't redirect
+  }, [user ? user._id : null]);
 
   // Pages open the quick check by dispatching OPEN_EVENT (see focus/quickCheck.js)
   useEffect(() => {

@@ -81,6 +81,7 @@ function CheckRow({ check, onUpdate, onDelete }) {
 export default function FocusCheck() {
   const [date, setDate] = useState(localDate());
   const [checks, setChecks] = useState([]);
+  const [planned, setPlanned] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
 
@@ -89,8 +90,12 @@ export default function FocusCheck() {
 
   const load = useCallback(async () => {
     try {
-      const res = await API.get('/quick-checks', { params: { date } });
+      const [res, plan] = await Promise.all([
+        API.get('/quick-checks', { params: { date } }),
+        API.get('/day-plan', { params: { date } }),
+      ]);
       setChecks(res.data);
+      setPlanned(plan.data.items.filter(i => i.verdict === 'do_now' || i.verdict === 'minimum'));
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not load your checks.'));
     } finally {
@@ -160,7 +165,7 @@ export default function FocusCheck() {
           {!isToday && <button className="btn btn-ghost btn-sm" onClick={() => setDate(today)}>Back to today</button>}
         </div>
 
-        <div className="grid-4" style={{ marginBottom: 20 }}>
+        <div className="qc-stats">
           <div className="stat-card"><div className="stat-value">{s.total}</div><div className="stat-label">Checks</div></div>
           <div className="stat-card"><div className="stat-value" style={{ color: 'var(--sage)' }}>{s.caught}</div><div className="stat-label">Time-wasters caught</div></div>
           <div className="stat-card"><div className="stat-value">{s.did}</div><div className="stat-label">Went ahead</div></div>
@@ -168,6 +173,25 @@ export default function FocusCheck() {
         </div>
 
         {summaryLine(s, isToday) && <p className="qc-summary">{summaryLine(s, isToday)}</p>}
+
+        {planned.length > 0 && (
+          <div className="card" style={{ padding: '16px 20px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <strong>☀️ {isToday ? "Today's" : "That day's"} plan</strong>
+              <span className="qc-row-meta">
+                {planned.filter(i => i.todo_status === 'done').length}/{planned.length} done
+              </span>
+            </div>
+            {planned.map(i => (
+              <div key={i.todo_id} className="mp-item" style={{ padding: '6px 0' }}>
+                <span style={{ textDecoration: i.todo_status === 'done' ? 'line-through' : 'none', opacity: i.todo_status === 'done' ? 0.55 : 1 }}>
+                  {i.todo_status === 'done' ? '✔' : '✖'} {i.title}
+                </span>
+                {i.todo_status !== 'done' && <Link to="/todos" className="qc-row-meta">open</Link>}
+              </div>
+            ))}
+          </div>
+        )}
 
         {showEvening && (
           <div className="qc-evening">

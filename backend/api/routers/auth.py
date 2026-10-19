@@ -258,7 +258,7 @@ def delete_account(current_user=Depends(get_current_user)):
         "project_ideas", "creative_sessions",
         "meaning_log", "travel_log", "bucket_list",
         "skills", "courses", "failure_log", "skills_gap", "feedback",
-        "quick_checks", "activity_logs"
+        "quick_checks", "day_plans", "activity_logs"
     ]
     
     for coll in collections_to_delete:

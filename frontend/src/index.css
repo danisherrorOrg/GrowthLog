@@ -2558,6 +2558,13 @@ h4 {
   font-size: 18px;
 }
 
+.qc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 .qc-summary {
   font-size: 15px;
   margin-bottom: 16px;
@@ -2631,4 +2638,123 @@ h4 {
     height: 50px;
     font-size: 22px;
   }
+}
+
+/* ── Morning Plan ─────────────────────────────────────────────── */
+.mp-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(13, 13, 13, 0.45);
+}
+
+.mp-title {
+  font-size: 24px;
+  margin: 6px 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.mp-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
+  margin-bottom: 20px;
+}
+
+.mp-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mp-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sage);
+}
+
+.mp-suggestion {
+  border-left: 5px solid var(--sage);
+  background: var(--cloud);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.mp-suggestion-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.mp-verdicts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 8px;
+}
+
+.mp-verdict-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(13, 13, 13, 0.12);
+  background: white;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mp-verdict-btn small {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(13, 13, 13, 0.5);
+}
+
+.mp-verdict-btn.selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.mp-verdict-btn.selected small {
+  color: rgba(245, 240, 232, 0.65);
+}
+
+.mp-verdict-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.mp-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 6px;
+}
+
+.mp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(13, 13, 13, 0.06);
+}
+
+.mp-item-note {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
 }

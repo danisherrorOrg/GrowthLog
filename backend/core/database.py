@@ -65,6 +65,10 @@ def create_indexes():
 
     # ── Quick Checks ("Should I do this?") ────────────────────────────────────
     db.quick_checks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("created_at", DESCENDING)])
+    try:
+        db.day_plans.create_index([("user_id", ASCENDING), ("date", ASCENDING)], unique=True)
+    except Exception as e:
+        logger.warning(f"Could not create unique index on day_plans: {e}. Please deduplicate manually.")
 
     # ── Library & Media ───────────────────────────────────────────────────────
     db.books.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
