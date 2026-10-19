@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from core.database import db
 from utils.cache import utcnow, cache_get, cache_set
 from api.deps import get_current_user
+from utils.streak import _get_local_now
 from prompts import QUOTES, CATEGORY_PROMPTS
 from core.rate_limit import limiter
 
@@ -11,15 +12,18 @@ from core.rate_limit import limiter
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 prompts_router = APIRouter(prefix="/prompts", tags=["prompts"])
 
+def _local_day_of_year(user: dict) -> int:
+    # Rotate on the user's midnight, not the server's
+    return _get_local_now(user).timetuple().tm_yday
+
 @prompts_router.get("/quote")
-def get_quote():
-    day_of_year = datetime.now().timetuple().tm_yday
-    quote = QUOTES[day_of_year % len(QUOTES)]
+def get_quote(current_user=Depends(get_current_user)):
+    quote = QUOTES[_local_day_of_year(current_user) % len(QUOTES)]
     return quote
 
 @prompts_router.get("/daily")
-def get_daily_prompts():
-    day_seed = datetime.now().timetuple().tm_yday
+def get_daily_prompts(current_user=Depends(get_current_user)):
+    day_seed = _local_day_of_year(current_user)
     prompts = {}
     for cat, p_list in CATEGORY_PROMPTS.items():
         prompts[cat] = p_list[day_seed % len(p_list)]

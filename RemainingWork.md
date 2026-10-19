@@ -25,10 +25,10 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * `get_current_user` in `backend/api/deps.py` checks the JWT blocklist and runs `check_and_apply_streak_shields` on every API call.
    * **Done:** removed the JWT blocklist; a deleted account's tokens already fail the user lookup. The shield check was kept, since it makes no DB calls unless a missed day needs a shield.
 
-5. **Daily quote/prompt uses server time, not the user's timezone**
+5. ✅ **Completed — Daily quote/prompt uses server time, not the user's timezone**
    * `backend/api/routers/dashboard.py` uses `datetime.now()` to pick the day.
    * Users in other timezones get the next day's content early or late.
-   * **Fix:** reuse the user-timezone helper from `backend/utils/streak.py`.
+   * **Done:** `/prompts/quote` and `/prompts/daily` now require login and pick the day from the user's timezone.
 
 6. **Tests can't run with one command**
    * `pytest` fails at import if `MONGO_URL` isn't set, and it needs a live MongoDB.
