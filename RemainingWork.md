@@ -48,18 +48,15 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 7. ✅ **Old planning notes merged here.** `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/` (about 1,700 lines, mostly repeats of each other or already built) are folded into "Other ideas" below, and the stray `backend/fix_schemas.py` and `backend/test_traceback.txt` are gone.
 8. ✅ **Weekly review ritual.** On the Reviews page's Weekly tab, "Start weekly review" opens a 5-step flow: a look back (last week's focus, days logged, mood, highlights, quick checks and decisions), then wins, struggles, learnings and next week's focus. A week's existing review opens for editing, and the API rejects a second review for the same period. A notification nudges for it from Saturday, and on Monday for the week just ended. "Goals completed" in review stats now counts only goals finished in that period.
 9. ✅ **"Should I do this?" time insights.** Quick checks can now record an expected time when you start something and the real time in the evening review (both optional, one tap). "Your patterns" on `/focus` adds: how long "quick" things (≤15 min expected) really take, unplanned time in the last 7 days vs. the week before, and the category whose logged time changed most week over week.
+10. ✅ **Dashboard speed measured.** With a 3-year heavy user (about 1,100 logs, 6 entries each) among 300 other users (61k logs total), `/dashboard` takes 14 ms for 30 days and 29 ms for 365 days uncached, and the other dashboard endpoints take 3–10 ms. No caching changes were needed. The one problem was that `todos` had no index, so every to-do query scanned all users' to-dos; it now has `(user_id, status, due_date)` and `(user_id, created_at)` indexes.
 
 ---
 
 ## 🧭 What to Do Next (in order)
 
-### Needs some design first
-
-1. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
-
 ### Maintenance
 
-2. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
+1. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 
