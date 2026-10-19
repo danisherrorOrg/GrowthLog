@@ -251,7 +251,7 @@ def delete_account(current_user=Depends(get_current_user)):
     collections_to_delete = [
         "categories", "category_templates", "goals", "manifestations", "snapshots", "daily_logs",
         "sleep_logs", "workouts", "meal_logs", "health_metrics", "exercise_goals", "custom_exercises",
-        "thoughts", "reframes", "books", "quotes",
+        "thoughts", "reframes", "books", "quotes", "todos",
         "anti_goals", "habit_graveyard", "time_entries", "screen_time", "procrastination_log", "not_to_do",
         "regrets", "future_advice", "past_advice", "life_lessons",
         "project_ideas", "creative_sessions",

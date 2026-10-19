@@ -44,3 +44,14 @@ def test_todo_lifecycle(client, auth_headers):
     # Verify gone
     resp = client.get("/todos", headers=auth_headers)
     assert not any(t["id"] == todo_id for t in resp.json())
+
+
+def test_account_deletion_removes_todos(client, auth_headers):
+    """Deleting an account must not leave the user's to-dos behind."""
+    uid = client.get("/auth/me", headers=auth_headers).json()["id"]
+    client.post("/todos", headers=auth_headers, json={"title": "Orphan check"})
+    assert db.todos.count_documents({"user_id": uid}) == 1
+
+    resp = client.delete("/auth/me", headers=auth_headers)
+    assert resp.status_code == 200
+    assert db.todos.count_documents({"user_id": uid}) == 0
