@@ -45,28 +45,25 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 4. ✅ **Data export covers everything.** The export now uses the same collection list as account deletion (`USER_DATA_COLLECTIONS`), so lotus boards, reviews, task check-ins and the other missing modules are included. The profile export no longer includes verification or password-reset tokens.
 5. ✅ **Morning Plan on the dashboard.** A "Today's plan" card shows how many to-dos are waiting to be triaged, or, once the day is planned, how many "do now" tasks are done and the open ones. It links to `/plan`.
 6. ✅ **Category colors and icons are validated.** The Profile editor for them already existed. The backend now only accepts 1–24 six-digit hex colors and 1–24 short icons, and the editor won't remove the last one or go past the limit.
+7. ✅ **Old planning notes merged here.** `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/` (about 1,700 lines, mostly repeats of each other or already built) are folded into "Other ideas" below, and the stray `backend/fix_schemas.py` and `backend/test_traceback.txt` are gone.
 
 ---
 
 ## 🧭 What to Do Next (in order)
 
-### Quick fixes (under an hour each)
-
-1. **Clean up leftover files.** Delete `backend/fix_schemas.py` and `backend/test_traceback.txt`. Merge `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/*` (about 400 lines, mostly stale) into this file.
-
 ### Next features
 
-2. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
-3. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
+1. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
+2. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
 
 ### Needs some design first
 
-4. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
-5. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
+3. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
+4. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
 
 ### Maintenance
 
-6. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
+5. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 
@@ -74,5 +71,17 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 * **"Spotify Wrapped"-style shareable cards.** PNG images of streaks, goal completion and category balance.
 * **XP & growth levels.** Seedling → Root → Branch → Canopy.
 * **Interactive Life Balance Wheel.** Drag the radar chart points to set targets and see the gaps.
-* **"Best days" report.** Best-performing weekdays and mood/energy correlations.
+* **"Best days" report.** Best-performing weekdays, what high- and low-rated days have in common, and correlations such as sleep vs. mood or exercise vs. energy.
+* **Life Score.** One weekly number built from days logged, mood, goal progress and emotions, with the week-over-week change.
+* **Goal deadline insights.** Each goal already stores `extension_history`; sum it up across goals ("you extended 4 of 7 goals") on the Goals page.
+* **Quick-log widget.** A button on every page for a 15-second mood/energy and one-line highlight entry.
+* **Voice-to-log.** A mic button on the daily log using the browser's speech recognition.
+* **Starter templates.** Ready-made category and goal sets ("Fitness", "Career pivot", "Mindfulness 30-day") for new users.
+* **Custom emotions.** Let users add their own emotions, with a frequency breakdown per category.
+* **Year in review.** An annual summary of logs, snapshots and goals (the Profile page already has a PDF export to build on).
+* **Accountability partner.** Share chosen goals read-only with one other person.
+* **Finance tracking.** Daily spending, income, budgets and subscriptions.
+* **Data import.** Load a GrowthLog export back in (pairs with Bring Your Own Database).
+* **AI features.** A weekly growth letter, a coach that answers questions about your own logs, and free-text logging that fills in categories. Needs an LLM provider chosen first.
+* **Engineering.** CI that runs `./test.sh` on every PR, Playwright tests for the log → dashboard flow, and translations (English/Hindi).
 * **Bring Your Own Database.** Power users save their own encrypted MongoDB URI.
