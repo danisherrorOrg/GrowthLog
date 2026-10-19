@@ -80,6 +80,54 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * The form shows "✓ Looks good" for an address like `name@example.test`, and the API's raw Pydantic error is shown as the toast.
     * **Fix:** show a friendly message for 422 email errors.
 
+### Found in a second browser pass on 2026-10-20
+
+Checked and working: Mind Garden (plant, pin, search with highlighting, edit, delete with in-app confirmations), the Reframing studio including the distortion filter chip, and "Should I do this?" (the Q shortcut, verdict, parking an activity as a to-do, and the 👍/👎 rating).
+
+17. **Insight Lab time entries aren't checked on the server**
+    * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit exists only in the browser form, and the `"not-a-date"` entry now shows up as a day heading in Time Tracking.
+    * About 27 date fields in `backend/models/schemas.py` are plain strings with no format check. Daily logs, by contrast, already reject out-of-range mood, energy, time spent and overall rating (422).
+    * **Fix:** add range limits to hours and use real date types (or a date-format validator) for the date fields.
+
+18. **No range or order checks on several forms**
+    * Habit Graveyard saved a habit that ended a month before it started.
+    * Procrastination saved an entry dated Jan 1, 2030.
+    * Task Check-ins saved check-in number −3, shown as "Check-in #-3".
+    * **Fix:** validate in the API (end ≥ start, no future dates where they make no sense, positive check-in numbers) and mirror it in the forms.
+
+19. **More of the UTC-date bug (see #9)**
+    * In Mind Garden, a thought planted seconds earlier says "About 6 hours ago"; all Mind Garden times show 6 hours too old.
+    * Several date pickers default to Oct 19 instead of today (Oct 20 local): Insight Lab's "Log Today" for time, procrastination and trigger entries, and the check-in date.
+    * **Fix:** comes with #9; default the pickers to the local date, not the UTC one.
+
+20. **Leaving the To-Dos page ends a running focus session without warning**
+    * The elapsed time lives only in page memory (`Todos.js:28`), so it's lost on navigation or refresh and never recorded.
+    * Switching the timer preset while paused also resets the elapsed time with no warning.
+    * **Fix:** persist the running session (start time + task) so it survives navigation, and confirm before a preset change discards time.
+
+21. **Task Check-ins: "Quick (5 questions)" shows only 4 questions.**
+
+22. **Mind Garden filter and input issues**
+    * "All" looks selected while the Pinned filter is still on, so searching "stuck" showed no results.
+    * Submitting an empty thought gives no feedback.
+    * Cmd+Enter doesn't submit.
+
+23. **Morning Plan puts ratings on the wrong task**
+    * Adding an item while rating another moves the new item to the front, so ratings already started went onto the wrong task.
+    * **Fix:** add new items to the end (or key the in-progress ratings by item id, not position).
+
+24. **Check-in verdict cards (Continue / Pause / Drop) aren't buttons**
+    * Keyboard and screen-reader users can't select them.
+    * **Fix:** render them as buttons (or radio inputs) with a visible focus state.
+
+25. **"Log a Trigger" and "Log a Bad Decision" forms are taller than the window**
+    * Their buttons are cut off.
+    * **Fix:** make the modal body scroll and keep the buttons in a fixed footer.
+
+26. **Smaller UI issues in Insight Lab**
+    * In the Bad Decision form, the Domain dropdown crowds the next label.
+    * The Weakness Map sliders use plain browser-blue styling, unlike the rest of the app.
+
 ### Smaller issues and gaps
 
 * **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
