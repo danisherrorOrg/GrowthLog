@@ -3258,3 +3258,31 @@ h4 {
   color: rgba(13, 13, 13, 0.6);
   margin-bottom: 16px;
 }
+
+/* ── Today's plan (dashboard) ─────────────────────────────────── */
+.today-plan {
+  border-left: 3px solid var(--sage);
+}
+
+.today-plan-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.today-plan-text {
+  font-size: 14px;
+  color: rgba(13, 13, 13, 0.55);
+  margin: 0;
+}
+
+.today-plan-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 14px;
+}
