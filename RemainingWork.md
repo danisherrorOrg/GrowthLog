@@ -44,6 +44,7 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 3. ✅ **"On this day" card on the dashboard.** `GET /dashboard/on-this-day` returns logs written on today's date (in the user's timezone) in each of the last 10 years. The card shows the highlight, a few entries and gratitude, lets you switch between years, and opens that day's log. Leap days fall back to Feb 28.
 4. ✅ **Data export covers everything.** The export now uses the same collection list as account deletion (`USER_DATA_COLLECTIONS`), so lotus boards, reviews, task check-ins and the other missing modules are included. The profile export no longer includes verification or password-reset tokens.
 5. ✅ **Morning Plan on the dashboard.** A "Today's plan" card shows how many to-dos are waiting to be triaged, or, once the day is planned, how many "do now" tasks are done and the open ones. It links to `/plan`.
+6. ✅ **Category colors and icons are validated.** The Profile editor for them already existed. The backend now only accepts 1–24 six-digit hex colors and 1–24 short icons, and the editor won't remove the last one or go past the limit.
 
 ---
 
@@ -51,22 +52,21 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ### Quick fixes (under an hour each)
 
-1. **Let users pick their category colors and icons.** The backend already stores per-user `category_colors` / `category_icons` lists and accepts updates to them (`ProfileUpdateModel`), and Goals and Categories already read them. Only the Profile screen to edit them is missing.
-2. **Clean up leftover files.** Delete `backend/fix_schemas.py` and `backend/test_traceback.txt`. Merge `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/*` (about 400 lines, mostly stale) into this file.
+1. **Clean up leftover files.** Delete `backend/fix_schemas.py` and `backend/test_traceback.txt`. Merge `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/*` (about 400 lines, mostly stale) into this file.
 
 ### Next features
 
-3. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
-4. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
+2. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
+3. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
 
 ### Needs some design first
 
-5. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
-6. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
+4. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
+5. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
 
 ### Maintenance
 
-7. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
+6. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 

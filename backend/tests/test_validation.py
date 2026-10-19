@@ -310,3 +310,26 @@ def test_false_negative_prevention_valid_edge_cases(client, auth_headers):
         "deadline": "2099-12-31"
     })
     assert future_goal.status_code == 200
+
+def test_category_theme_is_validated(client, auth_headers):
+    colors = ["#6b8c6b", "#123ABC"]
+    icons = ["🧠", "🏳️‍🌈"]
+    resp = client.put("/auth/profile", headers=auth_headers, json={"category_colors": colors, "category_icons": icons})
+    assert resp.status_code == 200
+    me = client.get("/auth/me", headers=auth_headers).json()
+    assert me["category_colors"] == colors
+    assert me["category_icons"] == icons
+
+    for bad in (
+        {"category_colors": ["red"]},
+        {"category_colors": ["#123456; background: url(x)"]},
+        {"category_colors": []},
+        {"category_colors": ["#000000"] * 25},
+        {"category_icons": [" "]},
+        {"category_icons": ["A" * 9]},
+        {"category_icons": []},
+    ):
+        assert client.put("/auth/profile", headers=auth_headers, json=bad).status_code == 422, bad
+
+    # Rejected updates leave the saved theme alone
+    assert client.get("/auth/me", headers=auth_headers).json()["category_colors"] == colors

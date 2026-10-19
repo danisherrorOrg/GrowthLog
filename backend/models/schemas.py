@@ -1,5 +1,9 @@
 from pydantic import BaseModel, field_validator, EmailStr, Field
 from typing import Optional, List, Literal
+import re
+
+HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{6}")
+MAX_THEME_ITEMS = 24
 # --- Auth & Profile ---
 class RegisterModel(BaseModel):
     name: str = Field(..., max_length=100)
@@ -30,8 +34,22 @@ class ProfileUpdateModel(BaseModel):
     avatar_emoji: Optional[str] = Field(None, max_length=10)
     timezone: Optional[str] = Field(None, max_length=60)
     email_notifications: Optional[bool] = None
-    category_colors: Optional[List[str]] = None
-    category_icons: Optional[List[str]] = None
+    category_colors: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
+    category_icons: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
+
+    @field_validator("category_colors")
+    @classmethod
+    def colors_are_hex(cls, v):
+        if v is not None and not all(HEX_COLOR.fullmatch(c) for c in v):
+            raise ValueError("Colors must be 6-digit hex values like #6b8c6b")
+        return v
+
+    @field_validator("category_icons")
+    @classmethod
+    def icons_are_short(cls, v):
+        if v is not None and not all(c.strip() and len(c) <= 8 for c in v):
+            raise ValueError("Each icon must be a single emoji or short symbol")
+        return v
 
 class PasswordChangeModel(BaseModel):
     current_password: str = Field(..., max_length=128)

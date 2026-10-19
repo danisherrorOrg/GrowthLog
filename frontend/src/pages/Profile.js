@@ -12,6 +12,7 @@ import {
 import PromptModal from '../components/ui/PromptModal';
 import { generateGrowthLogPDF } from '../utils/pdfExport';
 
+const MAX_THEME_ITEMS = 24; // matches the backend limit in ProfileUpdateModel
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 
 // Badge definitions with progress metadata
@@ -1108,6 +1109,9 @@ export default function Profile() {
                         }}
                         title="Click to remove color"
                         onClick={() => {
+                          if (form.category_colors.length === 1) {
+                            return toast.error('Keep at least one color');
+                          }
                           const updated = form.category_colors.filter((_, i) => i !== index);
                           setForm({ ...form, category_colors: updated });
                         }}
@@ -1184,6 +1188,9 @@ export default function Profile() {
                         if (!/^#[0-9A-Fa-f]{6}$/.test(newColorInput)) {
                           return toast.error('Please enter a valid 6-character hex color (e.g. #FF00FF)');
                         }
+                        if (form.category_colors.length >= MAX_THEME_ITEMS) {
+                          return toast.error(`Your palette can hold up to ${MAX_THEME_ITEMS} colors`);
+                        }
                         if (form.category_colors.includes(newColorInput)) {
                           return toast.error('This color is already in your palette');
                         }
@@ -1232,6 +1239,9 @@ export default function Profile() {
                         }}
                         title="Click to remove icon"
                         onClick={() => {
+                          if (form.category_icons.length === 1) {
+                            return toast.error('Keep at least one icon');
+                          }
                           const updated = form.category_icons.filter((_, i) => i !== index);
                           setForm({ ...form, category_icons: updated });
                         }}
@@ -1284,6 +1294,9 @@ export default function Profile() {
                         if (!emoji) return toast.error('Please input a valid emoji or character');
                         if (emoji.length > 8) {
                           return toast.error('Icon should be a single emoji or short symbol');
+                        }
+                        if (form.category_icons.length >= MAX_THEME_ITEMS) {
+                          return toast.error(`You can keep up to ${MAX_THEME_ITEMS} icons`);
                         }
                         if (form.category_icons.includes(emoji)) {
                           return toast.error('This icon is already in your list');
