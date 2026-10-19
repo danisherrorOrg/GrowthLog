@@ -9,7 +9,7 @@ from core.rate_limit import limiter
 
 from core.database import create_indexes
 from core.config import ALLOWED_ORIGINS
-from utils.email import send_email
+from utils.email import send_email, render_email
 
 # ==============================================================================
 # Security Documentation: CSRF Protection
@@ -200,15 +200,12 @@ def nudge_silent_users(background_tasks: BackgroundTasks):
     
     for user in silent_users:
         subject = "✦ A small nudge for your future self"
-        body = f"""
-        <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee;">
-            <h2 style="font-family: serif; color: #6b8c6b;">Keep the streak alive, {user['name']}?</h2>
-            <p>Growth is built on small, daily reflections. You haven't checked in today yet!</p>
-            <p>It only takes 2 minutes to record how you're feeling and what you've learned.</p>
-            <a href="{ALLOWED_ORIGINS[0]}/log" style="display: inline-block; background: #c9a84c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 30px;">Log Today's Growth →</a>
-            <p style="font-size: 12px; color: #999; margin-top: 40px;">GrowthLog — Holistic Tracking for the Intentional Life</p>
-        </div>
-        """
+        body = render_email(
+            f"Keep the streak alive, {user['name']}?",
+            ["Growth is built on small, daily reflections. You haven't checked in today yet!",
+             "It only takes 2 minutes to record how you're feeling and what you've learned."],
+            "Log Today's Growth →", f"{ALLOWED_ORIGINS[0]}/log",
+        )
         background_tasks.add_task(send_email, user['email'], subject, body)
         
     return {"status": "success", "nudge_count": len(silent_users)}
