@@ -2370,6 +2370,11 @@ h4 {
 
 /* Mobile Responsiveness for Notification Tray */
 @media (max-width: 900px) {
+  /* The sticky top bar is in normal flow here; stack it above the content, not beside it */
+  .app-shell {
+    flex-direction: column;
+  }
+
   .top-navbar {
     position: sticky;
     top: 0;
