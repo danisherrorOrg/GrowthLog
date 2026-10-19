@@ -36,6 +36,7 @@ import LotusList from './pages/LotusList';
 import Reviews from './pages/Reviews';
 import TaskCheckins from './pages/TaskCheckins';
 import TaskCheckinDetail from './pages/TaskCheckinDetail';
+import FocusCheck from './pages/FocusCheck';
 
 
 function PrivateRoute({ children }) {
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="lotus" element={<LotusList />} />
             <Route path="lotus/:id" element={<LotusBlossom />} />
             <Route path="reviews" element={<Reviews />} />
+            <Route path="focus" element={<FocusCheck />} />
             <Route path="checkins" element={<TaskCheckins />} />
             <Route path="checkins/:checkinId" element={<TaskCheckinDetail />} />
             <Route path="growth" element={<Growth />} />

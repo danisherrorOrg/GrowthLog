@@ -63,6 +63,9 @@ def create_indexes():
     db.thoughts.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     db.reframes.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
 
+    # ── Quick Checks ("Should I do this?") ────────────────────────────────────
+    db.quick_checks.create_index([("user_id", ASCENDING), ("date", ASCENDING), ("created_at", DESCENDING)])
+
     # ── Library & Media ───────────────────────────────────────────────────────
     db.books.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
     db.quotes.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])

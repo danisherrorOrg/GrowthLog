@@ -2409,3 +2409,221 @@ h4 {
     padding-top: 20px;
   }
 }
+
+/* ==============================================================================
+   "SHOULD I DO THIS?" QUICK CHECK
+   ============================================================================== */
+.qc-fab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 998;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.qc-fab:hover {
+  transform: scale(1.06);
+  background: #222;
+}
+
+.qc-fab:focus-visible,
+.qc-scale-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.qc-top-task {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.55);
+  margin-top: 8px;
+}
+
+.qc-question {
+  margin-bottom: 18px;
+}
+
+.qc-question-text {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.qc-scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.qc-scale-btn {
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid rgba(13, 13, 13, 0.12);
+  background: white;
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.qc-scale-btn:hover {
+  border-color: var(--sage);
+  background: var(--mist);
+}
+
+.qc-scale-btn.selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.qc-scale-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(13, 13, 13, 0.45);
+  margin-top: 4px;
+}
+
+.qc-scale-ends span:last-child {
+  text-align: right;
+}
+
+.qc-verdict {
+  border-radius: var(--radius);
+  padding: 20px;
+  border-left: 5px solid var(--sage);
+  background: rgba(107, 140, 107, 0.08);
+}
+
+.qc-verdict.not-now {
+  border-left-color: var(--rust);
+  background: rgba(196, 98, 58, 0.07);
+}
+
+.qc-verdict-title {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.qc-verdict-reason {
+  font-size: 15px;
+}
+
+.qc-verdict-back {
+  margin-top: 12px;
+  font-size: 15px;
+}
+
+.qc-verdict-score {
+  margin-top: 12px;
+  font-size: 12px;
+  color: rgba(13, 13, 13, 0.45);
+  overflow-wrap: anywhere;
+}
+
+.qc-kbd {
+  font-family: monospace;
+  font-size: 12px;
+  background: var(--mist);
+  border: 1px solid rgba(13, 13, 13, 0.12);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.qc-day-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+}
+
+.qc-summary {
+  font-size: 15px;
+  margin-bottom: 16px;
+  color: rgba(13, 13, 13, 0.7);
+}
+
+.qc-evening {
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.qc-row {
+  padding: 16px 20px;
+}
+
+.qc-row:hover {
+  transform: none;
+}
+
+.qc-row-text {
+  font-weight: 500;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.qc-row-meta {
+  font-size: 13px;
+  color: rgba(13, 13, 13, 0.5);
+  margin-top: 2px;
+}
+
+.qc-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 20px;
+  background: rgba(107, 140, 107, 0.12);
+  color: var(--sage);
+}
+
+.qc-pill.not-now {
+  background: rgba(196, 98, 58, 0.1);
+  color: var(--rust);
+}
+
+.qc-row-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(13, 13, 13, 0.06);
+}
+
+.qc-row-action {
+  font-size: 13px;
+}
+
+/* Sit above the mobile bottom nav */
+@media (max-width: 900px) {
+  .qc-fab {
+    right: 16px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+}
