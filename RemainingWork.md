@@ -2,7 +2,7 @@
 
 What is still open in GrowthLog, checked against the code on 2026-10-20.
 
-Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose, data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
+Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose (currently broken, see #8), data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
 
 ---
 
@@ -34,6 +34,64 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * `pytest` fails at import if `MONGO_URL` isn't set, and it needs a live MongoDB.
    * There are no frontend tests at all.
    * **Done:** `./test.sh` starts a throwaway `mongo-test` compose service and runs the backend and frontend suites; no `.env` needed. Added frontend smoke tests (API client, auth session, login page) and fixed tests that had fallen behind the app.
+
+### Found in a browser walkthrough on 2026-10-20
+
+7. **🔴 Timeline search shows other users' private data**
+   * `backend/api/routers/timeline.py:66`, `:135`, `:210`. When `q` is set, the code replaces the `$or` that holds the user filter with the search conditions, so the search runs across every user's daily logs, goals and manifestations.
+   * Reproduced: a second account searching `/timeline?q=habits` got the first account's full daily log text. All 264 tests pass, so nothing covers this.
+   * **Fix:** combine the user filter and the search with `$and` instead of overwriting `$or`, and add a test that one user's timeline search never returns another user's data. (`GET /search` is scoped correctly.)
+
+8. **One-command Docker setup fails**
+   * `docker compose up --build` stops at `npm ci` in the frontend image: `package-lock.json` is out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
+   * **Fix:** run `npm install` in `frontend/` and commit the updated lock file.
+
+9. **Dates are wrong for anyone outside UTC**
+   * The browser timezone is never detected, so every user is stored with `timezone: "UTC"` unless they change it in Profile.
+   * Reproduced at 02:47 IST (still Oct 19 in UTC): after logging Oct 20, the bell still said "Protect your 1-day streak! Write today's daily log"; a to-do completed on Oct 20 shows "✓ Oct 19".
+   * The API also returns naive timestamps (`"created_at": "2026-10-19T21:18:55.272000"`, no `Z`), so `parseISO` reads them as local time. Profile shows "Member since October 19".
+   * **Fix:** send the browser timezone on register/login (and offer to update it when it changes), and return timestamps as UTC with an offset.
+
+10. **Timeline "Mood" is really the overall day rating**
+    * `backend/api/routers/timeline.py:123` sends `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
+    * **Fix:** average the entries' `mood`, or label the value "Day rating".
+
+11. **Signing out shows "Session Expired"**
+    * After `/auth/logout` clears the cookie, in-flight polling (notifications etc.) gets a 401 and the interceptor in `frontend/src/utils/api.js:21` redirects to `/login?expired=true`.
+    * **Fix:** set a "logging out" flag (or cancel pending requests) so the interceptor skips the redirect, and navigate to plain `/login`.
+
+12. **Goals accept a deadline in the past**
+    * A goal with a 2020 deadline was saved and immediately shown as "2484d overdue". The deadline is required but not marked as required, and leaving it empty only gives "Fill all required fields".
+    * **Fix:** reject past deadlines in the API and the form, and mark the field as required.
+
+13. **No 404 page**
+    * `frontend/src/App.js` has no catch-all route, so an unknown URL renders a blank page.
+    * **Fix:** add a `*` route with a "Page not found" view and a link to the dashboard.
+
+14. **History page overflows on phones**
+    * At 380px wide, `/history` is 646px wide: the filter sidebar and the calendar sit side by side instead of stacking. Every other page fits.
+    * **Fix:** stack the filter panel above the calendar on narrow screens.
+
+15. **Floating search and bell buttons cover page content**
+    * They overlap the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
+    * **Fix:** reserve space for them in the page header, or move toasts below them.
+
+16. **Sign-up accepts emails in the browser that the API rejects**
+    * The form shows "✓ Looks good" for an address like `name@example.test`, and the API's raw Pydantic error is shown as the toast.
+    * **Fix:** show a friendly message for 422 email errors.
+
+### Smaller issues and gaps
+
+* **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
+* **Life Balance chart shows made-up data.** A new user with no logs sees "Mood: 5" for every category, and categories with no entries still show 5 after logging.
+* **Email verification needs a login.** `/verify/:token` sits inside `PrivateRoute`, so opening the link on another device lands on the login page.
+* **The login token is still returned in the response body.** `backend/api/routers/auth.py:81` and `:140` return `token` even though the browser now uses the httpOnly cookie; page scripts can read it. Drop it for browser clients.
+* **Default categories don't match the copy.** The login page lists Mind/Body/Career/Social/Soul; new accounts get Mind/Body/Career/Finance/Spirit.
+* **Category Consistency shows "0 / 0 days"** for the 30-day range on the dashboard.
+* **Opening a log from search collapses everything.** All categories start collapsed, with no sign of which ones have entries.
+* **After saving a log, the dashboard opens scrolled halfway down.**
+* **Empty gratitude fields are saved** as `['', '', '']`.
+* **Duplicate "Goal not found" toasts** when opening a missing goal (an effect that runs twice).
 
 ---
 
