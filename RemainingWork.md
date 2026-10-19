@@ -37,24 +37,36 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ---
 
-## 🚧 Unfinished Parts of Existing Features
+## ✅ Recently Completed Features
 
-* **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights aren't built, because quick checks don't record how long things took.
-* **Morning Plan isn't the first screen.** The plan was for it to open first, but `/` still goes to `/dashboard`, and the dashboard has no link to `/plan`. Idea: redirect to `/plan` once a day before noon if today's plan isn't done.
-* **Users can't pick their own category colors and icons.** These are still hardcoded lists.
-* **Dashboard queries will slow down as data grows.** Category aggregates and radar charts rely on `$lookup`; add indexes and cache them.
+1. ✅ **Password reset.** It was the gap that actually locked users out.
+2. ✅ **Global search (⌘K).** ⌘K / Ctrl+K (or the ⌕ button by the bell) opens a palette that jumps to pages and searches logs, goals, to-dos, thoughts, decisions, reframes, reviews, manifestations, snapshots, books, quotes, lotus boards and categories through `GET /search`. The input is escaped before it's used as a regex.
+3. ✅ **"On this day" card on the dashboard.** `GET /dashboard/on-this-day` returns logs written on today's date (in the user's timezone) in each of the last 10 years. The card shows the highlight, a few entries and gratitude, lets you switch between years, and opens that day's log. Leap days fall back to Feb 28.
+4. ✅ **Data export covers everything.** The export now uses the same collection list as account deletion (`USER_DATA_COLLECTIONS`), so lotus boards, reviews, task check-ins and the other missing modules are included. The profile export no longer includes verification or password-reset tokens.
 
 ---
 
-## 🚀 Features to Build Next (in order)
+## 🧭 What to Do Next (in order)
 
-1. ✅ **Completed — Password reset.** It's the gap that actually locks users out.
-2. ✅ **Completed — Global search (⌘K).** With 20+ modules, finding an old entry is hard.
-   * **Done:** ⌘K / Ctrl+K (or the ⌕ button by the bell) opens a palette that jumps to pages and searches logs, goals, to-dos, thoughts, decisions, reframes, reviews, manifestations, snapshots, books, quotes, lotus boards and categories through `GET /search`. The input is escaped before it's used as a regex.
-3. ✅ **Completed — "On this day" card on the dashboard.** Shows a log from 1 or 2 years ago on today's date.
-   * **Done:** `GET /dashboard/on-this-day` returns logs written on today's date (in the user's timezone) in each of the last 10 years. The dashboard card shows the highlight, a few entries and gratitude, lets you switch between years, and opens that day's log. Leap days fall back to Feb 28.
-4. **Weekly review ritual.** One end-of-week flow that ties together reviews, quick checks and decisions (wins, struggles, next week's focus).
-5. **PWA / installable app.** People log daily from their phones; make it installable, later with offline sync.
+### Quick fixes (under an hour each)
+
+1. **Add a Morning Plan link to the dashboard.** The once-a-morning redirect to `/plan` already exists in `Layout.js` (when today isn't planned yet). Only a dashboard link to `/plan` is missing.
+2. **Let users pick their category colors and icons.** The backend already stores per-user `category_colors` / `category_icons` lists and accepts updates to them (`ProfileUpdateModel`), and Goals and Categories already read them. Only the Profile screen to edit them is missing.
+3. **Clean up leftover files.** Delete `backend/fix_schemas.py` and `backend/test_traceback.txt`. Merge `to.md`, `ToDo.md`, `nextTOOdo.md`, `newFeatureinLife.md` and `NextTODO/*` (about 400 lines, mostly stale) into this file.
+
+### Next features
+
+4. **Weekly review ritual.** One end-of-week flow that pulls in the week's logs, quick checks and decisions, then asks for wins, struggles and next week's focus. It can build on the existing Reviews page and its stats endpoint.
+5. **PWA / installable app.** People log daily from their phones. Start with a manifest, icons and a basic offline fallback; offline sync can come later.
+
+### Needs some design first
+
+6. **"Should I do this?" time insights.** The "quick fixes take 40+ minutes" and "more time on Growth tasks than last week" insights need quick checks to record how long things took first.
+7. **Dashboard speed.** The backend no longer uses `$lookup`. Measure the dashboard with a lot of data, then add indexes or caching where it's actually slow.
+
+### Maintenance
+
+8. **Split the very large page files** before building more on them: `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000).
 
 ### Other ideas (lower priority)
 
@@ -64,11 +76,3 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 * **Interactive Life Balance Wheel.** Drag the radar chart points to set targets and see the gaps.
 * **"Best days" report.** Best-performing weekdays and mood/energy correlations.
 * **Bring Your Own Database.** Power users save their own encrypted MongoDB URI.
-
----
-
-## 🧹 Maintenance
-
-* **Too many roadmap files.** `to.md`, `ToDo.md`, `nextTOOdo.md` and `NextTODO/*` overlap and list work that's already done. Merge them into this file.
-* **Leftover files.** `backend/fix_schemas.py` and `backend/test_traceback.txt` look like debugging leftovers.
-* **Very large page files.** `Profile.js` (~1,400 lines), `Todos.js` (~1,300) and `Insights.js` (~1,000) are getting hard to change safely. Split them into components.
