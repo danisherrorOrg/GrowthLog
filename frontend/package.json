@@ -17,8 +17,8 @@
     "remark-gfm": "^4.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build"
+    "start": "REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000} react-scripts start",
+    "build": "INLINE_RUNTIME_CHUNK=false REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000} react-scripts build"
   },
   "browserslist": {
     "production": [

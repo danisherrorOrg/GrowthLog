@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
+import QuickCheckModal from './focus/QuickCheckModal';
+import { OPEN_EVENT, localDate, markPlanPrompted, shouldPromptPlan } from './focus/quickCheck';
 
 const NAV_GROUPS = [
   {
@@ -12,7 +14,9 @@ const NAV_GROUPS = [
       { to: '/dashboard', icon: '◈', label: 'Dashboard', shortcut: 'D' },
       { to: '/log', icon: '✦', label: 'Daily Log', shortcut: 'L' },
       { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
-      { to: '/checkins', icon: '⏱️', label: 'Task Check-In', shortcut: 'N' },
+      { to: '/plan', icon: '☀️', label: 'Morning Plan', shortcut: 'A' },
+      { to: '/focus', icon: '🧭', label: 'Should I Do This?', shortcut: 'S' },
+      { to: '/decisions', icon: '⚖️', label: 'Decision Matrix', shortcut: 'N' },
     ]
   },
   {
@@ -89,6 +93,7 @@ export default function Layout() {
   });
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [showQuickCheck, setShowQuickCheck] = useState(false);
 
   // --- Notifications State & Logic ---
   const [notifications, setNotifications] = useState([]);
@@ -234,6 +239,11 @@ export default function Layout() {
       }
 
       const key = e.key.toLowerCase();
+      if (key === 'q') {
+        e.preventDefault();
+        setShowQuickCheck(true);
+        return;
+      }
       if (SHORTCUT_MAP[key]) {
         e.preventDefault();
         navigate(SHORTCUT_MAP[key]);
@@ -244,6 +254,25 @@ export default function Layout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
   // ────────────────────────────────────────────────────────────
+
+  // Once a day (mornings), opening the app lands on the Morning Plan if today isn't planned yet
+  useEffect(() => {
+    if (!user || !shouldPromptPlan() || !['/', '/dashboard'].includes(location.pathname)) return;
+    markPlanPrompted();
+    API.get('/day-plan', { params: { date: localDate() } })
+      .then(res => {
+        if (res.data.items.length === 0 && res.data.candidates.length > 0) navigate('/plan');
+      })
+      .catch(() => { });
+    // Only on first load: later navigation shouldn't redirect
+  }, [user ? user._id : null]);
+
+  // Pages open the quick check by dispatching OPEN_EVENT (see focus/quickCheck.js)
+  useEffect(() => {
+    const open = () => setShowQuickCheck(true);
+    window.addEventListener(OPEN_EVENT, open);
+    return () => window.removeEventListener(OPEN_EVENT, open);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -483,6 +512,17 @@ export default function Layout() {
         <Outlet />
       </main>
 
+      {/* ── "Should I do this?" quick check ───────────────────── */}
+      <button
+        className="qc-fab"
+        onClick={() => setShowQuickCheck(true)}
+        title="Should I do this? (Q)"
+        aria-label="Should I do this? Quick check"
+      >
+        🧭
+      </button>
+      {showQuickCheck && <QuickCheckModal onClose={() => setShowQuickCheck(false)} />}
+
       {/* ── Mobile bottom nav ─────────────────────────────────── */}
       <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
         {BOTTOM_NAV.map(({ to, icon, label }) => (
@@ -544,6 +584,17 @@ export default function Layout() {
                   color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
                 }}>Esc</span>
                 <span style={{ fontSize: 14 }}>Close modal / dialog</span>
+              </div>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 0', borderBottom: '1px solid rgba(13,13,13,0.04)'
+              }}>
+                <span style={{
+                  fontFamily: 'monospace', fontSize: 13, background: 'var(--mist)',
+                  borderRadius: 6, padding: '3px 8px', fontWeight: 700,
+                  color: 'var(--ink)', border: '1px solid rgba(13,13,13,0.1)'
+                }}>Q</span>
+                <span style={{ fontSize: 14 }}>🧭 Should I do this? (quick check)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
                 <span style={{

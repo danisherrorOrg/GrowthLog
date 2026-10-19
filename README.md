@@ -54,7 +54,14 @@ For a complete strategic guide, read our [Ultimate Guide (Guide.md)](./Guide.md)
 
 ## ⚙️ Getting Started
 
-### 1. Prerequisites
+### Quick start with Docker (one command)
+```bash
+cp .env.example .env        # set JWT_SECRET (openssl rand -hex 32)
+docker compose up --build   # app: http://localhost:3000  API: http://localhost:8000
+```
+MongoDB, the API, and the frontend start in order once each health check passes.
+
+### 1. Prerequisites (manual setup)
 *   Python 3.9+ | Node.js 18+ | MongoDB
 
 ### 2. Backend Setup

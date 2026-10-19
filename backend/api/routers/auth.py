@@ -8,8 +8,9 @@ from core.database import db
 from core.security import hash_password, verify_password, create_token
 from core.config import ALLOWED_ORIGINS
 from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
-from utils.email import send_email
+from utils.email import send_email, render_email
 from utils.helpers import clean_update
+from utils.user_data import wipe_user_data, default_categories, USER_PROGRESS_RESET
 from api.deps import get_current_user
 from models.schemas import (
     RegisterModel, LoginModel, ProfileUpdateModel, PasswordChangeModel,
@@ -18,6 +19,30 @@ from models.schemas import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 public_router = APIRouter(prefix="/public", tags=["public"])
+
+VERIFICATION_TTL = timedelta(hours=24)
+
+
+def _queue_verification_email(background_tasks: BackgroundTasks, to_email: str, name: str, token: str, new_address: bool = False):
+    link = f"{ALLOWED_ORIGINS[0]}/verify/{token}"
+    if new_address:
+        subject = "Verify your new email ✦"
+        body = render_email(
+            "Verify your new email",
+            [f"Hi {name}, you recently changed your email address on GrowthLog.",
+             "Please verify your new email to keep your account secure. This link expires in 24 hours."],
+            "Verify My Email", link,
+            note="If you didn't request this change, please contact support immediately.",
+        )
+    else:
+        subject = "Verify your GrowthLog ✦"
+        body = render_email(
+            f"Welcome to GrowthLog, {name}!",
+            ["We're thrilled to have you join our community of intentional growth. Your journey starts here.",
+             "Please verify your email to unlock your public profile. This link expires in 24 hours."],
+            "Verify My Email", link,
+        )
+    background_tasks.add_task(send_email, to_email, subject, body)
 
 @router.post("/register")
 @limiter.limit("5/minute")
@@ -39,42 +64,22 @@ def register(request: Request, data: RegisterModel, background_tasks: Background
     uid_str = str(result.inserted_id)
     db.users.update_one({"_id": result.inserted_id}, {"$set": {"token_version": 1}})
 
-    default_categories = [
-        {"user_id": uid_str, "name": "Mind", "icon": "🧠", "color": "#c9a84c", "description": "Learning, intellect, and mental health", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Body", "icon": "💪", "color": "#6b8c6b", "description": "Physical health, fitness, and nutrition", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Career", "icon": "💼", "color": "#5b8ba8", "description": "Professional growth and work tasks", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Finance", "icon": "💰", "color": "#8b6bc4", "description": "Wealth, savings, and investments", "archived": False, "created_at": utcnow()},
-        {"user_id": uid_str, "name": "Spirit", "icon": "🌿", "color": "#c46b8b", "description": "Peace, philosophy, and connection", "archived": False, "created_at": utcnow()}
-    ]
-    db.categories.insert_many(default_categories)
+    db.categories.insert_many(default_categories(uid_str))
 
     verify_token = secrets.token_urlsafe(32)
-    db.users.update_one({"_id": ObjectId(uid_str)}, {"$set": {"verification_token": verify_token, "verification_sent_at": utcnow()}})
-    
-    base_url = ALLOWED_ORIGINS[0]
-    verification_link = f"{base_url}/verify/{verify_token}"
-    
-    email_body = f"""
-    <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee; border-radius: 16px; color: #0d0d0d;">
-        <h2 style="font-family: serif; color: #6b8c6b; font-size: 24px;">Welcome to GrowthLog, {data.name}! ✦</h2>
-        <p style="font-size: 15px; line-height: 1.6;">We're thrilled to have you join our community of intentional growth. Your journey starts here.</p>
-        <p style="font-size: 15px; line-height: 1.6;">Please verify your email to unlock your public profile and start your first log:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{verification_link}" style="display: inline-block; background: #6b8c6b; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold;">Verify My Email ○</a>
-        </div>
-        <p style="font-size: 12px; color: #999; text-align: center;">If the button doesn't work, copy this link: <br/>{verification_link}</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
-        <p style="font-size: 12px; color: #999; text-align: center;">GrowthLog — The Holistic Tracking Platform</p>
-    </div>
-    """
-    background_tasks.add_task(send_email, data.email, "Verify your GrowthLog ✦", email_body)
+    db.users.update_one({"_id": ObjectId(uid_str)}, {"$set": {
+        "verification_token": verify_token,
+        "verification_token_expires": utcnow() + VERIFICATION_TTL,
+        "verification_sent_at": utcnow(),
+    }})
+    _queue_verification_email(background_tasks, data.email, data.name, verify_token)
 
     return {"token": create_token(uid_str, 1),
             "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": []}}
 
 @router.post("/verify/send")
 @limiter.limit("3/minute")
-def send_verification(request: Request, current_user=Depends(get_current_user)):
+def send_verification(request: Request, background_tasks: BackgroundTasks, current_user=Depends(get_current_user)):
     if current_user.get("is_verified", False):
         raise HTTPException(status_code=400, detail="User is already verified")
     
@@ -85,13 +90,19 @@ def send_verification(request: Request, current_user=Depends(get_current_user)):
             raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another email")
 
     token = secrets.token_urlsafe(32)
-    expires = utcnow() + timedelta(hours=24)
+    expires = utcnow() + VERIFICATION_TTL
 
     db.users.update_one({"_id": current_user["_id"]}, {"$set": {
         "verification_token": token,
         "verification_token_expires": expires,
         "verification_sent_at": utcnow()
     }})
+    # A pending email change is verified at the new address
+    pending = current_user.get("pending_email")
+    _queue_verification_email(
+        background_tasks, pending or current_user["email"], current_user.get("name", "there"), token,
+        new_address=bool(pending),
+    )
     return {"success": True}
 
 @router.get("/verify/{token}")
@@ -190,24 +201,8 @@ def change_email(data: EmailChangeModel, background_tasks: BackgroundTasks, curr
         "verification_token_expires": expires,
         "verification_sent_at": utcnow()
     }})
-    
-    base_url = ALLOWED_ORIGINS[0]
-    verification_link = f"{base_url}/verify/{verify_token}"
-    name = current_user.get("name", "there")
-    email_body = f"""
-    <div style="font-family: sans-serif; max-width: 500px; padding: 40px; background: #fdfcf9; border: 1px solid #eee; border-radius: 16px; color: #0d0d0d;">
-        <h2 style="font-family: serif; color: #6b8c6b; font-size: 24px;">Verify your new email for GrowthLog ✦</h2>
-        <p style="font-size: 15px; line-height: 1.6;">Hi {name}, you recently changed your email address on GrowthLog.</p>
-        <p style="font-size: 15px; line-height: 1.6;">Please verify your new email to keep your account secure:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{verification_link}" style="display: inline-block; background: #6b8c6b; color: white; padding: 14px 32px; text-decoration: none; border-radius: 30px; font-weight: bold;">Verify My Email ○</a>
-        </div>
-        <p style="font-size: 12px; color: #999; text-align: center;">If you didn't request this change, please contact support immediately.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
-        <p style="font-size: 12px; color: #999; text-align: center;">GrowthLog</p>
-    </div>
-    """
-    background_tasks.add_task(send_email, data.new_email, "Verify your new email ✦", email_body)
+
+    _queue_verification_email(background_tasks, data.new_email, current_user.get("name", "there"), verify_token, new_address=True)
 
     uid = str(current_user["_id"])
     from utils.activity import log_activity
@@ -244,33 +239,23 @@ def get_public_stats(user_id: str):
         "total_snapshots": db.snapshots.count_documents({"user_id": user_id})
     }
 
+@router.delete("/me/data")
+def delete_all_data(current_user=Depends(get_current_user)):
+    """Erase everything the user has logged but keep the account, login and profile settings."""
+    uid = str(current_user["_id"])
+    deleted = wipe_user_data(uid)
+    db.users.update_one({"_id": current_user["_id"]}, {"$set": USER_PROGRESS_RESET})
+    db.categories.insert_many(default_categories(uid))
+    return {"success": True, "deleted": deleted}
+
 @router.delete("/me")
 def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    
-    collections_to_delete = [
-        "categories", "category_templates", "goals", "manifestations", "snapshots", "daily_logs",
-        "sleep_logs", "workouts", "meal_logs", "health_metrics", "exercise_goals", "custom_exercises",
-        "thoughts", "reframes", "books", "quotes",
-        "anti_goals", "habit_graveyard", "time_entries", "screen_time", "procrastination_log", "not_to_do",
-        "regrets", "future_advice", "past_advice", "life_lessons",
-        "project_ideas", "creative_sessions",
-        "meaning_log", "travel_log", "bucket_list",
-        "skills", "courses", "failure_log", "skills_gap", "feedback",
-        "activity_logs"
-    ]
-    
-    for coll in collections_to_delete:
-        db[coll].delete_many({"user_id": uid})
-        
+    wipe_user_data(uid)
     db.users.delete_one({"_id": current_user["_id"]})
-    
+
     # Invalidate token explicitly for its entire 30-day lifetime
-    from datetime import timedelta
     db.jwt_blocklist.insert_one({"user_id": uid, "expire_at": utcnow() + timedelta(days=30)})
-    cache_invalidate_prefix(f"dashboard:{uid}:")
-    cache_invalidate_exact(f"categories:{uid}")
-    cache_invalidate_exact(f"stats:{uid}")
     return {"success": True, "action": "logout"}
 
 @router.get("/stats")

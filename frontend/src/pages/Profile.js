@@ -224,6 +224,28 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteData = () => {
+    setPrompt({
+      title: 'Delete All Data?',
+      message: 'This will permanently erase everything you have logged — daily logs, goals, categories, to-dos, health, insights, and more — and reset your streak. Your account, login, and profile settings are kept. Consider exporting your data first. THIS CANNOT BE UNDONE.',
+      expectedValue: 'DELETE',
+      confirmLabel: 'Erase My Data',
+      danger: true,
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await API.delete('/auth/me/data');
+          toast.success('All your data has been deleted. Your account is still active.');
+          await refreshUser(true);
+        } catch (e) {
+          toast.error(getErrorMessage(e, 'Failed to delete data.'));
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
   const handleDeleteAccount = () => {
     setPrompt({
       title: 'Delete Account?',
@@ -944,6 +966,12 @@ export default function Profile() {
         {/* Danger Zone */}
         <div className="card" style={{ padding: 24, borderLeft: '4px solid var(--rust)', background: 'var(--paper)' }}>
           <h3 style={{ fontSize: 18, color: 'var(--rust)', marginBottom: 8 }}>Danger Zone</h3>
+          <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', marginBottom: 16 }}>
+            Erase everything you've logged and start fresh, but keep your account, login, and profile settings. This action cannot be reversed.
+          </p>
+          <button className="btn btn-sm" onClick={handleDeleteData} disabled={loading} style={{ background: 'transparent', color: 'var(--rust)', border: '1px solid var(--rust)', marginBottom: 24 }}>
+            Delete All Data (Keep Account)
+          </button>
           <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', marginBottom: 16 }}>
             Permanently delete your account and all associated data (daily logs, categories, goals, and manifestations). This action cannot be reversed.
           </p>
