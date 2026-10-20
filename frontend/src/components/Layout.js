@@ -231,7 +231,7 @@ export default function Layout() {
   // A new page starts at the top. Back/forward (POP) keeps the browser's restored position.
   useEffect(() => {
     if (navigationType !== 'POP') window.scrollTo(0, 0);
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // eslint-disable-line
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
