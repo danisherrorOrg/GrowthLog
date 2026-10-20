@@ -157,7 +157,7 @@ export default function Profile() {
         try {
           await API.delete('/auth/me');
           toast.success('Account and all data successfully deleted.');
-          logout();
+          await logout();
           navigate('/login');
         } catch (e) {
           toast.error(getErrorMessage(e, 'Failed to delete account.'));

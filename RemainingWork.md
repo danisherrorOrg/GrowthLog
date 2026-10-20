@@ -53,9 +53,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * `backend/api/routers/timeline.py` sent `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
     * **Done:** a log's `mood` is now the average of its entries' moods (empty when no entry has one), and `overall_rating` goes out as `day_rating`. The feed and the day side panel show both, labelled. The side panel's "add reflection" also failed with a 422 (entries were sent without mood/energy) and would have wiped gratitude, regret, emotions and time spent; it now sends back every field and gives the new entry a neutral 5/5. Test: `test_timeline_log_mood_is_entry_average_not_day_rating`.
 
-11. **Signing out shows "Session Expired"**
-    * After `/auth/logout` clears the cookie, in-flight polling (notifications etc.) gets a 401 and the interceptor in `frontend/src/utils/api.js:21` redirects to `/login?expired=true`.
-    * **Fix:** set a "logging out" flag (or cancel pending requests) so the interceptor skips the redirect, and navigate to plain `/login`.
+11. ✅ **Completed — Signing out showed "Session Expired"**
+    * The sign-out button navigated to `/login` before `logout()` had cleared the user, so the login route sent them back to `/dashboard`, whose requests then got 401s from the cleared cookie and the interceptor redirected to `/login?expired=true`. In-flight polling could do the same.
+    * **Done:** `logout()` sets a "signing out" flag in `utils/api.js` that stops the 401 redirect (cleared on the next login or sign-up), and the sidebar and account-deletion flows wait for `logout()` before going to plain `/login`. Test in `utils/api.test.js`.
 
 12. **Goals accept a deadline in the past**
     * A goal with a 2020 deadline was saved and immediately shown as "2484d overdue". The deadline is required but not marked as required, and leaving it empty only gives "Fill all required fields".
