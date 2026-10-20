@@ -112,9 +112,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * Adding an item while rating another moved the new item to the front, so ratings already started went onto the wrong task.
     * **Done:** the API sorts the queue by urgency, priority and due date, so a new task (or an undone one) can sort ahead of the one being rated. The page now keeps the task on the card until it's confirmed or skipped, with its ratings intact, wherever it lands after a reload. Test in `MorningPlan.test.js`.
 
-24. **Check-in verdict cards (Continue / Pause / Drop) aren't buttons**
-    * Keyboard and screen-reader users can't select them.
-    * **Fix:** render them as buttons (or radio inputs) with a visible focus state.
+24. ✅ **Completed — Check-in verdict cards (Continue / Pause / Drop) weren't buttons**
+    * Keyboard and screen-reader users couldn't select them.
+    * **Done:** the verdict cards are now a labelled radio group built on real radio inputs, so Tab reaches the group and the arrow keys change the choice. The stat cards above the list (Total / Continued / Paused / Dropped), which filter it, had the same problem and are now buttons that report whether their filter is on. Both get a gold focus outline on keyboard focus. Added a shared `.sr-only` class in `index.css`. Tests in `TaskCheckins.test.js`.
 
 25. **"Log a Trigger" and "Log a Bad Decision" forms are taller than the window**
     * Their buttons are cut off.

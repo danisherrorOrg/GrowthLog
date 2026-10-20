@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import API from '../utils/api';
 import TaskCheckins from './TaskCheckins';
@@ -38,4 +38,41 @@ test('quick mode asks as many questions as its label says and saves each answer'
     quick_show_for_30: 'answer 3',
     quick_energy_suited: 'answer 4',
   });
+});
+
+test('the verdict is a radio group that works without a mouse', async () => {
+  render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><TaskCheckins /></MemoryRouter>);
+  await waitFor(() => expect(API.get).toHaveBeenCalledWith('/checkins'));
+
+  fireEvent.click(screen.getByRole('button', { name: '+ New Check-In' }));
+  fireEvent.click(screen.getByRole('button', { name: /Quick \(4 questions\)/ }));
+  fireEvent.change(screen.getByPlaceholderText(/Refactor auth module/), { target: { value: 'Write report' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Continue to Questions →' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Go to Verdict →' }));
+
+  const group = screen.getByRole('radiogroup', { name: /Final Verdict/ });
+  const radios = within(group).getAllByRole('radio');
+  expect(radios).toHaveLength(3);
+  expect(within(group).getByRole('radio', { name: /Continue/ })).toBeChecked();
+
+  const drop = within(group).getByRole('radio', { name: /Drop \/ Delegate/ });
+  fireEvent.click(drop);
+  expect(drop).toBeChecked();
+
+  fireEvent.click(screen.getByRole('button', { name: '✦ Save Check-In' }));
+  await waitFor(() => expect(API.post).toHaveBeenCalled());
+  expect(API.post.mock.calls[0][1]).toMatchObject({ verdict: 'drop' });
+});
+
+test('the stat cards are buttons that show which filter is on', async () => {
+  API.get.mockImplementation(url => Promise.resolve({
+    data: url === '/checkins/stats/summary' ? { total: 3, continue_count: 1, pause_count: 1, drop_count: 1 } : [],
+  }));
+  render(<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><TaskCheckins /></MemoryRouter>);
+
+  const paused = await screen.findByRole('button', { name: /^Paused: 1/ });
+  expect(paused).toHaveAttribute('aria-pressed', 'false');
+  fireEvent.click(paused);
+  expect(paused).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: /^Total Check-ins: 3/ })).toHaveAttribute('aria-pressed', 'false');
 });

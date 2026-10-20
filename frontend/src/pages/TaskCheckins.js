@@ -307,9 +307,11 @@ export default function TaskCheckins() {
             ].map(s => {
               const isActive = filterVerdict === s.id;
               return (
-                <div key={s.label} className="card"
-                  onClick={() => setFilterVerdict(s.id)}
+                <button key={s.label} type="button" className="card checkin-stat-btn"
+                  onClick={() => setFilterVerdict(s.id)} aria-pressed={isActive}
+                  aria-label={`${s.label}: ${s.val}${s.id ? '. Show only these' : '. Show all'}`}
                   style={{
+                    font: 'inherit', textAlign: 'left', color: 'inherit',
                     background: isActive ? `${s.color}15` : 'white',
                     border: isActive ? `2px solid ${s.color}` : '1px solid rgba(13,13,13,0.06)',
                     borderRadius: 16,
@@ -323,7 +325,7 @@ export default function TaskCheckins() {
                   <div style={{ fontSize: 22 }}>{s.icon}</div>
                   <div style={{ fontFamily: 'Fraunces', fontSize: 28, fontWeight: 700, color: s.color }}>{s.val}</div>
                   <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>{s.label}</div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -513,25 +515,27 @@ export default function TaskCheckins() {
             {/* Step: Verdict */}
             {step === 'verdict' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(13,13,13,0.5)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                <div id="checkin-verdict-label" style={{ fontSize: 13, fontWeight: 700, color: 'rgba(13,13,13,0.5)', textTransform: 'uppercase', letterSpacing: 1 }}>
                   Final Verdict — Look at all your answers and choose one:
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div role="radiogroup" aria-labelledby="checkin-verdict-label" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {VERDICTS.map(v => (
-                    <div key={v.key} onClick={() => setVerdict(v.key)}
+                    <label key={v.key} className="checkin-verdict-option"
                       style={{
                         padding: '16px 20px', borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
                         border: `2px solid ${verdict === v.key ? v.color : 'rgba(13,13,13,0.08)'}`,
                         background: verdict === v.key ? `${v.color}10` : 'white',
                         display: 'flex', alignItems: 'center', gap: 14,
                       }}>
-                      <span style={{ fontSize: 24 }}>{v.icon}</span>
+                      <input type="radio" name="checkin-verdict" value={v.key} className="sr-only"
+                        checked={verdict === v.key} onChange={() => setVerdict(v.key)} />
+                      <span style={{ fontSize: 24 }} aria-hidden="true">{v.icon}</span>
                       <div>
                         <div style={{ fontWeight: 700, color: verdict === v.key ? v.color : 'var(--ink)' }}>{v.label}</div>
                         <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', marginTop: 2 }}>{v.desc}</div>
                       </div>
-                      {verdict === v.key && <span style={{ marginLeft: 'auto', fontWeight: 700, color: v.color }}>✓</span>}
-                    </div>
+                      {verdict === v.key && <span style={{ marginLeft: 'auto', fontWeight: 700, color: v.color }} aria-hidden="true">✓</span>}
+                    </label>
                   ))}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
