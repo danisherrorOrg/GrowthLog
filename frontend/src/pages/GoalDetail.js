@@ -83,7 +83,7 @@ export default function GoalDetail() {
     let stale = false;
     load(() => stale);
     return () => { stale = true; };
-  }, [goalId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [goalId]); // eslint-disable-line
 
   const cat = categories.find(c => c.id === goal?.category_id);
 

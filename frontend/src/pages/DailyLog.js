@@ -98,7 +98,7 @@ export default function DailyLog() {
       });
 
     return () => { cancelled = true; };
-  }, [todayDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [todayDateStr]); // eslint-disable-line
 
   // Auto-save draft
   useEffect(() => {
