@@ -2,7 +2,7 @@
 
 What is still open in GrowthLog, checked against the code on 2026-10-20.
 
-Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose (currently broken, see #8), data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
+Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose, data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
 
 ---
 
@@ -41,9 +41,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * `backend/api/routers/timeline.py`. When `q` was set, the code replaced the `$or` that held the user filter with the search conditions, so the search ran across every user's daily logs, goals and manifestations.
    * **Done:** the owner check is now a separate `user_id: {$in: [...]}` filter shared by every timeline query, so the search `$or` can't replace it. It also no longer matches documents with no `user_id`. `test_timeline_search_never_returns_other_users_data` covers logs, goals, manifestations and snapshots.
 
-8. **One-command Docker setup fails**
-   * `docker compose up --build` stops at `npm ci` in the frontend image: `package-lock.json` is out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
-   * **Fix:** run `npm install` in `frontend/` and commit the updated lock file.
+8. ✅ **Completed — One-command Docker setup failed**
+   * `docker compose up --build` stopped at `npm ci` in the frontend image: `package-lock.json` was out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
+   * **Done:** regenerated the lock file with the image's Node 20 / npm 10 (adds Tailwind's optional `yaml@2` peer). Also fixed the frontend healthcheck, which always failed because `localhost` resolved to IPv6 while nginx listens on IPv4 only. All three containers now come up healthy.
 
 9. **Dates are wrong for anyone outside UTC**
    * The browser timezone is never detected, so every user is stored with `timezone: "UTC"` unless they change it in Profile.
