@@ -159,10 +159,11 @@ export default function JourneyFeed({ events, onEventClick }) {
                                     <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '6px', color: '#111' }}>{e.title}</div>
                                     {e.description && <div className="markdown-body" style={{ fontSize: '15px', color: '#555', lineHeight: 1.5 }}><MarkdownRenderer content={e.description} /></div>}
                                     
-                                    {e.data && e.data.mood && (
+                                    {e.data && (e.data.mood || e.data.day_rating) && (
                                         <div style={{ marginTop: '12px', fontSize: '13px', color: '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>Mood: {e.data.mood}/10</div>
-                                            {e.data.entries_count && <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>{e.data.entries_count} Entries</div>}
+                                            {e.data.mood && <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>Mood: {e.data.mood}/10</div>}
+                                            {e.data.day_rating && <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>Day rating: {e.data.day_rating}/10</div>}
+                                            {e.data.entries_count > 0 && <div style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: 6 }}>{e.data.entries_count} Entries</div>}
                                         </div>
                                     )}
                                 </div>

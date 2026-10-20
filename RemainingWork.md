@@ -49,9 +49,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * Every user was stored with `timezone: "UTC"`, and the API returned naive timestamps (`"2026-10-19T21:18:55.272000"`) that the browser read as local time.
    * **Done:** the Mongo client is now `tz_aware`, so every stored timestamp goes out as UTC with `+00:00`. Sign-up stores the browser timezone. Login fills it in for accounts still on the default UTC, unless the user picked UTC in Profile. Profile has a timezone picker and rejects unknown zones. A banner offers to switch when the device's timezone differs from the account's ("Keep" is remembered per pair of zones). Timeline goal dates, search result dates and manifestation start dates now use the user's day. Tests in `backend/tests/test_timezones.py`, `TimezoneBanner.test.js` and `utils/dates.test.js`.
 
-10. **Timeline "Mood" is really the overall day rating**
-    * `backend/api/routers/timeline.py:123` sends `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
-    * **Fix:** average the entries' `mood`, or label the value "Day rating".
+10. ✅ **Completed — Timeline "Mood" was really the overall day rating**
+    * `backend/api/routers/timeline.py` sent `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
+    * **Done:** a log's `mood` is now the average of its entries' moods (empty when no entry has one), and `overall_rating` goes out as `day_rating`. The feed and the day side panel show both, labelled. The side panel's "add reflection" also failed with a 422 (entries were sent without mood/energy) and would have wiped gratitude, regret, emotions and time spent; it now sends back every field and gives the new entry a neutral 5/5. Test: `test_timeline_log_mood_is_entry_average_not_day_rating`.
 
 11. **Signing out shows "Session Expired"**
     * After `/auth/logout` clears the cookie, in-flight polling (notifications etc.) gets a 401 and the interceptor in `frontend/src/utils/api.js:21` redirects to `/login?expired=true`.

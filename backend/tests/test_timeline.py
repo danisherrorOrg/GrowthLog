@@ -407,3 +407,37 @@ def test_timeline_search_never_returns_other_users_data(client, auth_headers, ot
         "daily_log", "goal_created", "goal_deadline",
         "manifestation_started", "manifestation_target", "snapshot",
     ])
+
+
+def test_timeline_log_mood_is_entry_average_not_day_rating(client, auth_headers, test_user_data):
+    """A log's mood is the average of its entries' moods; overall_rating is sent as day_rating."""
+    uid = str(db.users.find_one({"email": test_user_data["email"]})["_id"])
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-07-01",
+        "highlight": "Good mood, average day",
+        "overall_rating": 5,
+        "gratitude": ["coffee"],
+        "regret": "stayed up late",
+        "entries": [
+            {"category_id": "c1", "text": "a", "mood": 8, "energy": 6},
+            {"category_id": "c2", "text": "b", "mood": 9, "energy": 7},
+        ],
+    })
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-07-02",
+        "overall_rating": 7,
+        "entries": [{"category_id": "c1", "text": "old entry without mood"}],
+    })
+
+    response = client.get("/timeline?start_date=2026-07-01&end_date=2026-07-02", headers=auth_headers)
+    assert response.status_code == 200
+    by_date = {e["date"]: e["data"] for e in response.json()["events"]}
+
+    assert by_date["2026-07-01"]["mood"] == 8.5
+    assert by_date["2026-07-01"]["day_rating"] == 5
+    assert by_date["2026-07-01"]["gratitude"] == ["coffee"]
+    assert by_date["2026-07-01"]["regret"] == "stayed up late"
+    assert by_date["2026-07-02"]["mood"] is None
+    assert by_date["2026-07-02"]["day_rating"] == 7

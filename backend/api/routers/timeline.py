@@ -111,7 +111,11 @@ def get_timeline(
                 log_cats.append(cat_info)
 
         main_cat = log_cats[0] if log_cats else {"name": "Pulse", "icon": "🔥", "color": "#6b8c6b"}
-        
+
+        # Mood is logged per entry; the log's overall_rating is a separate "day rating".
+        entry_moods = [e["mood"] for e in log_entries if isinstance(e.get("mood"), (int, float))]
+        avg_mood = round(sum(entry_moods) / len(entry_moods), 1) if entry_moods else None
+
         events.append({
             "id": str(log["_id"]),
             "type": "daily_log",
@@ -122,7 +126,10 @@ def get_timeline(
             "category": main_cat,
             "categories": log_cats,
             "data": {
-                "mood": log.get("overall_rating", 5),
+                "mood": avg_mood,
+                "day_rating": log.get("overall_rating"),
+                "gratitude": log.get("gratitude", []),
+                "regret": log.get("regret", ""),
                 "entries_count": len(enriched_entries),
                 "entries": enriched_entries
             }
