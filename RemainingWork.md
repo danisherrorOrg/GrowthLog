@@ -175,6 +175,42 @@ Checked in the browser at 1414×820 and at 390px wide. All in `frontend/src/comp
     * Whether the sidebar is shown or hidden on desktop isn't saved, so it resets on every reload. Keep it in localStorage.
     * **Done:** shortcut chips are brighter (45% opacity) and hidden under 900px; the profile link is a `NavLink` that highlights on `/profile`; Growth Analytics uses `Y`; the desktop show/hide choice is saved in localStorage. Tests in `components/Layout.test.js`.
 
+### More sidebar issues found on 2026-10-20
+
+Checked in the browser at 1414×876, 960×700, exactly 900px and 390×844, with a temporary account that was deleted afterwards. All in `frontend/src/components/Layout.js` and `frontend/src/index.css`.
+
+36. ✅ **Completed — At exactly 900px wide the sidebar covered the page**
+    * The CSS switches to the phone layout at `max-width: 900px`, but `isMobileWidth()` used `innerWidth < 900`. At 900px the page got the phone styles (no left margin) while the sidebar stayed open as on desktop, with no backdrop and no bottom bar, so it sat on top of the content.
+    * **Done:** `isMobileWidth()` now uses `<= 900`, the same cutoff as the CSS. Test: "at exactly 900px the sidebar uses the phone layout".
+
+37. ✅ **Completed — Nav rows were taller than needed, so few links fit**
+    * The 18px emoji icons took the body's 1.6 line height (28.8px), making each row about 53px instead of the intended 44px. At 960×700 only 6 of the 21 links showed.
+    * **Done:** the icon has `line-height: 1`, and row padding is 10px (12px on phones), so rows are 44px on desktop and 48px on phones. At 960×700, 8 links now show; at 1414×876, 11 (was 9).
+
+38. ✅ **Completed — Some pages highlighted nothing in the sidebar**
+    * `/checkins` (linked from Decision Matrix), `/books/:id` (Knowledge Vault) and `/snapshots/:id` (Temporal Space) have no link of their own, so no item was marked as current.
+    * **Done:** nav items can list related pages in `also`, and an item counts as current on its own path, its sub-paths, and those pages, with `aria-current="page"`. `/growth-hub` still doesn't highlight Growth Analytics (`/growth`). Tests for each page.
+
+39. ✅ **Completed — On phones, the bottom bar highlighted nothing on most pages**
+    * It only has Home, Log, Todos and Mind, so on pages like Goals nothing was lit.
+    * **Done:** "More" is highlighted whenever the current page isn't one of the four bottom-bar pages, since that's where it lives.
+
+40. ✅ **Completed — A long name stretched the sidebar footer**
+    * Names can be 100 characters. A long one wrapped to 4 lines and grew the footer from 171px to 225px, leaving less room for the nav.
+    * **Done:** the name stays on one line with an ellipsis, and the link's tooltip shows the full name ("Profile: …").
+
+41. ✅ **Completed — The `?` button opened keyboard shortcuts on phones**
+    * Phones have no keyboard (the shortcut letters were already hidden there). The drawer also stayed open behind the sheet, and as an `aria-modal` dialog it could hide the sheet from screen readers.
+    * **Done:** the `?` button is only shown on desktop. Its inline styles moved to a `.sidebar-shortcuts-btn` class.
+
+42. ✅ **Completed — Keyboard focus was hard to see in the sidebar**
+    * There was no focus style, so links got the browser's thin dark-blue ring on the near-black sidebar.
+    * **Done:** sidebar links and buttons, the bottom bar and the ☰ button get a 2px gold outline on keyboard focus.
+
+43. ✅ **Completed — No way to skip past the navigation**
+    * Keyboard users tabbed through about 27 stops (sidebar and top bar) on every page before reaching the content.
+    * **Done:** a "Skip to content" link is the first tab stop. It is hidden until focused and moves focus to `<main>`. It isn't shown while the phone drawer is open, since the page behind is inert then.
+
 ### Smaller issues and gaps
 
 * **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
@@ -187,6 +223,7 @@ Checked in the browser at 1414×820 and at 390px wide. All in `frontend/src/comp
 * **After saving a log, the dashboard opens scrolled halfway down.**
 * **Empty gratitude fields are saved** as `['', '', '']`.
 * **Duplicate "Goal not found" toasts** when opening a missing goal (an effect that runs twice).
+* **Page titles aren't `<h1>`.** Every page title is an `<h2>` in `.page-header` (25 pages), and the only `<h1>` is the "GrowthLog" logo in the sidebar, so screen-reader heading navigation starts at the logo and the sidebar's group headings. Make page titles `<h1>` and the logo plain text.
 * **Deleting a category template always reports success.** `DELETE /categories/templates/{id}` (`backend/api/routers/categories.py:67`) returns `{"success": true}` and logs a "Deleted a category template" activity even when no template matched. Return 404 when nothing was deleted.
 
 ---

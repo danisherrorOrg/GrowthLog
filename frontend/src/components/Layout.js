@@ -1,4 +1,4 @@
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useRef } from 'react';
 import API from '../utils/api';
@@ -18,7 +18,8 @@ const NAV_GROUPS = [
       { to: '/todos', icon: '☑', label: 'To-Dos', shortcut: 'T' },
       { to: '/plan', icon: '☀️', label: 'Morning Plan', shortcut: 'A' },
       { to: '/focus', icon: '🧭', label: 'Should I Do This?', shortcut: 'S' },
-      { to: '/decisions', icon: '⚖️', label: 'Decision Matrix', shortcut: 'N' },
+      // `also`: pages without their own link that belong to this one, so it stays highlighted
+      { to: '/decisions', icon: '⚖️', label: 'Decision Matrix', shortcut: 'N', also: ['/checkins'] },
     ]
   },
   {
@@ -26,7 +27,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/thoughts', icon: '🪴', label: 'Mind Garden', shortcut: 'M' },
       { to: '/insights', icon: '🔬', label: 'Insight Lab', shortcut: 'I' },
-      { to: '/temporal', icon: '🕰️', label: 'Temporal Space', shortcut: 'P' },
+      { to: '/temporal', icon: '🕰️', label: 'Temporal Space', shortcut: 'P', also: ['/snapshots', '/time-capsule'] },
       { to: '/reframes', icon: '🧠', label: 'Reframing', shortcut: 'R' },
       { to: '/lotus', icon: '🌸', label: 'Lotus Blossom', shortcut: 'B' },
       { to: '/reviews', icon: '📋', label: 'Reviews', shortcut: 'E' },
@@ -51,7 +52,7 @@ const NAV_GROUPS = [
   {
     group: 'Learning & Career',
     items: [
-      { to: '/knowledge', icon: '📚', label: 'Knowledge Vault', shortcut: 'K' },
+      { to: '/knowledge', icon: '📚', label: 'Knowledge Vault', shortcut: 'K', also: ['/books'] },
     ]
   },
   {
@@ -78,6 +79,7 @@ const BOTTOM_NAV = [
   { to: '/thoughts', icon: '🪴', label: 'Mind' },
 ];
 
+// Matches the CSS `@media (max-width: 900px)` phone layout, so 900px itself is a phone
 const MOBILE_BREAKPOINT = 900;
 const SIDEBAR_PREF_KEY = 'growthlog_sidebar_visible';
 const SIDEBAR_ID = 'app-sidebar';
@@ -91,7 +93,13 @@ const readSidebarPref = () => {
   }
 };
 
-const isMobileWidth = () => typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
+const isMobileWidth = () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
+
+const pathIsUnder = (pathname, base) => pathname === base || pathname.startsWith(`${base}/`);
+
+// A nav item is current on its own page, its sub-pages, and the pages listed in `also`
+const isNavItemActive = (item, pathname) =>
+  [item.to, ...(item.also || [])].some(base => pathIsUnder(pathname, base));
 
 export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
@@ -373,6 +381,9 @@ export default function Layout() {
     navigate('/login');
   };
 
+  // Pages that aren't in the bottom bar live behind "More", so it lights up for them
+  const onBottomNavPage = BOTTOM_NAV.some(({ to }) => pathIsUnder(location.pathname, to));
+
   const toggleSidebar = () => {
     focusOnOpenRef.current = !isSidebarVisible;
     setIsSidebarVisible(v => !v);
@@ -380,6 +391,20 @@ export default function Layout() {
 
   return (
     <div className={`app-shell ${!isSidebarVisible ? 'sidebar-hidden' : ''}`}>
+
+      {/* First tab stop: jump past the sidebar and top bar (not while the phone drawer is open) */}
+      {!isDrawerOpen && (
+        <a
+          href="#main-content"
+          className="skip-link"
+          onClick={(e) => {
+            e.preventDefault();
+            mainRef.current?.focus();
+          }}
+        >
+          Skip to content
+        </a>
+      )}
 
       {/* Floating toggle — only when sidebar is hidden on desktop */}
       {!isSidebarVisible && !isMobile && (
@@ -441,20 +466,25 @@ export default function Layout() {
             <div key={gIdx} className="nav-group">
               <h2 className="nav-group-label">{group.group}</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {group.items.map(({ to, icon, label, shortcut }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    title={shortcut ? `${label} (${shortcut})` : label}
-                  >
-                    <span className="icon" aria-hidden="true">{icon}</span>
-                    {label}
-                    {shortcut && (
-                      <span className="nav-shortcut" aria-hidden="true">{shortcut}</span>
-                    )}
-                  </NavLink>
-                ))}
+                {group.items.map((item) => {
+                  const { to, icon, label, shortcut } = item;
+                  const isActive = isNavItemActive(item, location.pathname);
+                  return (
+                    <Link
+                      key={to}
+                      to={to}
+                      className={`nav-item ${isActive ? 'active' : ''}`}
+                      aria-current={isActive ? 'page' : undefined}
+                      title={shortcut ? `${label} (${shortcut})` : label}
+                    >
+                      <span className="icon" aria-hidden="true">{icon}</span>
+                      {label}
+                      {shortcut && (
+                        <span className="nav-shortcut" aria-hidden="true">{shortcut}</span>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -473,10 +503,10 @@ export default function Layout() {
           <NavLink
             to="/profile"
             className={({ isActive }) => `nav-profile-link ${isActive ? 'active' : ''}`}
-            title="Profile"
+            title={user?.name ? `Profile: ${user.name}` : 'Profile'}
           >
-            <span aria-hidden="true" style={{ fontSize: 18 }}>{user?.avatar_emoji || '👤'}</span>
-            {user?.name || 'Profile'}
+            <span aria-hidden="true" style={{ fontSize: 18, flexShrink: 0 }}>{user?.avatar_emoji || '👤'}</span>
+            <span className="nav-profile-name">{user?.name || 'Profile'}</span>
           </NavLink>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
@@ -486,23 +516,17 @@ export default function Layout() {
             >
               Sign out
             </button>
+            {/* Phones have no keyboard, so they don't get the shortcut help */}
+            {!isMobile && (
             <button
+              className="sidebar-shortcuts-btn"
               onClick={() => setShowShortcutHelp(true)}
               title="Keyboard shortcuts (?)"
               aria-label="Keyboard shortcuts"
-              style={{
-                background: 'rgba(245,240,232,0.06)',
-                border: '1px solid rgba(245,240,232,0.1)',
-                borderRadius: 6,
-                cursor: 'pointer',
-                color: 'rgba(245,240,232,0.6)',
-                width: 32, height: 32,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontFamily: 'monospace', flexShrink: 0,
-              }}
             >
               ?
             </button>
+            )}
           </div>
         </div>
       </aside>
@@ -580,7 +604,12 @@ export default function Layout() {
         </div>
       </div>
 
-      <main ref={mainRef} className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
+      <main
+        ref={mainRef}
+        id="main-content"
+        tabIndex={-1}
+        className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}
+      >
         {!user?.is_verified && (
           <div style={{
             margin: 'clamp(16px, 4vw, 24px)',
@@ -646,7 +675,7 @@ export default function Layout() {
         <button
           ref={moreBtnRef}
           onClick={toggleSidebar}
-          className={isSidebarVisible ? 'active' : ''}
+          className={isSidebarVisible || !onBottomNavPage ? 'active' : ''}
           aria-label="More pages"
           aria-expanded={isSidebarVisible}
           aria-controls={SIDEBAR_ID}
