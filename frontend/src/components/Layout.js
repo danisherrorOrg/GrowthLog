@@ -57,7 +57,7 @@ const NAV_GROUPS = [
   {
     group: 'Analytics & History',
     items: [
-      { to: '/growth', icon: '◎', label: 'Growth Analytics', shortcut: null },
+      { to: '/growth', icon: '◎', label: 'Growth Analytics', shortcut: 'Y' },
       { to: '/history', icon: '⏳', label: 'History Hub', shortcut: 'H' },
     ]
   }
@@ -79,20 +79,32 @@ const BOTTOM_NAV = [
 ];
 
 const MOBILE_BREAKPOINT = 900;
+const SIDEBAR_PREF_KEY = 'growthlog_sidebar_visible';
+const SIDEBAR_ID = 'app-sidebar';
+
+// Whether the user left the sidebar shown on desktop (phones always start with the drawer closed)
+const readSidebarPref = () => {
+  try {
+    return localStorage.getItem(SIDEBAR_PREF_KEY) !== 'false';
+  } catch {
+    return true;
+  }
+};
+
+const isMobileWidth = () => typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
 
 export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isSidebarVisible, setIsSidebarVisible] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return window.innerWidth >= MOBILE_BREAKPOINT;
-  });
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < MOBILE_BREAKPOINT;
-  });
+  const [isMobile, setIsMobile] = useState(isMobileWidth);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(() => !isMobileWidth() && readSidebarPref());
+  const isMobileRef = useRef(isMobile);
+  const sidebarRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const showBtnRef = useRef(null);
+  const moreBtnRef = useRef(null);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showQuickCheck, setShowQuickCheck] = useState(false);
@@ -199,23 +211,50 @@ export default function Layout() {
     if (user) {
       fetchNotifications();
     }
-  }, [location.pathname, user ? user._id : null]);
+  }, [location.pathname, user?.id]);
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
     if (isMobile) setIsSidebarVisible(false);
   }, [location.pathname, isMobile]);
 
+  // Only reset visibility when the width crosses the breakpoint. Phones fire resize when the
+  // browser bar collapses or the keyboard opens, which shouldn't close the drawer.
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     const onResize = () => {
-      const nowMobile = window.innerWidth < MOBILE_BREAKPOINT;
+      const nowMobile = isMobileWidth();
+      if (nowMobile === isMobileRef.current) return;
+      isMobileRef.current = nowMobile;
       setIsMobile(nowMobile);
-      setIsSidebarVisible(!nowMobile);
+      setIsSidebarVisible(!nowMobile && readSidebarPref());
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // Remember the desktop show/hide choice across reloads
+  useEffect(() => {
+    if (isMobile) return;
+    try {
+      localStorage.setItem(SIDEBAR_PREF_KEY, String(isSidebarVisible));
+    } catch { /* storage unavailable */ }
+  }, [isSidebarVisible, isMobile]);
+
+  // A hidden sidebar is only slid off-screen, so make it inert to keep it out of the tab order
+  // and away from screen readers. Keep focus on a control that's still on screen.
+  useEffect(() => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    if (isSidebarVisible) {
+      el.removeAttribute('inert');
+      if (isMobile) closeBtnRef.current?.focus();
+      return;
+    }
+    const hadFocus = el.contains(document.activeElement);
+    el.setAttribute('inert', '');
+    if (hadFocus) (isMobile ? moreBtnRef : showBtnRef).current?.focus();
+  }, [isSidebarVisible, isMobile]);
 
   // ── Keyboard shortcuts ──────────────────────────────────────
   useEffect(() => {
@@ -229,6 +268,9 @@ export default function Layout() {
         if (overlay) {
           const closeBtn = overlay.querySelector('.modal-close');
           if (closeBtn) closeBtn.click();
+        } else if (isMobile && isSidebarVisible) {
+          setIsSidebarVisible(false);
+          moreBtnRef.current?.focus();
         }
         setShowShortcutHelp(false);
         return;
@@ -255,7 +297,7 @@ export default function Layout() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate]);
+  }, [navigate, isMobile, isSidebarVisible]);
 
   // ⌘K / Ctrl+K opens global search from anywhere, even while typing in a field
   useEffect(() => {
@@ -280,7 +322,7 @@ export default function Layout() {
       })
       .catch(() => { });
     // Only on first load: later navigation shouldn't redirect
-  }, [user ? user._id : null]);
+  }, [user?.id]);
 
   // Pages open the quick check by dispatching OPEN_EVENT (see focus/quickCheck.js)
   useEffect(() => {
@@ -303,11 +345,15 @@ export default function Layout() {
       {/* Floating toggle — only when sidebar is hidden on desktop */}
       {!isSidebarVisible && !isMobile && (
         <button
+          ref={showBtnRef}
           className="sidebar-toggle-floating"
           onClick={toggleSidebar}
           title="Show Sidebar"
+          aria-label="Show sidebar"
+          aria-expanded="false"
+          aria-controls={SIDEBAR_ID}
         >
-          ☰
+          <span aria-hidden="true">☰</span>
         </button>
       )}
 
@@ -320,7 +366,11 @@ export default function Layout() {
         />
       )}
 
-      <aside className={`sidebar ${isSidebarVisible ? 'visible' : 'hidden'}`}>
+      <aside
+        id={SIDEBAR_ID}
+        ref={sidebarRef}
+        className={`sidebar ${isSidebarVisible ? 'visible' : 'hidden'}`}
+      >
         <div className="sidebar-logo">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -328,16 +378,24 @@ export default function Layout() {
               <span>Personal Journal</span>
             </div>
             <button
+              ref={closeBtnRef}
               className="sidebar-toggle-btn"
               onClick={toggleSidebar}
-              title="Hide Sidebar"
+              title={isMobile ? 'Close menu' : 'Hide Sidebar'}
+              aria-label={isMobile ? 'Close menu' : 'Hide sidebar'}
+              aria-expanded={isSidebarVisible}
+              aria-controls={SIDEBAR_ID}
             >
-              ✕
+              <span aria-hidden="true">✕</span>
             </button>
           </div>
         </div>
 
-        <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <nav
+          className="sidebar-nav"
+          aria-label="Main navigation"
+          style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+        >
           {NAV_GROUPS.map((group, gIdx) => (
             <div key={gIdx} className="nav-group">
               <div style={{
@@ -355,21 +413,10 @@ export default function Layout() {
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     title={shortcut ? `${label} (${shortcut})` : label}
                   >
-                    <span className="icon">{icon}</span>
+                    <span className="icon" aria-hidden="true">{icon}</span>
                     {label}
                     {shortcut && (
-                      <span style={{
-                        marginLeft: 'auto',
-                        fontSize: 10,
-                        color: 'rgba(245,240,232,0.2)',
-                        background: 'rgba(245,240,232,0.06)',
-                        borderRadius: 4,
-                        padding: '2px 5px',
-                        fontFamily: 'monospace',
-                        letterSpacing: 0,
-                      }}>
-                        {shortcut}
-                      </span>
+                      <span className="nav-shortcut" aria-hidden="true">{shortcut}</span>
                     )}
                   </NavLink>
                 ))}
@@ -388,18 +435,14 @@ export default function Layout() {
               </div>
             )}
           </div>
-          <button
-            onClick={() => navigate('/profile')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'rgba(245,240,232,0.6)', fontSize: 13,
-              marginBottom: 10, padding: '6px 8px', borderRadius: 8, width: '100%'
-            }}
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => `nav-profile-link ${isActive ? 'active' : ''}`}
+            title="Profile"
           >
-            <span style={{ fontSize: 18 }}>{user?.avatar_emoji || '👤'}</span>
-            {user?.name}
-          </button>
+            <span aria-hidden="true" style={{ fontSize: 18 }}>{user?.avatar_emoji || '👤'}</span>
+            {user?.name || 'Profile'}
+          </NavLink>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               className="btn btn-ghost"
@@ -411,6 +454,7 @@ export default function Layout() {
             <button
               onClick={() => setShowShortcutHelp(true)}
               title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
               style={{
                 background: 'rgba(245,240,232,0.06)',
                 border: '1px solid rgba(245,240,232,0.1)',
@@ -557,15 +601,19 @@ export default function Layout() {
             to={to}
             className={({ isActive }) => isActive ? 'active' : ''}
           >
-            <span className="bn-icon">{icon}</span>
+            <span className="bn-icon" aria-hidden="true">{icon}</span>
             {label}
           </NavLink>
         ))}
         <button
+          ref={moreBtnRef}
           onClick={toggleSidebar}
           className={isSidebarVisible ? 'active' : ''}
+          aria-label="More pages"
+          aria-expanded={isSidebarVisible}
+          aria-controls={SIDEBAR_ID}
         >
-          <span className="bn-icon">☰</span>
+          <span className="bn-icon" aria-hidden="true">☰</span>
           More
         </button>
       </nav>
