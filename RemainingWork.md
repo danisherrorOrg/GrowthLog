@@ -104,10 +104,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
 21. ✅ **Completed — Task Check-ins: "Quick (5 questions)" showed only 4 questions**
     * **Done:** quick mode has 4 questions by design (the API stores 4 quick answers), so the label was wrong. Both mode labels and the completion bar now count the question lists, so they can't drift again. The form uses one quick-question list keyed by the API's field names instead of a second hard-coded copy. Test in `TaskCheckins.test.js`.
 
-22. **Mind Garden filter and input issues**
-    * "All" looks selected while the Pinned filter is still on, so searching "stuck" showed no results.
-    * Submitting an empty thought gives no feedback.
-    * Cmd+Enter doesn't submit.
+22. ✅ **Completed — Mind Garden filter and input issues**
+    * "All" looked selected while the Pinned filter was still on, so searching "stuck" showed no results. Submitting an empty thought gave no feedback, and Cmd+Enter didn't submit.
+    * **Done:** "All" now means no filters: it's only highlighted when neither a mood nor Pinned is on, and clicking it turns Pinned off too. The count reads "1 of 12 thoughts" while anything narrows the list. The empty state names the active filters ("No pinned thoughts match "stuck".") and has a "Show all thoughts" button. Planting an empty or blank thought shows "Write a thought first." and focuses the box (saving a blank edit says it can't be empty). ⌘+Enter / Ctrl+Enter plants a thought or saves an edit, with a hint under each box. Tests in `Thoughts.test.js`.
 
 23. **Morning Plan puts ratings on the wrong task**
     * Adding an item while rating another moves the new item to the front, so ratings already started went onto the wrong task.
