@@ -3406,3 +3406,50 @@ h4 {
 .qc-row-actions .qc-minutes {
   margin-top: 0;
 }
+
+/* ══ HISTORY CALENDAR ON PHONES ═══════════════════════════════════ */
+@media (max-width: 768px) {
+  .history-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Filters go above the calendar instead of beside it */
+  .history-layout {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 20px !important;
+  }
+
+  .history-filters {
+    width: 100% !important;
+    height: auto !important;
+    position: static !important;
+  }
+
+  .history-category-list {
+    max-height: 180px;
+  }
+
+  .history-month-nav {
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .history-month-label {
+    min-width: 0 !important;
+  }
+
+  .calendar-grid {
+    gap: 4px !important;
+  }
+
+  .calendar-weekday {
+    font-size: 11px !important;
+  }
+
+  .calendar-day {
+    padding: 6px !important;
+    min-height: 64px !important;
+  }
+}

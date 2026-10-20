@@ -65,9 +65,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * `frontend/src/App.js` had no catch-all route, so an unknown URL rendered a blank page.
     * **Done:** a `*` route inside the signed-in layout shows `pages/NotFound.js` ("Page not found", the URL that was asked for, and a link to the dashboard), with the sidebar still there. Signed-out visitors are sent to login as before. Vercel and nginx already serve the app for every path, so no server change was needed. Test in `NotFound.test.js`.
 
-14. **History page overflows on phones**
-    * At 380px wide, `/history` is 646px wide: the filter sidebar and the calendar sit side by side instead of stacking. Every other page fits.
-    * **Fix:** stack the filter panel above the calendar on narrow screens.
+14. ✅ **Completed — History page overflowed on phones**
+    * At 380px wide, `/history` was 646px wide: the filter sidebar and the calendar sat side by side instead of stacking.
+    * **Done:** below 768px the filter panel stacks above the calendar at full width (no longer a fixed-height sticky column; the category list scrolls inside 180px), and the calendar cells shrink (`minmax(0, 1fr)` columns, smaller padding and height) so all 7 days fit. Checked at 380px in both Calendar and Timeline views: the page is 370px wide with nothing overflowing. Desktop is unchanged.
 
 15. **Floating search and bell buttons cover page content**
     * They overlap the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
