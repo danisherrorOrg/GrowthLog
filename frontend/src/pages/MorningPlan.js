@@ -157,6 +157,9 @@ export default function MorningPlan() {
   const [loading, setLoading] = useState(true);
   const [skipped, setSkipped] = useState([]);
   const [newTask, setNewTask] = useState('');
+  // The task on the card. Reloads can reorder the queue (a new task or an undo
+  // may sort ahead of it), so it stays put until it's applied or skipped.
+  const [activeId, setActiveId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -175,7 +178,10 @@ export default function MorningPlan() {
   }, [load]);
 
   const queue = plan.candidates.filter(c => !skipped.includes(c.id));
-  const current = queue[0];
+  const current = queue.find(c => c.id === activeId) || queue[0];
+  useEffect(() => {
+    if (current && current.id !== activeId) setActiveId(current.id);
+  }, [current, activeId]);
   const doNowCount = plan.items.filter(i => i.verdict === 'do_now').length;
 
   const addTask = async (e) => {

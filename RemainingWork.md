@@ -108,9 +108,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * "All" looked selected while the Pinned filter was still on, so searching "stuck" showed no results. Submitting an empty thought gave no feedback, and Cmd+Enter didn't submit.
     * **Done:** "All" now means no filters: it's only highlighted when neither a mood nor Pinned is on, and clicking it turns Pinned off too. The count reads "1 of 12 thoughts" while anything narrows the list. The empty state names the active filters ("No pinned thoughts match "stuck".") and has a "Show all thoughts" button. Planting an empty or blank thought shows "Write a thought first." and focuses the box (saving a blank edit says it can't be empty). ⌘+Enter / Ctrl+Enter plants a thought or saves an edit, with a hint under each box. Tests in `Thoughts.test.js`.
 
-23. **Morning Plan puts ratings on the wrong task**
-    * Adding an item while rating another moves the new item to the front, so ratings already started went onto the wrong task.
-    * **Fix:** add new items to the end (or key the in-progress ratings by item id, not position).
+23. ✅ **Completed — Morning Plan put ratings on the wrong task**
+    * Adding an item while rating another moved the new item to the front, so ratings already started went onto the wrong task.
+    * **Done:** the API sorts the queue by urgency, priority and due date, so a new task (or an undone one) can sort ahead of the one being rated. The page now keeps the task on the card until it's confirmed or skipped, with its ratings intact, wherever it lands after a reload. Test in `MorningPlan.test.js`.
 
 24. **Check-in verdict cards (Continue / Pause / Drop) aren't buttons**
     * Keyboard and screen-reader users can't select them.
