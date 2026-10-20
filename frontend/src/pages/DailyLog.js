@@ -33,12 +33,23 @@ export default function DailyLog() {
 
   useEffect(() => {
     let hasLoadedLog = false;
+    let cancelled = false;
+    // Opening another day (e.g. from search while already on this page) starts from a clean slate
+    setLoading(true);
+    setError(false);
+    setTodayLog(null);
+    setHighlight('');
+    setOverallRating(5);
+    setGratitude(['', '', '']);
+    setRegret('');
+    setExpandedCategories([]);
     Promise.all([
       API.get('/categories'), 
       API.get(`/logs/${todayDateStr}`),
       API.get('/prompts/daily')
     ])
       .then(([catsRes, logRes, promptsRes]) => {
+        if (cancelled) return;
         const cats = catsRes.data;
         setCategories(cats);
         setSmartPrompts(promptsRes.data);
@@ -55,6 +66,8 @@ export default function DailyLog() {
             map[e.category_id] = { text: e.text, mood: e.mood, energy: e.energy, emotions: e.emotions || [], time_spent: e.time_spent || 0 };
           });
           setEntries(map);
+          // Open the categories that have something written, so a saved day doesn't look empty
+          setExpandedCategories(existing.entries.filter(e => e.text && e.text.trim()).map(e => e.category_id));
         } else {
           const map = {};
           cats.forEach((c) => { map[c.id] = { text: '', mood: 5, energy: 5, emotions: [], time_spent: 0 }; });
@@ -62,10 +75,12 @@ export default function DailyLog() {
         }
       })
       .catch((e) => {
+        if (cancelled) return;
         setError(true);
         toast.error(getErrorMessage(e, 'Failed to load log data'));
       })
       .finally(() => {
+        if (cancelled) return;
         setLoading(false);
         // Load draft from localStorage if available
         const draftKey = `growthlog_draft_${todayDateStr}`;
@@ -73,7 +88,7 @@ export default function DailyLog() {
         if (draft && !hasLoadedLog) {
           try {
             const parsed = JSON.parse(draft);
-            setEntries(parsed.entries || entries);
+            if (parsed.entries) setEntries(parsed.entries);
             if (parsed.highlight) setHighlight(parsed.highlight);
             if (parsed.overallRating) setOverallRating(parsed.overallRating);
             if (parsed.gratitude) setGratitude(parsed.gratitude);
@@ -82,7 +97,8 @@ export default function DailyLog() {
         }
       });
 
-  }, []);
+    return () => { cancelled = true; };
+  }, [todayDateStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save draft
   useEffect(() => {
@@ -131,7 +147,7 @@ export default function DailyLog() {
         entries: entryList,
         highlight,
         overall_rating: overallRating,
-        gratitude: gratitude.map(g => g.trim()),
+        gratitude: gratitude.map(g => g.trim()).filter(Boolean),
         regret: regret.trim(),
       });
       await refreshUser();
@@ -214,7 +230,10 @@ export default function DailyLog() {
                   <span style={{ fontSize: 24 }}>{cat.icon}</span>
                   <h3 style={{ fontSize: 18, margin: 0 }}>{cat.name}</h3>
                 </div>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {!isExpanded && entry.text?.trim() && (
+                    <span style={{ fontSize: 11, color: 'var(--sage)', fontWeight: 600 }}>✓ Written</span>
+                  )}
                   <span style={{ color: 'var(--sage)' }}>{isExpanded ? '▲' : '▼'}</span>
                 </div>
               </div>

@@ -61,7 +61,8 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
                 {"$unwind": "$entries"},
                 {"$group": {
                     "_id": "$entries.category_id",
-                    "count": {"$sum": 1},
+                    # Distinct days, so "N / total days" can't pass 100% when a day has two entries
+                    "days": {"$addToSet": "$date"},
                     "avg_mood": {"$avg": "$entries.mood"},
                     "time_spent": {"$sum": "$entries.time_spent"}
                 }}
@@ -129,15 +130,16 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
         cat_id = item.get("_id")
         if cat_id:
             stats_map[str(cat_id)] = {
-                "count": item.get("count", 0),
-                "avg_mood": item.get("avg_mood", 5.0),
+                "count": len(item.get("days", [])),
+                "avg_mood": item.get("avg_mood"),
                 "time_spent": item.get("time_spent", 0)
             }
             
     cat_consistency = []
     for c in categories:
         cat_id_str = str(c["_id"])
-        stat = stats_map.get(cat_id_str, {"count": 0, "avg_mood": 5.0, "time_spent": 0})
+        # No entries means no mood, not a neutral 5
+        stat = stats_map.get(cat_id_str, {"count": 0, "avg_mood": None, "time_spent": 0})
         cat_consistency.append({
             "name": c.get("name", "Unknown"),
             "icon": c.get("icon", "📝"),
@@ -145,7 +147,7 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
             "id": cat_id_str,
             "count": stat["count"],
             "percentage": round((stat["count"] / max(logs_count, 1)) * 100),
-            "avg_mood": round(stat["avg_mood"] or 5.0, 1),
+            "avg_mood": round(stat["avg_mood"], 1) if stat["avg_mood"] is not None else None,
             "time_spent": stat["time_spent"]
         })
         
@@ -187,7 +189,7 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
         
         logged_cats = [c for c in cat_consistency if c["count"] > 0]
         if logged_cats:
-            by_mood = sorted(logged_cats, key=lambda x: x["avg_mood"], reverse=True)
+            by_mood = sorted(logged_cats, key=lambda x: x["avg_mood"] or 0, reverse=True)
             happiest_cat = by_mood[0]
             insights.append({
                 "type": "mood_booster",
@@ -208,7 +210,7 @@ def get_dashboard(request: Request, days: int = 30, current_user=Depends(get_cur
         activity_score = round((c["count"] / max(logs_count, 1)) * 10, 1)
         radar_data.append({
             "subject": f"{c['icon']} {c['name']}",
-            "mood": c["avg_mood"],
+            "mood": c["avg_mood"] or 0,
             "activity": activity_score,
             "full": 10
         })

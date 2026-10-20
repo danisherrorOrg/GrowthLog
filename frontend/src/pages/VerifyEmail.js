@@ -11,25 +11,26 @@ import { getErrorMessage } from '../utils/errors';
 export default function VerifyEmail() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const [status, setStatus] = useState('verifying'); // verifying, success, error
 
   const hasRun = useRef(false);
 
   useEffect(() => {
-    if (hasRun.current) return;
+    // Wait for the session check so we know whether to refresh the signed-in user afterwards
+    if (loading || hasRun.current) return;
     hasRun.current = true;
-    
+
     API.get(`/auth/verify/${token}`)
       .then(async () => {
         setStatus('success');
-        await refreshUser();
+        if (user) await refreshUser(true).catch(() => {});
       })
       .catch((e) => {
         setStatus('error');
         toast.error(getErrorMessage(e, 'Verification failed'));
       });
-  }, [token]); // eslint-disable-line
+  }, [token, loading]); // eslint-disable-line
 
 
 
@@ -53,8 +54,8 @@ export default function VerifyEmail() {
             <p style={{ color: 'rgba(13,13,13,0.5)', fontSize: 14, marginBottom: 24 }}>
               Your account is now secure. You can now receive reminders and stay consistent.
             </p>
-            <button className="btn btn-primary" onClick={() => navigate('/dashboard')} style={{ width: '100%', justifyContent: 'center' }}>
-              Go to Dashboard
+            <button className="btn btn-primary" onClick={() => navigate(user ? '/dashboard' : '/login')} style={{ width: '100%', justifyContent: 'center' }}>
+              {user ? 'Go to Dashboard' : 'Sign in'}
             </button>
           </>
         )}
@@ -66,8 +67,8 @@ export default function VerifyEmail() {
             <p style={{ color: 'rgba(13,13,13,0.5)', fontSize: 14, marginBottom: 24 }}>
               The link may be expired or invalid. Please try sending a new one from your profile.
             </p>
-            <Link to="/profile" className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
-              Return to Profile
+            <Link to={user ? '/profile' : '/login'} className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
+              {user ? 'Return to Profile' : 'Sign in'}
             </Link>
           </>
         )}

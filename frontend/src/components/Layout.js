@@ -1,4 +1,4 @@
-import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useEffect, useState, useRef } from 'react';
 import API from '../utils/api';
@@ -105,6 +105,7 @@ export default function Layout() {
   const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const navigationType = useNavigationType();
 
   const [isMobile, setIsMobile] = useState(isMobileWidth);
   const [isSidebarVisible, setIsSidebarVisible] = useState(() => !isMobileWidth() && readSidebarPref());
@@ -226,6 +227,11 @@ export default function Layout() {
       fetchNotifications();
     }
   }, [location.pathname, user?.id]);
+
+  // A new page starts at the top. Back/forward (POP) keeps the browser's restored position.
+  useEffect(() => {
+    if (navigationType !== 'POP') window.scrollTo(0, 0);
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close sidebar on mobile when route changes
   useEffect(() => {

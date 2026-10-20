@@ -67,7 +67,13 @@ def create_category_template(data: CategoryTemplateModel, current_user=Depends(g
 @router.delete("/templates/{template_id}")
 def delete_category_template(template_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
-    db.category_templates.delete_one({"_id": ObjectId(template_id), "user_id": uid})
+    try:
+        oid = ObjectId(template_id)
+    except bson_errors.InvalidId:
+        raise HTTPException(status_code=404, detail="Template not found")
+    result = db.category_templates.delete_one({"_id": oid, "user_id": uid})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
     from utils.activity import log_activity
     log_activity(uid, "delete", "category_template", template_id, "Deleted a category template")
     return {"success": True}

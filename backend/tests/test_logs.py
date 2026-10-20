@@ -104,3 +104,40 @@ def test_log_cross_user_isolation(client, auth_headers, other_user_headers):
     # 3. User B tries to delete it
     resp = client.delete(f"/logs/{today}", headers=other_user_headers)
     assert resp.status_code == 404
+
+
+def test_blank_gratitude_lines_are_not_saved(client, auth_headers):
+    cat_id = client.get("/categories", headers=auth_headers).json()[0]["id"]
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    log = {"date": today, "entries": [{"category_id": cat_id, "mood": 7, "energy": 7, "text": "x"}],
+           "gratitude": ["  coffee ", "", "   "]}
+    assert client.post("/logs", headers=auth_headers, json=log).status_code == 200
+    assert client.get(f"/logs/{today}", headers=auth_headers).json()["gratitude"] == ["coffee"]
+
+    log["gratitude"] = ["", "", ""]
+    assert client.post("/logs", headers=auth_headers, json=log).status_code == 200
+    assert client.get(f"/logs/{today}", headers=auth_headers).json()["gratitude"] == []
+
+
+def test_dashboard_has_no_made_up_mood(client, auth_headers):
+    """Categories without entries have no mood, and consistency counts days, not entries."""
+    dash = client.get("/dashboard?days=30", headers=auth_headers).json()
+    assert dash["total_logs"] == 0
+    assert all(c["avg_mood"] is None for c in dash["category_consistency"])
+    assert all(r["mood"] == 0 for r in dash["radar_data"])
+
+    cats = client.get("/categories", headers=auth_headers).json()
+    now = datetime.now(timezone.utc)
+    for offset in (1, 2):
+        day = (now - timedelta(days=offset)).strftime("%Y-%m-%d")
+        client.post("/logs", headers=auth_headers, json={"date": day, "entries": [
+            {"category_id": cats[0]["id"], "mood": 8, "energy": 6, "text": "a"},
+        ]})
+
+    dash = client.get("/dashboard?days=30", headers=auth_headers).json()
+    by_id = {c["id"]: c for c in dash["category_consistency"]}
+    assert dash["total_logs"] == 2
+    assert by_id[cats[0]["id"]]["count"] == 2
+    assert by_id[cats[0]["id"]]["avg_mood"] == 8
+    assert by_id[cats[1]["id"]]["count"] == 0
+    assert by_id[cats[1]["id"]]["avg_mood"] is None

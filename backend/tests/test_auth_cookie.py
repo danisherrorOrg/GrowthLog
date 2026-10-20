@@ -73,3 +73,23 @@ def test_password_change_keeps_current_session(client):
 def test_bearer_header_still_works_without_csrf_header(client, auth_headers):
     resp = client.post("/categories", json={"name": "Bearer Cat", "icon": "🔑", "color": "#111"}, headers=auth_headers)
     assert resp.status_code == 200
+
+
+def test_browser_clients_dont_get_token_in_body(client):
+    data, resp = _register(client)
+    # API clients (no CSRF header) still get the token for Bearer auth
+    assert "token" in resp.json()
+    creds = {"email": data["email"], "password": data["password"]}
+    assert "token" in client.post("/auth/login", json=creds).json()
+
+    # The browser app sends the CSRF header and relies on the httpOnly cookie only
+    browser = {CSRF_HEADER: "XMLHttpRequest"}
+    client.cookies.clear()
+    body = client.post("/auth/login", json=creds, headers=browser).json()
+    assert "token" not in body
+    assert body["user"]["email"] == data["email"]
+    assert client.get("/auth/me").status_code == 200
+
+    other = {"name": "B", "email": f"cookie_{os.urandom(4).hex()}@example.com", "password": "Password123!"}
+    body = client.post("/auth/register", json=other, headers=browser).json()
+    assert "token" not in body

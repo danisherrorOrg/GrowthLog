@@ -7,7 +7,7 @@ import secrets
 
 from core.database import db
 from core.security import hash_password, verify_password, create_token
-from core.config import ALLOWED_ORIGINS
+from core.config import ALLOWED_ORIGINS, CSRF_HEADER
 from utils.cache import utcnow, cache_get, cache_set, cache_invalidate_exact, cache_invalidate_prefix
 from utils.email import send_email, render_email
 from utils.helpers import clean_update
@@ -46,6 +46,13 @@ def _queue_verification_email(background_tasks: BackgroundTasks, to_email: str, 
         )
     background_tasks.add_task(send_email, to_email, subject, body)
 
+def _with_token(request: Request, token: str, body: dict) -> dict:
+    # The browser app sends the CSRF header and uses the httpOnly cookie, so it never gets the
+    # token where page scripts could read it. Other API clients still get it for Bearer auth.
+    if not request.headers.get(CSRF_HEADER):
+        body["token"] = token
+    return body
+
 @router.post("/register")
 @limiter.limit("5/minute")
 def register(request: Request, response: Response, data: RegisterModel, background_tasks: BackgroundTasks):
@@ -78,8 +85,8 @@ def register(request: Request, response: Response, data: RegisterModel, backgrou
 
     token = create_token(uid_str, 1)
     set_auth_cookie(response, token)
-    return {"token": token,
-            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": [], "timezone": data.timezone or "UTC"}}
+    return _with_token(request, token,
+            {"user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": [], "timezone": data.timezone or "UTC"}})
 
 @router.post("/verify/send")
 @limiter.limit("3/minute")
@@ -143,8 +150,8 @@ def login(request: Request, response: Response, data: LoginModel):
     if data.timezone and tz == "UTC" and not user.get("timezone_set_manually"):
         tz = data.timezone
         db.users.update_one({"_id": user["_id"]}, {"$set": {"timezone": tz}})
-    return {"token": token,
-            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", []), "timezone": tz}}
+    return _with_token(request, token,
+            {"user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", []), "timezone": tz}})
 
 def _hash_reset_token(token: str) -> str:
     # Only the hash is stored, so a leaked database can't be used to reset passwords

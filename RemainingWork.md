@@ -217,17 +217,53 @@ Checked in the browser at 1414×876, 960×700, exactly 900px and 390×844, with 
 
 ### Smaller issues and gaps
 
-* **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
-* **Life Balance chart shows made-up data.** A new user with no logs sees "Mood: 5" for every category, and categories with no entries still show 5 after logging.
-* **Email verification needs a login.** `/verify/:token` sits inside `PrivateRoute`, so opening the link on another device lands on the login page.
-* **The login token is still returned in the response body.** `backend/api/routers/auth.py:81` and `:140` return `token` even though the browser now uses the httpOnly cookie; page scripts can read it. Drop it for browser clients.
-* **Default categories don't match the copy.** The login page lists Mind/Body/Career/Social/Soul; new accounts get Mind/Body/Career/Finance/Spirit.
-* **Category Consistency shows "0 / 0 days"** for the 30-day range on the dashboard.
-* **Opening a log from search collapses everything.** All categories start collapsed, with no sign of which ones have entries.
-* **After saving a log, the dashboard opens scrolled halfway down.**
-* **Empty gratitude fields are saved** as `['', '', '']`.
-* **Duplicate "Goal not found" toasts** when opening a missing goal (an effect that runs twice).
-* **Deleting a category template always reports success.** `DELETE /categories/templates/{id}` (`backend/api/routers/categories.py:67`) returns `{"success": true}` and logs a "Deleted a category template" activity even when no template matched. Return 404 when nothing was deleted.
+45. ✅ **Completed — "AI-generated patterns" label was wrong**
+    * The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved.
+    * **Done:** the label now reads "Patterns spotted in your logs".
+
+46. ✅ **Completed — Life Balance chart showed made-up data**
+    * A new user saw "Mood: 5" for every category, and categories with no entries still showed 5 after logging.
+    * **Done:** a category with no entries has no mood (`avg_mood: null`, and 0 on the radar) instead of 5. With no logs in the range, the card says "Log a few days to see your life balance". The unused Growth page code that also defaulted to 5 is gone, and Growth hides "avg mood" for categories without one.
+
+47. ✅ **Completed — Email verification needed a login**
+    * `/verify/:token` sat inside `PrivateRoute`, so opening the link on another device landed on the login page.
+    * **Done:** the route is public. Signed out, the page verifies and offers "Sign in"; signed in, it refreshes the user and offers the dashboard.
+
+48. ✅ **Completed — The login token was returned in the response body**
+    * Login and register returned `token` even though the browser uses the httpOnly cookie, so page scripts could read it.
+    * **Done:** requests with the CSRF header (the browser app) no longer get `token`. API clients and tests without it still do, for Bearer auth.
+
+49. ✅ **Completed — Default categories didn't match the copy**
+    * The login and sign-up pages listed Mind/Body/Career/Social/Soul; new accounts get Mind/Body/Career/Finance/Spirit.
+    * **Done:** both pages now show Mind/Body/Career/Finance/Spirit with the same icons and colors as the real defaults.
+
+50. ✅ **Completed — Category Consistency showed "0 / 0 days"**
+    * With no logs in the range it read "0 / 0 days". It also counted entries rather than days.
+    * **Done:** with no logs it says "No days logged yet", and each category counts the distinct days it was logged.
+
+51. ✅ **Completed — Opening a log from search collapsed everything**
+    * All categories started collapsed, with no sign of which had entries. Jumping to another day from search while already on the log page also kept showing the old day, because the page only loaded once.
+    * **Done:** a saved day opens with its written categories expanded, collapsed ones with text show "✓ Written", and the page reloads when the date changes.
+
+52. ✅ **Completed — After saving a log, the dashboard opened scrolled halfway down**
+    * Nothing reset the window scroll between pages.
+    * **Done:** every new page starts at the top. Back/forward still keeps the browser's restored position.
+
+53. ✅ **Completed — Empty gratitude fields were saved** as `['', '', '']`.
+    * **Done:** blank lines are dropped in the page and in `POST /logs`.
+
+54. ✅ **Completed — Duplicate "Goal not found" toasts**
+    * React's StrictMode ran the load effect twice, and both failures showed a toast.
+    * **Done:** a superseded load is ignored, and the toast has a fixed id.
+
+55. ✅ **Completed — Deleting a category template always reported success**
+    * **Done:** `DELETE /categories/templates/{id}` returns 404 (and logs no activity) when nothing was deleted, including for a malformed id or another user's template.
+
+56. ✅ **Completed — Growth Trends dates weren't formatted** (found while fixing the above)
+    * `parseISO` wasn't imported in `Dashboard.js`, so the chart's axis and tooltip silently fell back to raw `2026-10-01` strings.
+    * **Done:** imported.
+
+Tests: `DailyLog.test.js`, `GoalDetail.test.js`, `VerifyEmail.test.js`, and backend tests for the token, templates, gratitude and dashboard moods.
 
 ---
 

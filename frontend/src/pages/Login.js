@@ -5,11 +5,11 @@ import toast from 'react-hot-toast';
 import { getErrorMessage } from '../utils/errors';
 
 const DIMENSIONS = [
-  { icon: '🧠', title: 'Mind', desc: 'Intellectual growth, learning, and mental clarity.', color: 'var(--sage)' },
-  { icon: '💪', title: 'Body', desc: 'Physical health, energy levels, and vital habits.', color: 'var(--rust)' },
-  { icon: '💼', title: 'Career', desc: 'Professional wins, productivity, and financial health.', color: '#8b6bc4' },
-  { icon: '🤝', title: 'Social', desc: 'Deepening connections and finding community.', color: 'var(--gold)' },
-  { icon: '✨', title: 'Soul', desc: 'Spirituality, peace, and internal alignment.', color: '#c4623a' },
+  { icon: '🧠', title: 'Mind', desc: 'Intellectual growth, learning, and mental clarity.', color: '#c9a84c' },
+  { icon: '💪', title: 'Body', desc: 'Physical health, energy levels, and vital habits.', color: '#6b8c6b' },
+  { icon: '💼', title: 'Career', desc: 'Professional wins, productivity, and growth at work.', color: '#5b8ba8' },
+  { icon: '💰', title: 'Finance', desc: 'Earning, saving, and building wealth.', color: '#8b6bc4' },
+  { icon: '🌿', title: 'Spirit', desc: 'Peace, philosophy, and connection.', color: '#c46b8b' },
 ];
 
 const STATS = [

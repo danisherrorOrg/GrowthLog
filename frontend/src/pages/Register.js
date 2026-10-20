@@ -12,11 +12,11 @@ const STEPS = [
 ];
 
 const DIMENSIONS = [
-  { icon: '🧠', title: 'Mind', desc: 'Intellectual growth and mental clarity.', color: 'var(--sage)' },
-  { icon: '💪', title: 'Body', desc: 'Physical health and vital energy.', color: 'var(--rust)' },
-  { icon: '💼', title: 'Career', desc: 'Productivity and financial health.', color: '#8b6bc4' },
-  { icon: '🤝', title: 'Social', desc: 'Deepening human connections.', color: 'var(--gold)' },
-  { icon: '✨', title: 'Soul', desc: 'Spirituality and internal alignment.', color: '#c4623a' },
+  { icon: '🧠', title: 'Mind', desc: 'Learning and mental clarity.', color: '#c9a84c' },
+  { icon: '💪', title: 'Body', desc: 'Physical health and vital energy.', color: '#6b8c6b' },
+  { icon: '💼', title: 'Career', desc: 'Productivity and growth at work.', color: '#5b8ba8' },
+  { icon: '💰', title: 'Finance', desc: 'Saving and building wealth.', color: '#8b6bc4' },
+  { icon: '🌿', title: 'Spirit', desc: 'Peace, philosophy, and connection.', color: '#c46b8b' },
 ];
 
 function isValidEmail(email) {
