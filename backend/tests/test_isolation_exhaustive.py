@@ -11,7 +11,7 @@ def test_exhaustive_isolation(client, auth_headers, other_user_headers):
     
     # Goal
     goal = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat_id, "title": "A Goal", "deadline": "2025-12-31"
+        "category_id": cat_id, "title": "A Goal", "deadline": "2099-12-31"
     }).json()
     goal_id = goal["id"]
     

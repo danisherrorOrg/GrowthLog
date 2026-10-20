@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
 
 const EMPTY_FORM = { habit: '', reason: '', started_at: '', abandoned_at: '' };
 
@@ -12,6 +12,7 @@ export default function HabitGraveyardTab() {
   const openEdit = (i) => list.openEdit(i, { habit: i.habit, reason: i.reason || '', started_at: i.started_at || '', abandoned_at: i.abandoned_at || '' });
   const handleSave = () => {
     if (!form.habit.trim()) return toast.error('Name the habit');
+    if (form.started_at && form.abandoned_at && form.abandoned_at < form.started_at) return toast.error("The abandoned date can't be before the start date");
     list.save('🪦 Habit laid to rest');
   };
   const handleDelete = (item) => list.remove(item, { title: 'Remove from Graveyard?', message: `Remove "${item.habit}"?`, done: 'Removed' });
@@ -52,10 +53,10 @@ export default function HabitGraveyardTab() {
         <div className="form-group"><label className="form-label">Habit name</label><input maxLength={200} className="form-input" value={form.habit} onChange={e => setForm({ ...form, habit: e.target.value })} placeholder="e.g. Cold showers…" /></div>
         <div className="form-group"><label className="form-label">Why did you abandon it?</label><textarea maxLength={2000} className="form-textarea" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} placeholder="What made it not stick?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" className="form-input" value={form.started_at} onChange={e => setForm({ ...form, started_at: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Abandoned (optional)</label><input maxLength={200} type="date" className="form-input" value={form.abandoned_at} onChange={e => setForm({ ...form, abandoned_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started (optional)</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={form.started_at} onChange={e => setForm({ ...form, started_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Abandoned (optional)</label><input maxLength={200} type="date" max={localDate()} min={form.started_at || undefined} className="form-input" value={form.abandoned_at} onChange={e => setForm({ ...form, abandoned_at: e.target.value })} /></div>
         </div>
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Bury the Habit'}</button></div>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Bury the Habit'}</button></div>
       </div></div>)}
 
       <PreviewModal item={preview} onClose={() => setPreview(null)} icon="🪦" iconBg="linear-gradient(135deg,#f3eeff,#e8dcff)" titleColor="#8b6bc4" title={preview?.habit} subtitle={[preview?.started_at && `🌱 ${preview.started_at}`, preview?.abandoned_at && `🪦 ${preview.abandoned_at}`].filter(Boolean).join(' → ')} body={preview && (preview.reason ? <div style={{ padding: '18px 22px', background: 'linear-gradient(135deg,#f3eeff,#ede4ff)', borderRadius: 14, border: '1px solid rgba(139,107,196,0.2)' }}><div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, color: '#8b6bc4', fontWeight: 800, marginBottom: 10 }}>Why it didn't stick</div><div className="markdown-body" style={{ fontSize: 15, lineHeight: 1.75, fontStyle: 'italic', margin: 0 }}><MarkdownRenderer content={preview.reason} /></div></div> : <p style={{ color: 'rgba(13,13,13,0.4)', fontStyle: 'italic' }}>No reason recorded.</p>)} />

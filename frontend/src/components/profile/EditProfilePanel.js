@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { browserTimezone, timezoneOptions } from '../../utils/dates';
 
 const MAX_THEME_ITEMS = 24; // matches the backend limit in ProfileUpdateModel
 const AVATAR_OPTIONS = ['🌱', '🔥', '💎', '🦁', '🦋', '🌊', '⚡', '🎯', '🌙', '☀️', '🏔️', '🌿'];
 export const DEFAULT_CATEGORY_COLORS = ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'];
 export const DEFAULT_CATEGORY_ICONS = ['🧠', '💼', '❤️', '🤝', '💪', '🎯', '📚', '🌿', '💰', '🎨', '🙏', '⚡'];
 
-// Slide-in panel for editing name, bio, avatar, notifications and the category theme
+// Slide-in panel for editing name, bio, avatar, timezone, notifications and the category theme
 export default function EditProfilePanel({ form, setForm, saving, onSave, onClose }) {
   const [newColorInput, setNewColorInput] = useState('#6b8c6b');
   const [newIconInput, setNewIconInput] = useState('');
+  const deviceTz = browserTimezone();
 
   return (
     <div
@@ -90,6 +92,19 @@ export default function EditProfilePanel({ form, setForm, saving, onSave, onClos
               <span>Markdown supported</span>
               <span>{form.bio.length}/500</span>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="profile-timezone">Timezone</label>
+            <select id="profile-timezone" className="form-select" value={form.timezone}
+              onChange={e => setForm({ ...form, timezone: e.target.value })}>
+              {timezoneOptions(form.timezone, deviceTz).map(tz => (
+                <option key={tz} value={tz}>{tz === deviceTz ? `${tz} (this device)` : tz}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>
+              Decides when your day starts for logs, streaks and reminders.
+            </p>
           </div>
 
           <div className="form-group">

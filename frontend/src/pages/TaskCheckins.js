@@ -109,12 +109,15 @@ function formatTime(s) {
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
+// Keys are the check-in fields the API stores for each quick answer.
 const QUICK_QUESTIONS = [
-  { key: 'quick_most_important', label: 'Most important thing right now?' },
-  { key: 'quick_real_progress', label: 'Making real progress or going in circles?' },
-  { key: 'quick_show_for_30', label: 'What to show for this in 30 minutes?' },
-  { key: 'quick_energy_suited', label: 'Is my energy level suited to this task?' },
+  { key: 'quick_most_important', text: 'Is this the most important thing I can be doing right now?' },
+  { key: 'quick_real_progress', text: 'Am I making real progress, or going in circles?' },
+  { key: 'quick_show_for_30', text: 'What will I have to show for this in the next 30 minutes?' },
+  { key: 'quick_energy_suited', text: 'Is my energy level suited to this task?' },
 ];
+const FULL_QUESTION_COUNT = CATEGORIES.reduce((n, c) => n + c.questions.length, 0);
+const emptyQuickAnswers = () => Object.fromEntries(QUICK_QUESTIONS.map(q => [q.key, '']));
 
 function CheckInCard({ checkin, onDelete }) {
   const navigate = useNavigate();
@@ -169,7 +172,7 @@ export default function TaskCheckins() {
   const [taskName, setTaskName] = useState('');
   const [checkInNum, setCheckInNum] = useState(1);
   const [answers, setAnswers] = useState({});
-  const [quickAnswers, setQuickAnswers] = useState({ q1: '', q2: '', q3: '', q4: '' });
+  const [quickAnswers, setQuickAnswers] = useState(emptyQuickAnswers);
   const [customQuestions, setCustomQuestions] = useState([]); // [{id, text, answer}]
   const [newCustomQ, setNewCustomQ] = useState('');
   const [verdict, setVerdict] = useState('continue');
@@ -213,7 +216,7 @@ export default function TaskCheckins() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setTaskName(''); setCheckInNum(1); setAnswers({}); setQuickAnswers({ q1: '', q2: '', q3: '', q4: '' });
+    setTaskName(''); setCheckInNum(1); setAnswers({}); setQuickAnswers(emptyQuickAnswers());
     setCustomQuestions([]); setNewCustomQ('');
     setVerdict('continue'); setVerdictReason(''); setNextAction('');
     setActiveCategory(0); setStep('task'); setTimerSecs(0); setTimerRunning(false);
@@ -233,15 +236,13 @@ export default function TaskCheckins() {
 
   const handleSave = async () => {
     if (!taskName.trim()) return toast.error('Please enter a task name');
+    if (!Number.isInteger(checkInNum) || checkInNum < 1 || checkInNum > 99) return toast.error('Check-in number must be between 1 and 99');
     setSaving(true);
     try {
       const payload = {
         task_name: taskName, check_in_number: checkInNum, mode,
         answers: mode === 'full' ? answers : null,
-        quick_most_important: quickAnswers.q1,
-        quick_real_progress: quickAnswers.q2,
-        quick_show_for_30: quickAnswers.q3,
-        quick_energy_suited: quickAnswers.q4,
+        ...quickAnswers,
         custom_questions: customQuestions.map(({ text, answer }) => ({ text, answer })),
         verdict, verdict_reason: verdictReason, next_action: nextAction,
       };
@@ -272,8 +273,8 @@ export default function TaskCheckins() {
 
   const verdictColor = VERDICTS.find(v => v.key === verdict)?.color || 'var(--sage)';
   const progress = mode === 'full'
-    ? Math.round((Object.values(answers).filter(Boolean).length / 18) * 100)
-    : Math.round((Object.values(quickAnswers).filter(Boolean).length / 4) * 100);
+    ? Math.round((Object.values(answers).filter(Boolean).length / FULL_QUESTION_COUNT) * 100)
+    : Math.round((Object.values(quickAnswers).filter(Boolean).length / QUICK_QUESTIONS.length) * 100);
 
   return (
     <div>
@@ -306,9 +307,11 @@ export default function TaskCheckins() {
             ].map(s => {
               const isActive = filterVerdict === s.id;
               return (
-                <div key={s.label} className="card"
-                  onClick={() => setFilterVerdict(s.id)}
+                <button key={s.label} type="button" className="card checkin-stat-btn"
+                  onClick={() => setFilterVerdict(s.id)} aria-pressed={isActive}
+                  aria-label={`${s.label}: ${s.val}${s.id ? '. Show only these' : '. Show all'}`}
                   style={{
+                    font: 'inherit', textAlign: 'left', color: 'inherit',
                     background: isActive ? `${s.color}15` : 'white',
                     border: isActive ? `2px solid ${s.color}` : '1px solid rgba(13,13,13,0.06)',
                     borderRadius: 16,
@@ -322,7 +325,7 @@ export default function TaskCheckins() {
                   <div style={{ fontSize: 22 }}>{s.icon}</div>
                   <div style={{ fontFamily: 'Fraunces', fontSize: 28, fontWeight: 700, color: s.color }}>{s.val}</div>
                   <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)' }}>{s.label}</div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -362,7 +365,7 @@ export default function TaskCheckins() {
 
             {/* Mode tabs */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-              {[{ k: 'full', l: '📋 Full (18 questions)' }, { k: 'quick', l: '⚡ Quick (5 questions)' }].map(m => (
+              {[{ k: 'full', l: `📋 Full (${FULL_QUESTION_COUNT} questions)` }, { k: 'quick', l: `⚡ Quick (${QUICK_QUESTIONS.length} questions)` }].map(m => (
                 <button key={m.k} onClick={() => setMode(m.k)}
                   className={`btn ${mode === m.k ? 'btn-primary' : 'btn-outline'}`}
                   style={{ borderRadius: 30, fontSize: 13 }}>
@@ -467,12 +470,7 @@ export default function TaskCheckins() {
                 <div style={{ padding: '12px 16px', background: 'rgba(13,13,13,0.03)', borderRadius: 12, fontSize: 13, color: 'rgba(13,13,13,0.6)' }}>
                   ⚡ Use this when you only have 2 minutes for a check-in.
                 </div>
-                {[
-                  { key: 'q1', text: 'Is this the most important thing I can be doing right now?' },
-                  { key: 'q2', text: 'Am I making real progress, or going in circles?' },
-                  { key: 'q3', text: 'What will I have to show for this in the next 30 minutes?' },
-                  { key: 'q4', text: 'Is my energy level suited to this task?' },
-                ].map((q, i) => (
+                {QUICK_QUESTIONS.map((q, i) => (
                   <div key={q.key} className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label">{i + 1}. {q.text}</label>
                     <MdTextarea value={quickAnswers[q.key]} onChange={val => setQuickAnswers(a => ({ ...a, [q.key]: val }))}
@@ -517,25 +515,27 @@ export default function TaskCheckins() {
             {/* Step: Verdict */}
             {step === 'verdict' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(13,13,13,0.5)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                <div id="checkin-verdict-label" style={{ fontSize: 13, fontWeight: 700, color: 'rgba(13,13,13,0.5)', textTransform: 'uppercase', letterSpacing: 1 }}>
                   Final Verdict — Look at all your answers and choose one:
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div role="radiogroup" aria-labelledby="checkin-verdict-label" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {VERDICTS.map(v => (
-                    <div key={v.key} onClick={() => setVerdict(v.key)}
+                    <label key={v.key} className="checkin-verdict-option"
                       style={{
                         padding: '16px 20px', borderRadius: 14, cursor: 'pointer', transition: 'all 0.2s',
                         border: `2px solid ${verdict === v.key ? v.color : 'rgba(13,13,13,0.08)'}`,
                         background: verdict === v.key ? `${v.color}10` : 'white',
                         display: 'flex', alignItems: 'center', gap: 14,
                       }}>
-                      <span style={{ fontSize: 24 }}>{v.icon}</span>
+                      <input type="radio" name="checkin-verdict" value={v.key} className="sr-only"
+                        checked={verdict === v.key} onChange={() => setVerdict(v.key)} />
+                      <span style={{ fontSize: 24 }} aria-hidden="true">{v.icon}</span>
                       <div>
                         <div style={{ fontWeight: 700, color: verdict === v.key ? v.color : 'var(--ink)' }}>{v.label}</div>
                         <div style={{ fontSize: 12, color: 'rgba(13,13,13,0.5)', marginTop: 2 }}>{v.desc}</div>
                       </div>
-                      {verdict === v.key && <span style={{ marginLeft: 'auto', fontWeight: 700, color: v.color }}>✓</span>}
-                    </div>
+                      {verdict === v.key && <span style={{ marginLeft: 'auto', fontWeight: 700, color: v.color }} aria-hidden="true">✓</span>}
+                    </label>
                   ))}
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>

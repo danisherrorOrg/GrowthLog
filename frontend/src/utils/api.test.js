@@ -1,4 +1,4 @@
-import API from './api';
+import API, { setSigningOut } from './api';
 
 const onError = API.interceptors.response.handlers[0].rejected;
 const realLocation = window.location;
@@ -31,4 +31,15 @@ test('a 401 on a signed-out page or a session probe does not redirect', async ()
   setPath('/dashboard');
   await expect(onError({ response: { status: 401 }, config: { skipAuthRedirect: true } })).rejects.toBeTruthy();
   expect(window.location.href).toBe('/dashboard');
+});
+
+test('a 401 while signing out does not show "Session Expired"', async () => {
+  setPath('/dashboard');
+  setSigningOut(true);
+  try {
+    await expect(onError({ response: { status: 401 }, config: {} })).rejects.toBeTruthy();
+    expect(window.location.href).toBe('/dashboard');
+  } finally {
+    setSigningOut(false);
+  }
 });

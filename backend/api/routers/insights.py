@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     AntiGoalModel, HabitGraveyardModel,
     TimeEntryModel, ScreenTimeModel, ProcrastinationLogModel, NotToDoModel,
@@ -13,6 +13,21 @@ from models.schemas import (
 )
 
 router = APIRouter(prefix="/insights", tags=["insights"])
+
+
+def _check_day_total(collection, uid: str, day: str, hours: float, label: str, exclude_id=None):
+    """Hours logged for one day can't add up to more than 24."""
+    match = {"user_id": uid, "date": day}
+    if exclude_id is not None:
+        match["_id"] = {"$ne": exclude_id}
+    logged = sum(d.get("hours") or 0 for d in collection.find(match, {"hours": 1}))
+    total = round(logged + hours, 6)  # avoid float noise like 23.999999999
+    if total > 24:
+        left = round(max(0.0, 24 - logged), 6)
+        raise HTTPException(
+            status_code=422,
+            detail=f"{label} for {day} would come to {total:g}h. A day has 24 hours, and {left:g}h are left.",
+        )
 
 # ──────────────────────────────────────────────
 #  Anti-Goals
@@ -72,6 +87,7 @@ def get_habit_graveyard(current_user=Depends(get_current_user)):
 @router.post("/habit-graveyard")
 def create_habit_graveyard(data: HabitGraveyardModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Start date": data.started_at, "Abandoned date": data.abandoned_at})
     doc = {
         "user_id": uid,
         "habit": data.habit,
@@ -88,6 +104,7 @@ def create_habit_graveyard(data: HabitGraveyardModel, current_user=Depends(get_c
 @router.put("/habit-graveyard/{item_id}")
 def update_habit_graveyard(item_id: str, data: HabitGraveyardModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Start date": data.started_at, "Abandoned date": data.abandoned_at})
     result = db.habit_graveyard.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"habit": data.habit, "reason": data.reason or "", "started_at": data.started_at or "", "abandoned_at": data.abandoned_at or ""}}
@@ -121,9 +138,11 @@ def get_time_entries(current_user=Depends(get_current_user)):
 @router.post("/time-entries")
 def create_time_entry(data: TimeEntryModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.time_entries, uid, day, data.hours, "Time tracked")
     doc = {
         "user_id": uid,
-        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "date": day,
         "category": data.category,
         "hours": data.hours,
         "notes": data.notes or "",
@@ -137,9 +156,11 @@ def create_time_entry(data: TimeEntryModel, current_user=Depends(get_current_use
 @router.put("/time-entries/{item_id}")
 def update_time_entry(item_id: str, data: TimeEntryModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.time_entries, uid, day, data.hours, "Time tracked", exclude_id=ObjectId(item_id))
     result = db.time_entries.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
-        {"$set": {"date": data.date or utcnow().strftime("%Y-%m-%d"), "category": data.category, "hours": data.hours, "notes": data.notes or ""}}
+        {"$set": {"date": day, "category": data.category, "hours": data.hours, "notes": data.notes or ""}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Time entry not found")
@@ -166,9 +187,11 @@ def get_screen_time(current_user=Depends(get_current_user)):
 @router.post("/screen-time")
 def create_screen_time(data: ScreenTimeModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.screen_time, uid, day, data.hours, "Screen time")
     doc = {
         "user_id": uid,
-        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "date": day,
         "app_category": data.app_category,
         "hours": data.hours,
         "notes": data.notes or "",
@@ -182,9 +205,11 @@ def create_screen_time(data: ScreenTimeModel, current_user=Depends(get_current_u
 @router.put("/screen-time/{item_id}")
 def update_screen_time(item_id: str, data: ScreenTimeModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.screen_time, uid, day, data.hours, "Screen time", exclude_id=ObjectId(item_id))
     result = db.screen_time.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
-        {"$set": {"date": data.date or utcnow().strftime("%Y-%m-%d"), "app_category": data.app_category, "hours": data.hours, "notes": data.notes or ""}}
+        {"$set": {"date": day, "app_category": data.app_category, "hours": data.hours, "notes": data.notes or ""}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Screen time entry not found")
@@ -211,6 +236,7 @@ def get_procrastination(current_user=Depends(get_current_user)):
 @router.post("/procrastination")
 def create_procrastination(data: ProcrastinationLogModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "date": data.date or utcnow().strftime("%Y-%m-%d"),
@@ -227,6 +253,7 @@ def create_procrastination(data: ProcrastinationLogModel, current_user=Depends(g
 @router.put("/procrastination/{item_id}")
 def update_procrastination(item_id: str, data: ProcrastinationLogModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.procrastination_log.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"date": data.date or "", "what": data.what, "why": data.why or "", "outcome": data.outcome or ""}}
@@ -299,6 +326,7 @@ def get_triggers(current_user=Depends(get_current_user)):
 @router.post("/triggers")
 def create_trigger(data: TriggerModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "trigger": data.trigger,
@@ -314,6 +342,7 @@ def create_trigger(data: TriggerModel, current_user=Depends(get_current_user)):
 @router.put("/triggers/{item_id}")
 def update_trigger(item_id: str, data: TriggerModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.trigger_journal.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"trigger": data.trigger, "behavior": data.behavior,
@@ -345,6 +374,7 @@ def get_bad_decisions(current_user=Depends(get_current_user)):
 @router.post("/bad-decisions")
 def create_bad_decision(data: BadDecisionModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "decision": data.decision,
@@ -361,6 +391,7 @@ def create_bad_decision(data: BadDecisionModel, current_user=Depends(get_current
 @router.put("/bad-decisions/{item_id}")
 def update_bad_decision(item_id: str, data: BadDecisionModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.bad_decisions.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"decision": data.decision, "what_went_wrong": data.what_went_wrong or "",

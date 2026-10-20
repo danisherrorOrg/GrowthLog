@@ -3,8 +3,8 @@ import API from '../../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/errors';
 import ConfirmModal from '../ui/ConfirmModal';
+import { localDate } from '../../utils/dates';
 
-const TODAY = new Date().toISOString().slice(0, 10);
 const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export default function NutritionTab() {
@@ -21,8 +21,8 @@ export default function NutritionTab() {
   const [viewingDay, setViewingDay] = useState(null);
 
   // Forms
-  const [mealForm, setMealForm] = useState({ date: TODAY, meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
-  const [metricsForm, setMetricsForm] = useState({ date: TODAY, water_ml: 2000, nutrition_quality: 7, notes: '' });
+  const [mealForm, setMealForm] = useState({ date: localDate(), meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
+  const [metricsForm, setMetricsForm] = useState({ date: localDate(), water_ml: 2000, nutrition_quality: 7, notes: '' });
 
   useEffect(() => {
     loadData();
@@ -48,7 +48,7 @@ export default function NutritionTab() {
   const openAddMeal = (e) => {
     e?.stopPropagation();
     setEditingMealId(null);
-    setMealForm({ date: TODAY, meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
+    setMealForm({ date: localDate(), meal_type: 'Breakfast', calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, notes: '' });
     setShowMealModal(true);
   };
 
@@ -107,7 +107,7 @@ export default function NutritionTab() {
   // --- Metrics Handlers ---
   const openMetrics = (e, targetDate, existingMetric) => {
     e?.stopPropagation();
-    const date = targetDate || TODAY;
+    const date = targetDate || localDate();
     const m    = existingMetric;
     if (m) {
       setMetricsForm({ date, water_ml: m.water_ml, nutrition_quality: m.nutrition_quality, notes: m.notes || '' });

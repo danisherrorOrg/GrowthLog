@@ -2,7 +2,7 @@
 
 What is still open in GrowthLog, checked against the code on 2026-10-20.
 
-Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose (currently broken, see #8), data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
+Already done and no longer tracked here: timeline search escapes regex input, backend debug prints removed, rate limiting on auth/dashboard/timeline/logs, real SMTP email delivery, one-command docker compose, data export, notification center, streak shields, Pomodoro timer on To-Dos, and the "Should I do this?" quick check, Morning Plan and Decision Matrix.
 
 ---
 
@@ -37,48 +37,45 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ### Found in a browser walkthrough on 2026-10-20
 
-7. **🔴 Timeline search shows other users' private data**
-   * `backend/api/routers/timeline.py:66`, `:135`, `:210`. When `q` is set, the code replaces the `$or` that holds the user filter with the search conditions, so the search runs across every user's daily logs, goals and manifestations.
-   * Reproduced: a second account searching `/timeline?q=habits` got the first account's full daily log text. All 264 tests pass, so nothing covers this.
-   * **Fix:** combine the user filter and the search with `$and` instead of overwriting `$or`, and add a test that one user's timeline search never returns another user's data. (`GET /search` is scoped correctly.)
+7. ✅ **Completed — Timeline search showed other users' private data**
+   * `backend/api/routers/timeline.py`. When `q` was set, the code replaced the `$or` that held the user filter with the search conditions, so the search ran across every user's daily logs, goals and manifestations.
+   * **Done:** the owner check is now a separate `user_id: {$in: [...]}` filter shared by every timeline query, so the search `$or` can't replace it. It also no longer matches documents with no `user_id`. `test_timeline_search_never_returns_other_users_data` covers logs, goals, manifestations and snapshots.
 
-8. **One-command Docker setup fails**
-   * `docker compose up --build` stops at `npm ci` in the frontend image: `package-lock.json` is out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
-   * **Fix:** run `npm install` in `frontend/` and commit the updated lock file.
+8. ✅ **Completed — One-command Docker setup failed**
+   * `docker compose up --build` stopped at `npm ci` in the frontend image: `package-lock.json` was out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
+   * **Done:** regenerated the lock file with the image's Node 20 / npm 10 (adds Tailwind's optional `yaml@2` peer). Also fixed the frontend healthcheck, which always failed because `localhost` resolved to IPv6 while nginx listens on IPv4 only. All three containers now come up healthy.
 
-9. **Dates are wrong for anyone outside UTC**
-   * The browser timezone is never detected, so every user is stored with `timezone: "UTC"` unless they change it in Profile.
-   * Reproduced at 02:47 IST (still Oct 19 in UTC): after logging Oct 20, the bell still said "Protect your 1-day streak! Write today's daily log"; a to-do completed on Oct 20 shows "✓ Oct 19".
-   * The API also returns naive timestamps (`"created_at": "2026-10-19T21:18:55.272000"`, no `Z`), so `parseISO` reads them as local time. Profile shows "Member since October 19".
-   * **Fix:** send the browser timezone on register/login (and offer to update it when it changes), and return timestamps as UTC with an offset.
+9. ✅ **Completed — Dates were wrong for anyone outside UTC**
+   * Every user was stored with `timezone: "UTC"`, and the API returned naive timestamps (`"2026-10-19T21:18:55.272000"`) that the browser read as local time.
+   * **Done:** the Mongo client is now `tz_aware`, so every stored timestamp goes out as UTC with `+00:00`. Sign-up stores the browser timezone. Login fills it in for accounts still on the default UTC, unless the user picked UTC in Profile. Profile has a timezone picker and rejects unknown zones. A banner offers to switch when the device's timezone differs from the account's ("Keep" is remembered per pair of zones). Timeline goal dates, search result dates and manifestation start dates now use the user's day. Tests in `backend/tests/test_timezones.py`, `TimezoneBanner.test.js` and `utils/dates.test.js`.
 
-10. **Timeline "Mood" is really the overall day rating**
-    * `backend/api/routers/timeline.py:123` sends `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
-    * **Fix:** average the entries' `mood`, or label the value "Day rating".
+10. ✅ **Completed — Timeline "Mood" was really the overall day rating**
+    * `backend/api/routers/timeline.py` sent `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
+    * **Done:** a log's `mood` is now the average of its entries' moods (empty when no entry has one), and `overall_rating` goes out as `day_rating`. The feed and the day side panel show both, labelled. The side panel's "add reflection" also failed with a 422 (entries were sent without mood/energy) and would have wiped gratitude, regret, emotions and time spent; it now sends back every field and gives the new entry a neutral 5/5. Test: `test_timeline_log_mood_is_entry_average_not_day_rating`.
 
-11. **Signing out shows "Session Expired"**
-    * After `/auth/logout` clears the cookie, in-flight polling (notifications etc.) gets a 401 and the interceptor in `frontend/src/utils/api.js:21` redirects to `/login?expired=true`.
-    * **Fix:** set a "logging out" flag (or cancel pending requests) so the interceptor skips the redirect, and navigate to plain `/login`.
+11. ✅ **Completed — Signing out showed "Session Expired"**
+    * The sign-out button navigated to `/login` before `logout()` had cleared the user, so the login route sent them back to `/dashboard`, whose requests then got 401s from the cleared cookie and the interceptor redirected to `/login?expired=true`. In-flight polling could do the same.
+    * **Done:** `logout()` sets a "signing out" flag in `utils/api.js` that stops the 401 redirect (cleared on the next login or sign-up), and the sidebar and account-deletion flows wait for `logout()` before going to plain `/login`. Test in `utils/api.test.js`.
 
-12. **Goals accept a deadline in the past**
+12. ✅ **Completed — Goals accepted a deadline in the past**
     * A goal with a 2020 deadline was saved and immediately shown as "2484d overdue". The deadline is required but not marked as required, and leaving it empty only gives "Fill all required fields".
-    * **Fix:** reject past deadlines in the API and the form, and mark the field as required.
+    * **Done:** goal deadlines must be a real `YYYY-MM-DD` date, and creating, editing or extending a goal rejects a day before today in the user's timezone (422). Editing an overdue goal still works as long as its deadline isn't moved to another past day. The forms mark required fields, set `min` on the date pickers, and name the missing field instead of "Fill all required fields". Tests in `test_goals.py` and `Goals.test.js`; older tests that used 2025 deadlines now use 2099.
 
-13. **No 404 page**
-    * `frontend/src/App.js` has no catch-all route, so an unknown URL renders a blank page.
-    * **Fix:** add a `*` route with a "Page not found" view and a link to the dashboard.
+13. ✅ **Completed — No 404 page**
+    * `frontend/src/App.js` had no catch-all route, so an unknown URL rendered a blank page.
+    * **Done:** a `*` route inside the signed-in layout shows `pages/NotFound.js` ("Page not found", the URL that was asked for, and a link to the dashboard), with the sidebar still there. Signed-out visitors are sent to login as before. Vercel and nginx already serve the app for every path, so no server change was needed. Test in `NotFound.test.js`.
 
-14. **History page overflows on phones**
-    * At 380px wide, `/history` is 646px wide: the filter sidebar and the calendar sit side by side instead of stacking. Every other page fits.
-    * **Fix:** stack the filter panel above the calendar on narrow screens.
+14. ✅ **Completed — History page overflowed on phones**
+    * At 380px wide, `/history` was 646px wide: the filter sidebar and the calendar sat side by side instead of stacking.
+    * **Done:** below 768px the filter panel stacks above the calendar at full width (no longer a fixed-height sticky column; the category list scrolls inside 180px), and the calendar cells shrink (`minmax(0, 1fr)` columns, smaller padding and height) so all 7 days fit. Checked at 380px in both Calendar and Timeline views: the page is 370px wide with nothing overflowing. Desktop is unchanged.
 
-15. **Floating search and bell buttons cover page content**
-    * They overlap the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
-    * **Fix:** reserve space for them in the page header, or move toasts below them.
+15. ✅ **Completed — Floating search and bell buttons covered page content**
+    * They overlapped the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
+    * **Done:** on desktop the buttons now sit in a 64px top bar with a solid background (like the phone layout already had), and the content area reserves room for it, so nothing sits or scrolls under them. The bar starts at the sidebar's edge and spans the full width when the sidebar is hidden; the "show sidebar" button stays clickable above it. Toasts start 72px from the top, below the bar. Checked at 1414px, 1000px and 380px.
 
-16. **Sign-up accepts emails in the browser that the API rejects**
-    * The form shows "✓ Looks good" for an address like `name@example.test`, and the API's raw Pydantic error is shown as the toast.
-    * **Fix:** show a friendly message for 422 email errors.
+16. ✅ **Completed — Sign-up showed a raw error for emails the API rejects**
+    * The form shows "✓ Looks good" for an address like `name@example.test`, and the toast read "Email: value is not a valid email address: The part after the @-sign is a special-use or reserved name…".
+    * **Done:** the API's validation handler (`backend/main.py`) now words email errors for people: reserved domains get "Please use a real email address. That domain is reserved and can't receive email.", and other bad addresses get "Please enter a valid email address." plus the validator's reason. This covers every endpoint that takes an email (sign-up, login, forgot password). Test: `test_invalid_email_gives_a_readable_message`.
 
 ### Found in a second browser pass on 2026-10-20
 
@@ -88,49 +85,44 @@ Ownership checks hold everywhere except the timeline (#7): signed in as a second
 
 Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review ritual, Knowledge Vault (books, courses, quotes), Health (5 tabs), Growth Hub, Life Canvas, category edit/delete, goal detail (milestones, extend) and Manifestations, Profile (edit, export, change password, public profile), the notifications panel, keyboard shortcuts, and History's Daily Logs and Audit Trail tabs.
 
-17. **Insight Lab time entries aren't checked on the server**
-    * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit exists only in the browser form, and the `"not-a-date"` entry now shows up as a day heading in Time Tracking.
-    * About 27 date fields in `backend/models/schemas.py` are plain strings with no format check. Daily logs, by contrast, already reject out-of-range mood, energy, time spent and overall rating (422).
-    * **Fix:** add range limits to hours and use real date types (or a date-format validator) for the date fields.
+17. ✅ **Completed — Insight Lab time entries weren't checked on the server**
+    * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit existed only in the browser form.
+    * **Done:** Time Tracking, Screen Time and creative-session hours must be more than 0 and at most 24, and the API rejects a Time Tracking or Screen Time entry that would push a day past 24 hours (an edit doesn't count its own old hours). The form now counts hours already saved that day too ("Only 4h left on this day"). Every date-only field in `models/schemas.py`, plus to-do due dates and check-in dates, must be a real `YYYY-MM-DD` date; empty optional dates are still allowed and kept as sent. Health numbers (calories, macros, water, workout minutes, sets, reps, weights) can't be negative, and nutrition quality is 1–10. Entries saved before this (like the `"not-a-date"` one) are left as they are. Tests in `test_insight_validation.py` and `Insights.test.js`.
 
-18. **No range or order checks on several forms**
-    * Habit Graveyard saved a habit that ended a month before it started.
-    * Procrastination saved an entry dated Jan 1, 2030.
-    * Task Check-ins saved check-in number −3, shown as "Check-in #-3".
-    * **Fix:** validate in the API (end ≥ start, no future dates where they make no sense, positive check-in numbers) and mirror it in the forms.
+18. ✅ **Completed — No range or order checks on several forms**
+    * Habit Graveyard saved a habit that ended a month before it started, Procrastination saved an entry dated Jan 1, 2030, and Task Check-ins saved check-in number −3.
+    * **Done:** the API rejects an end date before its start date (Habit Graveyard, courses, reviews) and a future date on things that already happened: procrastination, triggers, bad decisions, regrets, life lessons, failures, meaning logs, abandoned habits, and completion dates on courses and bucket-list items. "Future" means after today in the user's timezone (`reject_future_dates` in `api/deps.py`). Planned dates (bucket-list targets, course start dates, goal deadlines) can still be in the future. Check-in numbers must be 1–99, which matches the form. The forms cap those date pickers at today, the end-date pickers can't go before the start date, and Habit Graveyard, Courses and Task Check-ins check before saving. Errors that involve two fields now read as a plain sentence ("The abandoned date can't be before the start date.") instead of "Body: Value error, …". Tests in `test_range_checks.py` and `Insights.test.js`.
 
-19. **More of the UTC-date bug (see #9)**
-    * In Mind Garden, a thought planted seconds earlier says "About 6 hours ago"; all Mind Garden times show 6 hours too old.
-    * Several date pickers default to Oct 19 instead of today (Oct 20 local): Insight Lab's "Log Today" for time, procrastination, trigger and bad-decision entries, the "Take a Snapshot" date, and the check-in date.
-    * **Fix:** comes with #9; default the pickers to the local date, not the UTC one.
+19. ✅ **Completed — More of the UTC-date bug (see #9)**
+    * Mind Garden times were 6 hours too old, and several date pickers defaulted to the UTC day.
+    * **Done:** fixed by the timestamp offsets in #9. Every "today" default (Insight Lab, Health, Snapshots, Time Capsule, Growth Hub, Life Canvas, To-Dos, Manifestations, PDF export file name) now uses `localDate()` from `utils/dates.js`. Each one is computed when the form opens, so it doesn't go stale if the tab stays open overnight.
 
-20. **Leaving the To-Dos page ends a running focus session without warning**
-    * The elapsed time lives only in page memory (`Todos.js:28`), so it's lost on navigation or refresh and never recorded.
-    * Switching the timer preset while paused also resets the elapsed time with no warning.
-    * **Fix:** persist the running session (start time + task) so it survives navigation, and confirm before a preset change discards time.
+20. ✅ **Completed — Leaving the To-Dos page ended a running focus session**
+    * The elapsed time lived only in page memory, so it was lost on navigation or refresh and never recorded. Switching the timer preset also reset the countdown with no warning.
+    * **Done:** the session (task, preset, start time and time already banked) is saved in localStorage per user by `components/todos/useFocusSession.js`, and the countdown is worked out from the clock, so it keeps running across navigation and refreshes. If it ran out while you were away, the complete dialog opens on return with the countdown's time (not the time away). A saved session is dropped if its task was deleted or completed elsewhere. Changing the preset after the countdown has started asks first ("Restart the timer?"); time already focused still counts toward the task. Tests in `Todos.test.js`; checked in the browser across navigation, a refresh and the preset dialog.
 
-21. **Task Check-ins: "Quick (5 questions)" shows only 4 questions.**
+21. ✅ **Completed — Task Check-ins: "Quick (5 questions)" showed only 4 questions**
+    * **Done:** quick mode has 4 questions by design (the API stores 4 quick answers), so the label was wrong. Both mode labels and the completion bar now count the question lists, so they can't drift again. The form uses one quick-question list keyed by the API's field names instead of a second hard-coded copy. Test in `TaskCheckins.test.js`.
 
-22. **Mind Garden filter and input issues**
-    * "All" looks selected while the Pinned filter is still on, so searching "stuck" showed no results.
-    * Submitting an empty thought gives no feedback.
-    * Cmd+Enter doesn't submit.
+22. ✅ **Completed — Mind Garden filter and input issues**
+    * "All" looked selected while the Pinned filter was still on, so searching "stuck" showed no results. Submitting an empty thought gave no feedback, and Cmd+Enter didn't submit.
+    * **Done:** "All" now means no filters: it's only highlighted when neither a mood nor Pinned is on, and clicking it turns Pinned off too. The count reads "1 of 12 thoughts" while anything narrows the list. The empty state names the active filters ("No pinned thoughts match "stuck".") and has a "Show all thoughts" button. Planting an empty or blank thought shows "Write a thought first." and focuses the box (saving a blank edit says it can't be empty). ⌘+Enter / Ctrl+Enter plants a thought or saves an edit, with a hint under each box. Tests in `Thoughts.test.js`.
 
-23. **Morning Plan puts ratings on the wrong task**
-    * Adding an item while rating another moves the new item to the front, so ratings already started went onto the wrong task.
-    * **Fix:** add new items to the end (or key the in-progress ratings by item id, not position).
+23. ✅ **Completed — Morning Plan put ratings on the wrong task**
+    * Adding an item while rating another moved the new item to the front, so ratings already started went onto the wrong task.
+    * **Done:** the API sorts the queue by urgency, priority and due date, so a new task (or an undone one) can sort ahead of the one being rated. The page now keeps the task on the card until it's confirmed or skipped, with its ratings intact, wherever it lands after a reload. Test in `MorningPlan.test.js`.
 
-24. **Check-in verdict cards (Continue / Pause / Drop) aren't buttons**
-    * Keyboard and screen-reader users can't select them.
-    * **Fix:** render them as buttons (or radio inputs) with a visible focus state.
+24. ✅ **Completed — Check-in verdict cards (Continue / Pause / Drop) weren't buttons**
+    * Keyboard and screen-reader users couldn't select them.
+    * **Done:** the verdict cards are now a labelled radio group built on real radio inputs, so Tab reaches the group and the arrow keys change the choice. The stat cards above the list (Total / Continued / Paused / Dropped), which filter it, had the same problem and are now buttons that report whether their filter is on. Both get a gold focus outline on keyboard focus. Added a shared `.sr-only` class in `index.css`. Tests in `TaskCheckins.test.js`.
 
-25. **"Log a Trigger" and "Log a Bad Decision" forms are taller than the window**
-    * Their buttons are cut off.
-    * **Fix:** make the modal body scroll and keep the buttons in a fixed footer.
+25. ✅ **Completed — "Log a Trigger" and "Log a Bad Decision" forms were taller than the window**
+    * Their buttons were cut off.
+    * **Done:** the box already scrolled, but the buttons were at the end of it. A new `.modal-footer` class in `index.css` pins the button row to the bottom of the box while the fields scroll behind it. All eight Insight Lab forms use it, since they share the same button row. The modal's padding is now in `--modal-pad-y` / `--modal-pad-x` variables so the footer reaches the box's edges at every width. A side effect: phones under 480px now get the 20px/16px padding the stylesheet already asked for, which a `!important` rule had been overriding. Checked in the browser at 1414×719 (Trigger and Bad Decision, top and scrolled to the end) and at 380×700.
 
-26. **Smaller UI issues in Insight Lab**
-    * In the Bad Decision form, the Domain dropdown crowds the next label.
-    * The Weakness Map sliders use plain browser-blue styling, unlike the rest of the app.
+26. ✅ **Completed — Smaller UI issues in Insight Lab**
+    * In the Bad Decision form, the Domain dropdown crowded the next label. The Weakness Map sliders used plain browser-blue styling, unlike the rest of the app.
+    * **Done:** the two-column rows in the Bad Decision and Weakness Map forms now leave the usual 20px before the next field. The Weakness Map's Severity and Frequency sliders use the app's `.rating-slider` style (sage fill up to the value, dark thumb) and have accessible names. `.rating-slider` also gets a styled thumb in Firefox and a gold outline on keyboard focus, which applies to every slider using it. Checked in the browser at 1400px.
 
 ### Smaller issues and gaps
 

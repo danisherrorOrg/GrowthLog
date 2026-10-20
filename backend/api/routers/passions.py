@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     ProjectIdeaModel, CreativeSessionModel,
     MeaningLogModel, TravelLogModel, BucketListModel
@@ -115,6 +115,7 @@ def get_meaning_logs(current_user=Depends(get_current_user)):
 @router.post("/meaning-log")
 def create_meaning_log(data: MeaningLogModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {"user_id": uid, "date": data.date or utcnow().strftime("%Y-%m-%d"),
            "experience": data.experience, "why_meaningful": data.why_meaningful or "",
            "created_at": utcnow()}
@@ -125,6 +126,7 @@ def create_meaning_log(data: MeaningLogModel, current_user=Depends(get_current_u
 @router.put("/meaning-log/{item_id}")
 def update_meaning_log(item_id: str, data: MeaningLogModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.meaning_log.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"date": data.date or "", "experience": data.experience,
@@ -193,6 +195,7 @@ def get_bucket_list(current_user=Depends(get_current_user)):
 @router.post("/bucket-list")
 def create_bucket_list(data: BucketListModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_date})
     doc = {"user_id": uid, "title": data.title, "description": data.description or "",
            "status": data.status or "not_started", "target_date": data.target_date or "",
            "completed_date": data.completed_date or "", "created_at": utcnow()}
@@ -203,6 +206,7 @@ def create_bucket_list(data: BucketListModel, current_user=Depends(get_current_u
 @router.put("/bucket-list/{item_id}")
 def update_bucket_list(item_id: str, data: BucketListModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_date})
     result = db.bucket_list.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"title": data.title, "description": data.description or "",

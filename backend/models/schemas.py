@@ -1,6 +1,44 @@
-from pydantic import BaseModel, field_validator, EmailStr, Field
+from pydantic import BaseModel, field_validator, model_validator, EmailStr, Field
 from typing import Optional, List, Literal
 import re
+from zoneinfo import ZoneInfo
+from datetime import date
+
+def is_valid_timezone(tz: str) -> bool:
+    try:
+        ZoneInfo(tz)
+        return True
+    except Exception:
+        return False
+
+def _browser_timezone(v):
+    # Sent automatically by the browser; an unknown zone is dropped so it can never block sign-in
+    return v if v and is_valid_timezone(v) else None
+
+def _iso_date(v):
+    """A calendar day as YYYY-MM-DD; empty means not set, for optional fields."""
+    if not v:
+        return None
+    if len(v) == 10:
+        try:
+            return date.fromisoformat(v).isoformat()
+        except ValueError:
+            pass
+    raise ValueError("Use a date in YYYY-MM-DD format")
+
+def _optional_iso_date(v):
+    """Like _iso_date, but an empty value is kept as sent ("" or None) so stored data keeps its shape."""
+    return _iso_date(v) if v else v
+
+def _check_order(start, end, message):
+    """Both dates are YYYY-MM-DD (or empty), so string order is date order."""
+    if start and end and end < start:
+        raise ValueError(message)
+
+def _required_iso_date(v):
+    if not v:
+        raise ValueError("A date is required")
+    return _iso_date(v)
 
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{6}")
 MAX_THEME_ITEMS = 24
@@ -9,6 +47,9 @@ class RegisterModel(BaseModel):
     name: str = Field(..., max_length=100)
     email: EmailStr
     password: str = Field(..., max_length=128)
+    timezone: Optional[str] = Field(None, max_length=60)
+
+    _check_timezone = field_validator("timezone")(_browser_timezone)
 
     @field_validator("name")
     @classmethod
@@ -27,6 +68,9 @@ class RegisterModel(BaseModel):
 class LoginModel(BaseModel):
     email: EmailStr
     password: str = Field(..., max_length=128)
+    timezone: Optional[str] = Field(None, max_length=60)
+
+    _check_timezone = field_validator("timezone")(_browser_timezone)
 
 class ProfileUpdateModel(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
@@ -36,6 +80,13 @@ class ProfileUpdateModel(BaseModel):
     email_notifications: Optional[bool] = None
     category_colors: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
     category_icons: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
+
+    @field_validator("timezone")
+    @classmethod
+    def timezone_known(cls, v):
+        if v is not None and not is_valid_timezone(v):
+            raise ValueError("Unknown timezone")
+        return v
 
     @field_validator("category_colors")
     @classmethod
@@ -116,16 +167,22 @@ class GoalModel(BaseModel):
     description: Optional[str] = Field("", max_length=2000)
     deadline: str = Field(..., max_length=30)
 
+    _check_deadline = field_validator("deadline")(_required_iso_date)
+
 class GoalUpdateModel(BaseModel):
     title: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = Field(None, max_length=2000)
     deadline: Optional[str] = Field(None, max_length=30)
     category_id: Optional[str] = Field(None, max_length=500)
 
+    _check_deadline = field_validator("deadline")(_iso_date)
+
 class GoalReflectModel(BaseModel):
     status: str = Field(..., max_length=200)
     reflection: str = Field(..., max_length=2000)
     new_deadline: Optional[str] = Field(None, max_length=30)
+
+    _check_deadline = field_validator("new_deadline")(_iso_date)
 
 class MicroGoalModel(BaseModel):
     text: str = Field(..., max_length=2000)
@@ -134,6 +191,7 @@ class MicroGoalModel(BaseModel):
 class GoalReflectionAddModel(BaseModel):
     text: str = Field(..., max_length=2000)
     date: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
 class NoteModel(BaseModel):
     text: str = Field(..., max_length=2000)
@@ -168,6 +226,7 @@ class DailyLogModel(BaseModel):
     overall_rating: Optional[int] = 5
     gratitude: Optional[List[str]] = []
     regret: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("overall_rating")
     @classmethod
@@ -191,6 +250,7 @@ class ManifestationModel(BaseModel):
     target_date: Optional[str] = Field(None, max_length=30)
     categories: Optional[List[str]] = []
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("target_date")(_optional_iso_date)
 
 class ManifestationUpdateModel(BaseModel):
     vision: Optional[str] = Field(None, max_length=500)
@@ -198,6 +258,7 @@ class ManifestationUpdateModel(BaseModel):
     target_days: Optional[int] = None
     notes: Optional[str] = Field(None, max_length=2000)
     categories: Optional[List[str]] = None
+    _check_dates = field_validator("target_date")(_optional_iso_date)
 
 class ManifestationProgressModel(BaseModel):
     text: str = Field(..., max_length=2000)
@@ -216,6 +277,7 @@ class SnapshotModel(BaseModel):
     values: Optional[List[str]] = []
     mood: Optional[int] = 5
     date: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("mood")
     @classmethod
@@ -246,6 +308,12 @@ class HabitGraveyardModel(BaseModel):
     reason: Optional[str] = Field("", max_length=500)
     started_at: Optional[str] = Field("", max_length=30)
     abandoned_at: Optional[str] = Field("", max_length=30)
+    _check_dates = field_validator("started_at", "abandoned_at")(_optional_iso_date)
+
+    @model_validator(mode="after")
+    def abandoned_after_start(self):
+        _check_order(self.started_at, self.abandoned_at, "The abandoned date can't be before the start date")
+        return self
 
     @field_validator("habit")
     @classmethod
@@ -258,8 +326,9 @@ class HabitGraveyardModel(BaseModel):
 class TimeEntryModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30) # yyyy-MM-dd, defaults to today
     category: str = Field(..., max_length=200) # e.g. work, learning, leisure
-    hours: float
+    hours: float = Field(..., gt=0, le=24)
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("category")
     @classmethod
@@ -271,8 +340,9 @@ class TimeEntryModel(BaseModel):
 class ScreenTimeModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30)
     app_category: str = Field(..., max_length=200) # e.g. Social, News, Work, Entertainment
-    hours: float
+    hours: float = Field(..., gt=0, le=24)
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("app_category")
     @classmethod
@@ -286,6 +356,7 @@ class ProcrastinationLogModel(BaseModel):
     what: str = Field(..., max_length=200) # what was avoided
     why: Optional[str] = Field("", max_length=500)
     outcome: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("what")
     @classmethod
@@ -310,6 +381,7 @@ class RegretModel(BaseModel):
     text: str = Field(..., max_length=2000)
     action_to_avoid: Optional[str] = Field("", max_length=500)
     date: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("text")
     @classmethod
@@ -323,6 +395,7 @@ class FutureAdviceModel(BaseModel):
     target_read_date: Optional[str] = Field("", max_length=30)
     target_age: Optional[int] = None
     created_at: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("target_read_date")(_optional_iso_date)
 
     @field_validator("content")
     @classmethod
@@ -348,6 +421,7 @@ class LifeLessonModel(BaseModel):
     context: Optional[str] = Field("", max_length=500)
     date_learned: Optional[str] = Field(None, max_length=30)
     category: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date_learned")(_optional_iso_date)
 
     @field_validator("principle")
     @classmethod
@@ -374,8 +448,9 @@ class ProjectIdeaModel(BaseModel):
 class CreativeSessionModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30)
     project_name: str = Field(..., max_length=100)
-    hours: float
+    hours: float = Field(..., gt=0, le=24)
     output_notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("project_name")
     @classmethod
@@ -389,6 +464,7 @@ class MeaningLogModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30)
     experience: str = Field(..., max_length=200)
     why_meaningful: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("experience")
     @classmethod
@@ -403,6 +479,7 @@ class TravelLogModel(BaseModel):
     destination: str = Field(..., max_length=200)
     memories: Optional[str] = Field("", max_length=500)
     photos_link: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("destination")
     @classmethod
@@ -417,6 +494,7 @@ class BucketListModel(BaseModel):
     status: Optional[str] = Field("not_started", max_length=500) # not_started | in_progress | done
     target_date: Optional[str] = Field("", max_length=30)
     completed_date: Optional[str] = Field("", max_length=30)
+    _check_dates = field_validator("target_date", "completed_date")(_optional_iso_date)
 
     @field_validator("title")
     @classmethod
@@ -432,6 +510,7 @@ class SkillModel(BaseModel):
     level: Optional[int] = 1       # 1-5
     notes: Optional[str] = Field("", max_length=2000)
     started_at: Optional[str] = Field("", max_length=30)
+    _check_dates = field_validator("started_at")(_optional_iso_date)
 
     @field_validator("name")
     @classmethod
@@ -443,11 +522,17 @@ class SkillModel(BaseModel):
 class CourseModel(BaseModel):
     title: str = Field(..., max_length=200)
     provider: Optional[str] = Field("", max_length=500)
-    hours_spent: Optional[float] = 0.0
+    hours_spent: Optional[float] = Field(0.0, ge=0, le=100000)
     status: Optional[str] = Field("in_progress", max_length=500) # in_progress | completed | dropped
     what_learned: Optional[str] = Field("", max_length=500)
     started_at: Optional[str] = Field("", max_length=30)
     completed_at: Optional[str] = Field("", max_length=30)
+    _check_dates = field_validator("started_at", "completed_at")(_optional_iso_date)
+
+    @model_validator(mode="after")
+    def completed_after_start(self):
+        _check_order(self.started_at, self.completed_at, "The completion date can't be before the start date")
+        return self
 
     @field_validator("title")
     @classmethod
@@ -461,6 +546,7 @@ class FailureLogEntryModel(BaseModel):
     what_happened: str = Field(..., max_length=200)
     lesson: Optional[str] = Field("", max_length=500)
     domain: Optional[str] = Field("", max_length=500) # Work, Health, Relationships, etc.
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("what_happened")
     @classmethod
@@ -490,6 +576,7 @@ class FeedbackModel(BaseModel):
     feedback_type: Optional[str] = Field("positive", max_length=500) # positive | critical | mixed
     content: str = Field(..., max_length=2000)
     action_taken: Optional[str] = Field("", max_length=500)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("content")
     @classmethod
@@ -507,6 +594,7 @@ class SleepLogModel(BaseModel):
     wake_time: str = Field(..., max_length=200)
     quality: int # 1-10
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_required_iso_date)
 
     @field_validator("quality")
     @classmethod
@@ -516,8 +604,8 @@ class SleepLogModel(BaseModel):
         return v
 
 class ExerciseSetModel(BaseModel):
-    reps: int
-    weight: float
+    reps: int = Field(..., ge=0, le=10000)
+    weight: float = Field(..., ge=0, le=10000)
 
 class ExerciseLogEntryModel(BaseModel):
     exercise_name: str = Field(..., max_length=100)
@@ -528,10 +616,11 @@ class ExerciseLogEntryModel(BaseModel):
 class WorkoutSessionModel(BaseModel):
     date: str = Field(..., max_length=30)
     type: str = Field(..., max_length=200) # gym, run, yoga
-    duration_minutes: int
+    duration_minutes: int = Field(..., ge=0, le=1440)
     intensity: int # 1-10
     exercises: List[ExerciseLogEntryModel]
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_required_iso_date)
 
     @field_validator("intensity")
     @classmethod
@@ -543,26 +632,29 @@ class WorkoutSessionModel(BaseModel):
 class ExerciseGoalModel(BaseModel):
     exercise_name: str = Field(..., max_length=100)
     muscle_group: str = Field(..., max_length=200)
-    target_sets: int
-    target_reps: int
-    target_weight: float
+    target_sets: int = Field(..., ge=0, le=10000)
+    target_reps: int = Field(..., ge=0, le=10000)
+    target_weight: float = Field(..., ge=0, le=10000)
     deadline: str = Field(..., max_length=30)
     status: Optional[str] = Field("pending", max_length=500) # pending, achieved, failed
+    _check_dates = field_validator("deadline")(_required_iso_date)
 
 class HealthMetricsModel(BaseModel):
     date: str = Field(..., max_length=30)
-    water_ml: int
-    nutrition_quality: int # 1-10
+    water_ml: int = Field(..., ge=0, le=20000)
+    nutrition_quality: int = Field(..., ge=1, le=10)
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_required_iso_date)
 
 class MealLogModel(BaseModel):
     date: str = Field(..., max_length=30)
     meal_type: str = Field(..., max_length=200) # Breakfast, Lunch, Dinner, Snack
-    calories: int
-    protein_g: Optional[int] = 0
-    carbs_g: Optional[int] = 0
-    fat_g: Optional[int] = 0
+    calories: int = Field(..., ge=0, le=20000)
+    protein_g: Optional[int] = Field(0, ge=0, le=2000)
+    carbs_g: Optional[int] = Field(0, ge=0, le=2000)
+    fat_g: Optional[int] = Field(0, ge=0, le=2000)
     notes: Optional[str] = Field("", max_length=2000)
+    _check_dates = field_validator("date")(_required_iso_date)
 
 
 
@@ -610,6 +702,12 @@ class ReviewModel(BaseModel):
     learnings: Optional[str] = Field("", max_length=5000)
     intentions: Optional[str] = Field("", max_length=5000)
     tags: Optional[List[str]] = []
+    _check_dates = field_validator("start_date", "end_date")(_required_iso_date)
+
+    @model_validator(mode="after")
+    def end_after_start(self):
+        _check_order(self.start_date, self.end_date, "The end date can't be before the start date")
+        return self
 
     @field_validator("rating")
     @classmethod
@@ -633,6 +731,7 @@ class TriggerModel(BaseModel):
     consequence: Optional[str] = Field("", max_length=1000)  # What it cost you
     guard: Optional[str] = Field("", max_length=1000)        # System to prevent next time
     date: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("trigger")
     @classmethod
@@ -648,6 +747,7 @@ class BadDecisionModel(BaseModel):
     do_differently: Optional[str] = Field("", max_length=1000)
     domain: Optional[str] = Field("General", max_length=100)   # Work, Health, Finance, etc.
     date: Optional[str] = Field(None, max_length=30)
+    _check_dates = field_validator("date")(_optional_iso_date)
 
     @field_validator("decision")
     @classmethod

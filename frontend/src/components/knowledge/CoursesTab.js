@@ -3,6 +3,7 @@ import API from '../../utils/api';
 import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../../utils/errors';
+import { localDate } from '../../utils/dates';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
 
@@ -79,6 +80,7 @@ export default function CoursesTab() {
   const openCrEdit   = (i) => { setCrEdit(i); setCrForm({ title: i.title, provider: i.provider||'', hours_spent: i.hours_spent||'', status: i.status||'in_progress', what_learned: i.what_learned||'', started_at: i.started_at||'', completed_at: i.completed_at||'' }); setCrModal(true); };
   const handleCrSave = () => {
     if (!crForm.title.trim()) return toast.error('Name the course');
+    if (crForm.started_at && crForm.completed_at && crForm.completed_at < crForm.started_at) return toast.error("The completion date can't be before the start date");
     crudSave({ editItem: crEdit, postUrl: '/growth-hub/courses', putUrl: id => `/growth-hub/courses/${id}`, form: { ...crForm, hours_spent: +crForm.hours_spent || 0 },
       onSuccess: () => { toast.success(crEdit ? 'Updated' : '📚 Course added'); setCrModal(false); reloadCr(); }
     });
@@ -163,7 +165,7 @@ export default function CoursesTab() {
         </div>
         <div className="grid-2" style={{ gap: 12 }}>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Started</label><input maxLength={200} type="date" className="form-input" value={crForm.started_at} onChange={e => setCrForm({ ...crForm, started_at: e.target.value })} /></div>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed</label><input maxLength={200} type="date" className="form-input" value={crForm.completed_at} onChange={e => setCrForm({ ...crForm, completed_at: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed</label><input maxLength={200} type="date" max={localDate()} min={crForm.started_at || undefined} className="form-input" value={crForm.completed_at} onChange={e => setCrForm({ ...crForm, completed_at: e.target.value })} /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What did you learn?</label><textarea maxLength={2000} className="form-textarea" value={crForm.what_learned} onChange={e => setCrForm({ ...crForm, what_learned: e.target.value })} placeholder="Key insights, frameworks, skills gained…" style={{ minHeight: 100 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setCrModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleCrSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : crEdit ? 'Save Changes' : 'Add Course'}</button></div>

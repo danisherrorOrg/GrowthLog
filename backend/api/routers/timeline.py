@@ -8,11 +8,13 @@ from bson import ObjectId
 from core.database import db
 from api.deps import get_current_user
 from core.rate_limit import limiter
+from utils.streak import user_tz, local_date
 
 
 router = APIRouter(prefix="/timeline", tags=["timeline"])
 
 logger = logging.getLogger(__name__)
+
 
 @router.get("")
 @limiter.limit("30/minute")
@@ -27,6 +29,7 @@ def get_timeline(
     current_user=Depends(get_current_user)
 ):
     uid = str(current_user["_id"])
+    tz = user_tz(current_user)
     events = []
 
     # Escape search query for regex safety to prevent ReDoS
@@ -38,8 +41,10 @@ def get_timeline(
         cat_list = category_ids.split(",")
 
     # Fetch categories for enrichment with dual-type support
+    # user_id may be stored as a string or an ObjectId. Keep this filter on its own key:
+    # the search below adds a "$or", which must not replace the owner check.
     uid_obj = ObjectId(uid) if ObjectId.is_valid(uid) else None
-    uid_query = {"user_id": {"$in": [uid, uid_obj]}}
+    uid_query = {"user_id": {"$in": [uid, uid_obj] if uid_obj else [uid]}}
     db_categories = list(db.categories.find(uid_query))
     logger.debug(f"uid={uid}, uid_obj={uid_obj}, found_cats={len(db_categories)}")
     for c in db_categories:
@@ -53,10 +58,7 @@ def get_timeline(
     } for c in db_categories}
 
     # 1. Daily Logs
-    log_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    log_query = dict(uid_query)
     if start_date or end_date:
         log_query["date"] = {}
         if start_date: log_query["date"]["$gte"] = start_date
@@ -109,7 +111,11 @@ def get_timeline(
                 log_cats.append(cat_info)
 
         main_cat = log_cats[0] if log_cats else {"name": "Pulse", "icon": "🔥", "color": "#6b8c6b"}
-        
+
+        # Mood is logged per entry; the log's overall_rating is a separate "day rating".
+        entry_moods = [e["mood"] for e in log_entries if isinstance(e.get("mood"), (int, float))]
+        avg_mood = round(sum(entry_moods) / len(entry_moods), 1) if entry_moods else None
+
         events.append({
             "id": str(log["_id"]),
             "type": "daily_log",
@@ -120,17 +126,17 @@ def get_timeline(
             "category": main_cat,
             "categories": log_cats,
             "data": {
-                "mood": log.get("overall_rating", 5),
+                "mood": avg_mood,
+                "day_rating": log.get("overall_rating"),
+                "gratitude": log.get("gratitude", []),
+                "regret": log.get("regret", ""),
                 "entries_count": len(enriched_entries),
                 "entries": enriched_entries
             }
         })
 
     # 2. Goals
-    goal_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    goal_query = dict(uid_query)
     if q:
         goal_query["$or"] = [
             {"title": {"$regex": escaped_q, "$options": "i"}},
@@ -144,12 +150,7 @@ def get_timeline(
         main_cat = cat_map.get(str(goal.get("category_id")), {"id": str(goal.get("category_id")), "name": "General", "icon": "📁", "color": "#888"})
         
         # Goal Created Event
-        created_at = goal.get("created_at")
-        created_date = None
-        if isinstance(created_at, datetime):
-            created_date = created_at.strftime("%Y-%m-%d")
-        elif isinstance(created_at, str):
-            created_date = created_at[:10]
+        created_date = local_date(goal.get("created_at"), tz)
             
         if created_date and ((not start_date or created_date >= start_date) and (not end_date or created_date <= end_date)):
             events.append({
@@ -181,12 +182,7 @@ def get_timeline(
 
         # Goal Completed Event
         if goal.get("status") in ["completed", "completed_late"]:
-            completed_at = goal.get("completed_at")
-            comp_date = None
-            if isinstance(completed_at, datetime):
-                comp_date = completed_at.strftime("%Y-%m-%d")
-            elif isinstance(completed_at, str):
-                comp_date = completed_at[:10]
+            comp_date = local_date(goal.get("completed_at"), tz)
             
             if comp_date and ((not start_date or comp_date >= start_date) and (not end_date or comp_date <= end_date)):
                 events.append({
@@ -202,10 +198,7 @@ def get_timeline(
                 })
 
     # 3. Manifestations
-    manif_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    manif_query = dict(uid_query)
     if q:
         manif_query["$or"] = [
             {"vision": {"$regex": escaped_q, "$options": "i"}},
@@ -259,7 +252,7 @@ def get_timeline(
  
     # 4. Snapshots
     if not cat_list: # Snapshots don't have categories in schema yet
-        snap_query = {"user_id": uid}
+        snap_query = dict(uid_query)
         if start_date or end_date:
             snap_query["date"] = {}
             if start_date: snap_query["date"]["$gte"] = start_date

@@ -1,4 +1,5 @@
-import { format, parseISO, isPast, isToday } from 'date-fns';
+import { parseISO, isPast, isToday } from 'date-fns';
+import { localDate, parseServerTime } from '../../utils/dates';
 import API from '../../utils/api';
 
 // Window events so any page can open the check or react to one being saved
@@ -8,11 +9,7 @@ export const CHANGED_EVENT = 'quickcheck:changed';
 export const openQuickCheck = () => window.dispatchEvent(new Event(OPEN_EVENT));
 export const notifyQuickCheckChanged = () => window.dispatchEvent(new Event(CHANGED_EVENT));
 
-// The user's local day, so a 11pm check doesn't land on tomorrow (UTC)
-export const localDate = (d = new Date()) => format(d, 'yyyy-MM-dd');
-
-// Mongo returns naive UTC datetimes; without a zone they'd be read as local time
-export const parseServerTime = (s) => parseISO(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : `${s}Z`);
+export { localDate, parseServerTime };
 
 export const QUESTIONS = [
   { key: 'helps_today', text: "Does it help today's top task?", lo: 'Not at all', hi: 'It is my top task' },

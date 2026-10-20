@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
+from models.schemas import _optional_iso_date
 
 router = APIRouter(prefix="/checkins", tags=["Task Check-Ins"])
 
@@ -41,7 +42,7 @@ class CheckInAnswers(BaseModel):
 
 class TaskCheckInModel(BaseModel):
     task_name: str = Field(..., max_length=300)
-    check_in_number: Optional[int] = Field(1)
+    check_in_number: Optional[int] = Field(1, ge=1, le=99)
     mode: Optional[str] = Field("full", max_length=20)   # "full" | "quick"
     answers: Optional[CheckInAnswers] = None
     # Quick-mode fields
@@ -57,10 +58,12 @@ class TaskCheckInModel(BaseModel):
     custom_questions: Optional[List[dict]] = []  # [{"text": str, "answer": str}]
     notes: Optional[List[dict]] = []  # [{"text": str, "added_at": str}]
 
+    _check_dates = field_validator("date")(_optional_iso_date)
+
 
 class TaskCheckInUpdateModel(BaseModel):
     task_name: Optional[str] = Field(None, max_length=300)
-    check_in_number: Optional[int] = None
+    check_in_number: Optional[int] = Field(None, ge=1, le=99)
     mode: Optional[str] = Field(None, max_length=20)
     answers: Optional[CheckInAnswers] = None
     quick_most_important: Optional[str] = Field(None, max_length=2000)

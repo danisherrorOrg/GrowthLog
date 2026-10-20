@@ -1,15 +1,15 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
 
-const EMPTY_FORM = { decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: TODAY };
+const EMPTY_FORM = () => ({ decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: localDate() });
 
 export default function BadDecisionsTab() {
   const list = useInsightList('/insights/bad-decisions', EMPTY_FORM);
   const { items, loading, form, setForm, editing, modal, openCreate, closeModal, saving, preview, setPreview } = list;
 
-  const openEdit = (i) => list.openEdit(i, { decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || TODAY });
+  const openEdit = (i) => list.openEdit(i, { decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || localDate() });
   const handleSave = () => {
     if (!form.decision.trim()) return toast.error('Describe the decision');
     list.save('💀 Logged');
@@ -63,8 +63,8 @@ export default function BadDecisionsTab() {
 
       {modal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeModal()}><div className="modal">
         <div className="modal-header"><h3>{editing ? 'Edit Entry' : 'Log a Bad Decision'}</h3><button className="modal-close" onClick={closeModal}>✕</button></div>
-        <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
+        <div className="grid-2" style={{ gap: 12, marginBottom: 20 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" max={localDate()} className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label>
             <select className="form-input" value={form.domain} onChange={e => setForm({ ...form, domain: e.target.value })}>
               {['General', 'Work', 'Finance', 'Health', 'Relationships', 'Personal Growth', 'Business', 'Other'].map(d => <option key={d} value={d}>{d}</option>)}
@@ -75,7 +75,7 @@ export default function BadDecisionsTab() {
         <div className="form-group"><label className="form-label">What went wrong?</label><textarea maxLength={2000} className="form-textarea" value={form.what_went_wrong} onChange={e => setForm({ ...form, what_went_wrong: e.target.value })} placeholder="Describe the outcome and how it played out" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">Root cause (optional)</label><textarea maxLength={1000} className="form-textarea" value={form.root_cause} onChange={e => setForm({ ...form, root_cause: e.target.value })} placeholder="Fear, ego, lot of information, peer pressure?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">What would you do differently? (optional)</label><textarea maxLength={1000} className="form-textarea" value={form.do_differently} onChange={e => setForm({ ...form, do_differently: e.target.value })} placeholder="The rule or system you'd follow next time" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#7a5c8a', borderColor: '#7a5c8a' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Log Decision'}</button></div>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#7a5c8a', borderColor: '#7a5c8a' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Log Decision'}</button></div>
       </div></div>)}
 
       <PreviewModal item={preview} onClose={() => setPreview(null)} icon="💀" iconBg="rgba(122,92,138,0.08)" titleColor="#7a5c8a" title={preview?.decision} subtitle={preview && `${preview.domain} · ${preview.date}`} body={preview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

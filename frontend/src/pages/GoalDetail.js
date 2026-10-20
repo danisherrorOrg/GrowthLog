@@ -6,6 +6,7 @@ import { format, isPast, parseISO, differenceInDays } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { localDate, isBeforeToday } from '../utils/dates';
 
 
 const SORT_OPTIONS = [
@@ -216,7 +217,11 @@ export default function GoalDetail() {
   };
 
   const handleUpdateGoal = async () => {
-    if (!editForm.title || !editForm.category_id || !editForm.deadline) return toast.error('Fill all required fields');
+    if (!editForm.category_id) return toast.error('Pick a category');
+    if (!editForm.title.trim()) return toast.error('Give the goal a title');
+    if (!editForm.deadline) return toast.error('Pick a target deadline');
+    // An overdue goal can still be edited as long as its deadline isn't moved to another past day
+    if (isBeforeToday(editForm.deadline) && editForm.deadline !== goal.current_deadline) return toast.error("The deadline can't be in the past");
     setSaving(true);
     try {
       await API.put(`/goals/${goalId}`, editForm);
@@ -231,6 +236,7 @@ export default function GoalDetail() {
   const handleReflect = async () => {
     if (!reflectForm.reflection.trim()) return toast.error('Write your reflection');
     if (reflectForm.status === 'extended' && !reflectForm.new_deadline) return toast.error('Set a new deadline');
+    if (reflectForm.status === 'extended' && isBeforeToday(reflectForm.new_deadline)) return toast.error("The new deadline can't be in the past");
     setSaving(true);
     try {
       await API.put(`/goals/${goalId}/reflect`, reflectForm);
@@ -623,14 +629,14 @@ export default function GoalDetail() {
               <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
             </div>
             <div className="form-group">
-              <label className="form-label">Category</label>
+              <label className="form-label">Category *</label>
               <select className="form-select" value={editForm.category_id} onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Goal Title</label>
-              <input maxLength={200} className="form-input" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="What do you want to achieve?" />
+              <label className="form-label">Goal Title *</label>
+              <input maxLength={200} required className="form-input" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} placeholder="What do you want to achieve?" />
             </div>
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
@@ -638,8 +644,8 @@ export default function GoalDetail() {
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
-              <label className="form-label">Target Deadline</label>
-              <input maxLength={200} type="date" className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
+              <label className="form-label">Target Deadline *</label>
+              <input type="date" required min={localDate()} className="form-input" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
             </div>
             <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowEditModal(false)} style={{ flex: 1 }}>Cancel</button>
@@ -680,8 +686,8 @@ export default function GoalDetail() {
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">
-                <label className="form-label">New Deadline</label>
-                <input maxLength={200} type="date" className="form-input" value={reflectForm.new_deadline}
+                <label className="form-label">New Deadline *</label>
+                <input type="date" required min={localDate()} className="form-input" value={reflectForm.new_deadline}
                   onChange={e => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}

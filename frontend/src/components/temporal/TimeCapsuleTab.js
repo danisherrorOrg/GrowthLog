@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../../utils/errors';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
+import { localDate } from '../../utils/dates';
 
 const TABS = [
   { id: 'lessons',       label: 'Life Lessons',      icon: '🏛️', color: '#8b6bc4' },
@@ -13,7 +14,6 @@ const TABS = [
   { id: 'regrets',       label: 'Regrets Tracker',   icon: '🌧️',  color: 'var(--rust)' },
 ];
 
-const TODAY = new Date().toISOString().slice(0, 10);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const dateLabel = (d) => { try { return format(parseISO(d), 'MMM d, yyyy'); } catch { return d || '—'; } };
@@ -50,7 +50,7 @@ export default function TimeCapsule() {
   // ── Life Lessons ───────────────────────────────────────────────────────────
   const [lessons, setLessons]       = useState([]); const [lsLoad, setLsLoad] = useState(true);
   const [lsModal, setLsModal]       = useState(false); const [lsEdit, setLsEdit] = useState(null);
-  const [lsForm, setLsForm]         = useState({ principle: '', context: '', date_learned: TODAY, category: '' });
+  const [lsForm, setLsForm]         = useState({ principle: '', context: '', date_learned: localDate(), category: '' });
   const [lsPreview, setLsPreview]   = useState(null);
 
   // ── Future Advice ──────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ export default function TimeCapsule() {
   // ── Regrets Tracker ────────────────────────────────────────────────────────
   const [regrets, setRegrets]       = useState([]); const [reLoad, setReLoad] = useState(true);
   const [reModal, setReModal]       = useState(false); const [reEdit, setReEdit] = useState(null);
-  const [reForm, setReForm]         = useState({ text: '', action_to_avoid: '', date: TODAY });
+  const [reForm, setReForm]         = useState({ text: '', action_to_avoid: '', date: localDate() });
   const [rePreview, setRePreview]   = useState(null);
 
   // ── Shared ─────────────────────────────────────────────────────────────────
@@ -110,8 +110,8 @@ export default function TimeCapsule() {
   });
 
   // ── Life Lessons CRUD ──────────────────────────────────────────────────────
-  const openLsCreate = () => { setLsEdit(null); setLsForm({ principle: '', context: '', date_learned: TODAY, category: '' }); setLsModal(true); };
-  const openLsEdit   = (i) => { setLsEdit(i); setLsForm({ principle: i.principle, context: i.context||'', date_learned: i.date_learned||TODAY, category: i.category||'' }); setLsModal(true); };
+  const openLsCreate = () => { setLsEdit(null); setLsForm({ principle: '', context: '', date_learned: localDate(), category: '' }); setLsModal(true); };
+  const openLsEdit   = (i) => { setLsEdit(i); setLsForm({ principle: i.principle, context: i.context||'', date_learned: i.date_learned||localDate(), category: i.category||'' }); setLsModal(true); };
   const handleLsSave = () => {
     if (!lsForm.principle.trim()) return toast.error('Add the core principle');
     crudSave({ editItem: lsEdit, postUrl: '/time-capsule/life-lessons', putUrl: id => `/time-capsule/life-lessons/${id}`, form: lsForm,
@@ -143,8 +143,8 @@ export default function TimeCapsule() {
   const handlePaDel = crudDel('/time-capsule/past-advice', reloadPa);
 
   // ── Regrets CRUD ───────────────────────────────────────────────────────────
-  const openReCreate = () => { setReEdit(null); setReForm({ text: '', action_to_avoid: '', date: TODAY }); setReModal(true); };
-  const openReEdit   = (i) => { setReEdit(i); setReForm({ text: i.text, action_to_avoid: i.action_to_avoid||'', date: i.date||TODAY }); setReModal(true); };
+  const openReCreate = () => { setReEdit(null); setReForm({ text: '', action_to_avoid: '', date: localDate() }); setReModal(true); };
+  const openReEdit   = (i) => { setReEdit(i); setReForm({ text: i.text, action_to_avoid: i.action_to_avoid||'', date: i.date||localDate() }); setReModal(true); };
   const handleReSave = () => {
     if (!reForm.text.trim()) return toast.error('Describe the regret');
     crudSave({ editItem: reEdit, postUrl: '/time-capsule/regrets', putUrl: id => `/time-capsule/regrets/${id}`, form: reForm,
@@ -334,7 +334,7 @@ export default function TimeCapsule() {
         <div className="form-group"><label className="form-label">The Principle</label><input maxLength={200} className="form-input" value={lsForm.principle} onChange={e => setLsForm({ ...lsForm, principle: e.target.value })} placeholder="State the truth clearly…" /></div>
         <div className="form-group"><label className="form-label">Context / Backstory (optional)</label><textarea maxLength={2000} className="form-textarea" value={lsForm.context} onChange={e => setLsForm({ ...lsForm, context: e.target.value })} placeholder="How did you learn this hard truth?" style={{ minHeight: 90 }} /></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date Learned</label><input maxLength={200} type="date" className="form-input" value={lsForm.date_learned} onChange={e => setLsForm({ ...lsForm, date_learned: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date Learned</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={lsForm.date_learned} onChange={e => setLsForm({ ...lsForm, date_learned: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Category</label><input maxLength={200} className="form-input" value={lsForm.category} onChange={e => setLsForm({ ...lsForm, category: e.target.value })} placeholder="Career / Money / Love…" /></div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 24 }}><button className="btn btn-outline" onClick={() => setLsModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleLsSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : lsEdit ? 'Save Changes' : 'Record Truth'}</button></div>
@@ -365,7 +365,7 @@ export default function TimeCapsule() {
         <div className="modal-header"><h3>{reEdit ? 'Edit Regret' : 'Log a Regret'}</h3><button className="modal-close" onClick={() => setReModal(false)}>✕</button></div>
         <div className="form-group"><label className="form-label">The Regret</label><textarea maxLength={2000} className="form-textarea" value={reForm.text} onChange={e => setReForm({ ...reForm, text: e.target.value })} placeholder="I regret not..." style={{ minHeight: 80 }} /></div>
         <div className="form-group"><label className="form-label">The Strategy</label><textarea maxLength={2000} className="form-textarea" value={reForm.action_to_avoid} onChange={e => setReForm({ ...reForm, action_to_avoid: e.target.value })} placeholder="What is the precise action you will take to NEVER feel this way again?" style={{ minHeight: 80 }} /></div>
-        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={reForm.date} onChange={e => setReForm({ ...reForm, date: e.target.value })} style={{ maxWidth: 180 }} /></div>
+        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={reForm.date} onChange={e => setReForm({ ...reForm, date: e.target.value })} style={{ maxWidth: 180 }} /></div>
         <div style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setReModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleReSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : reEdit ? 'Save Changes' : 'Log Regret'}</button></div>
       </div></div>)}
 

@@ -41,6 +41,7 @@ import TaskCheckinDetail from './pages/TaskCheckinDetail';
 import FocusCheck from './pages/FocusCheck';
 import MorningPlan from './pages/MorningPlan';
 import Decisions from './pages/Decisions';
+import NotFound from './pages/NotFound';
 
 
 function PrivateRoute({ children }) {
@@ -66,7 +67,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14 } }} />
+        <Toaster position="top-right" containerStyle={{ top: 72 }} toastOptions={{ style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14 } }} />
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -109,7 +110,7 @@ export default function App() {
 
             <Route path="profile" element={<Profile />} />
             <Route path="verify/:token" element={<VerifyEmail />} />
-
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>

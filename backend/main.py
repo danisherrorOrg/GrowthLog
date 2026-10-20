@@ -116,18 +116,33 @@ async def server_timeout_handler(request, exc):
     return JSONResponse(status_code=503, content={"detail": "Service unavailable: Database connection timeout. Please try again later."})
 
 from fastapi.exceptions import RequestValidationError
+
+def _email_error_message(err):
+    """A readable message for an address the email validator rejected (it's shown as a toast)."""
+    reason = (err.get("ctx") or {}).get("reason", "")
+    if "special-use or reserved name" in reason:
+        return "Please use a real email address. That domain is reserved and can't receive email."
+    return f"Please enter a valid email address. {reason}".strip()
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     messages = []
     for err in exc.errors():
         field = err.get("loc", [""])[-1]
-        if err.get("type", "").startswith("string_too_long"):
+        if field == "email" and err.get("msg", "").startswith("value is not a valid email address"):
+            messages.append(_email_error_message(err))
+        elif err.get("type", "").startswith("string_too_long"):
             limit = err.get("ctx", {}).get("max_length", "its limit")
             field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
             messages.append(f"'{field_name}' must be at most {limit} characters.")
         elif err.get("msg"):
+            msg = err["msg"].removeprefix("Value error, ")
+            if field == "body":
+                # A check across several fields (e.g. end date before start date) reads fine on its own
+                messages.append(msg if msg.endswith(".") else f"{msg}.")
+                continue
             field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
-            messages.append(f"{field_name}: {err['msg']}")
+            messages.append(f"{field_name}: {msg}")
             
     # Combine messages into a single cleanly formatted string for toast notifications
     return JSONResponse(status_code=422, content={"detail": " ".join(messages)})

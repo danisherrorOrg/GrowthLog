@@ -124,3 +124,71 @@ def test_goal_extension(client, auth_headers):
     assert updated_goal["current_deadline"] == new_deadline
     assert len(updated_goal["extension_history"]) == 1
     assert updated_goal["extension_history"][0]["old_deadline"] == old_deadline
+
+
+def _day(tz: str, offset: int = 0) -> str:
+    from zoneinfo import ZoneInfo
+    from datetime import timezone as dt_timezone
+    now = datetime.now(dt_timezone.utc).astimezone(ZoneInfo(tz))
+    return (now + timedelta(days=offset)).strftime("%Y-%m-%d")
+
+
+def test_goal_deadline_cannot_be_in_the_past(client, auth_headers):
+    cat_id = client.get("/categories", headers=auth_headers).json()[0]["id"]
+    client.put("/auth/profile", json={"timezone": "UTC"}, headers=auth_headers)
+
+    past = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Old", "deadline": "2020-01-01"})
+    assert past.status_code == 422
+    assert "past" in past.json()["detail"]
+
+    for bad in ["", "not-a-date", "2026-13-01", "2099-1-1"]:
+        res = client.post("/goals", headers=auth_headers, json={
+            "category_id": cat_id, "title": "Bad", "deadline": bad})
+        assert res.status_code == 422, bad
+
+    today = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Due today", "deadline": _day("UTC")})
+    assert today.status_code == 200
+
+
+def test_goal_deadline_uses_the_users_today(client, auth_headers):
+    """Kiritimati (UTC+14) is always a day ahead of Pago Pago (UTC-11)."""
+    cat_id = client.get("/categories", headers=auth_headers).json()[0]["id"]
+    ahead_today = _day("Pacific/Kiritimati")
+
+    client.put("/auth/profile", json={"timezone": "Pacific/Pago_Pago"}, headers=auth_headers)
+    behind_today = _day("Pacific/Pago_Pago")
+    assert client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Behind", "deadline": behind_today}).status_code == 200
+
+    client.put("/auth/profile", json={"timezone": "Pacific/Kiritimati"}, headers=auth_headers)
+    assert behind_today < ahead_today
+    assert client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Behind", "deadline": behind_today}).status_code == 422
+
+
+def test_overdue_goal_can_be_edited_but_not_moved_into_the_past(client, auth_headers, test_user_data):
+    cat_id = client.get("/categories", headers=auth_headers).json()[0]["id"]
+    client.put("/auth/profile", json={"timezone": "UTC"}, headers=auth_headers)
+    goal_id = client.post("/goals", headers=auth_headers, json={
+        "category_id": cat_id, "title": "Overdue", "deadline": _day("UTC", 5)}).json()["id"]
+    from bson import ObjectId
+    db.goals.update_one({"_id": ObjectId(goal_id)}, {"$set": {"current_deadline": "2021-06-01"}})
+
+    # The edit form sends the existing (past) deadline back with the new title
+    res = client.put(f"/goals/{goal_id}", headers=auth_headers, json={
+        "title": "Renamed", "deadline": "2021-06-01", "category_id": cat_id})
+    assert res.status_code == 200
+
+    res = client.put(f"/goals/{goal_id}", headers=auth_headers, json={"deadline": "2021-07-01"})
+    assert res.status_code == 422
+
+    res = client.put(f"/goals/{goal_id}/reflect", headers=auth_headers, json={
+        "status": "extended", "reflection": "More time", "new_deadline": "2021-08-01"})
+    assert res.status_code == 422
+    assert db.goals.find_one({"_id": ObjectId(goal_id)})["extension_history"] == []
+
+    res = client.put(f"/goals/{goal_id}/reflect", headers=auth_headers, json={
+        "status": "completed", "reflection": "Done", "new_deadline": ""})
+    assert res.status_code == 200

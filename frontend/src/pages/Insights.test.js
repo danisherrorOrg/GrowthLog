@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import toast from 'react-hot-toast';
 import API from '../utils/api';
 import Insights from './Insights';
 
@@ -45,6 +46,24 @@ test('edits a time entry from the Time Tracking tab', async () => {
   ));
 });
 
+test('an edit that would push a day past 24 hours is stopped before saving', async () => {
+  const day = [
+    { id: 't1', date: '2026-10-19', category: 'Deep work', hours: 3, notes: '' },
+    { id: 't2', date: '2026-10-19', category: 'Sleep', hours: 20, notes: '' },
+  ];
+  API.get.mockImplementation(url => Promise.resolve({ data: url === '/insights/time-entries' ? day : [] }));
+  render(<Insights />);
+  fireEvent.click(screen.getByRole('button', { name: /Time Tracking/ }));
+  expect(await screen.findByText('Deep work')).toBeInTheDocument();
+
+  fireEvent.click(screen.getAllByRole('button', { name: '✎' })[0]);
+  fireEvent.change(screen.getByDisplayValue('3'), { target: { value: '5' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(toast.error).toHaveBeenCalledWith('Only 4h left on this day');
+  expect(API.put).not.toHaveBeenCalled();
+});
+
 test('logs screen time using a quick-pick category', async () => {
   render(<Insights />);
   fireEvent.click(screen.getByRole('button', { name: /Screen Time/ }));
@@ -58,4 +77,19 @@ test('logs screen time using a quick-pick category', async () => {
     '/insights/screen-time', expect.objectContaining({ app_category: 'Social', hours: 1.5 })
   ));
   expect(API.get).not.toHaveBeenCalledWith('/insights/weaknesses');
+});
+
+test('a habit that ends before it starts is stopped before saving', async () => {
+  const { container } = render(<Insights />);
+  fireEvent.click(screen.getByRole('button', { name: /Habit Graveyard/ }));
+  fireEvent.click((await screen.findAllByRole('button', { name: /Log/ }))[0]);
+
+  fireEvent.change(screen.getByPlaceholderText('e.g. Cold showers…'), { target: { value: 'Running' } });
+  const [started, abandoned] = container.querySelectorAll('.modal input[type="date"]');
+  fireEvent.change(started, { target: { value: '2026-05-01' } });
+  fireEvent.change(abandoned, { target: { value: '2026-04-01' } });
+  fireEvent.click(screen.getByRole('button', { name: /Lay to rest|Save|Bury|Add/ }));
+
+  expect(toast.error).toHaveBeenCalledWith("The abandoned date can't be before the start date");
+  expect(API.post).not.toHaveBeenCalled();
 });

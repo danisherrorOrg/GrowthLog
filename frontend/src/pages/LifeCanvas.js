@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { localDate } from '../utils/dates';
 
 // ── Tab config ────────────────────────────────────────────────────────────────
 const SECTIONS = [
@@ -31,7 +32,6 @@ const SECTIONS = [
 ];
 
 const ALL_TABS = SECTIONS.flatMap(s => s.tabs);
-const TODAY = new Date().toISOString().slice(0, 10);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const dateLabel = (d) => { try { return format(parseISO(d), 'MMM d, yyyy'); } catch { return d || '—'; } };
@@ -90,19 +90,19 @@ export default function LifeCanvas() {
   // ── Creative Sessions ──────────────────────────────────────────────────────
   const [creatives, setCreatives]   = useState([]); const [crLoad, setCrLoad] = useState(true);
   const [crModal, setCrModal]       = useState(false); const [crEdit, setCrEdit] = useState(null);
-  const [crForm, setCrForm]         = useState({ date: TODAY, project_name: '', hours: '', output_notes: '' });
+  const [crForm, setCrForm]         = useState({ date: localDate(), project_name: '', hours: '', output_notes: '' });
   const [crPreview, setCrPreview]   = useState(null);
 
   // ── Meaning Log ────────────────────────────────────────────────────────────
   const [meanings, setMeanings]     = useState([]); const [mnLoad, setMnLoad] = useState(true);
   const [mnModal, setMnModal]       = useState(false); const [mnEdit, setMnEdit] = useState(null);
-  const [mnForm, setMnForm]         = useState({ date: TODAY, experience: '', why_meaningful: '' });
+  const [mnForm, setMnForm]         = useState({ date: localDate(), experience: '', why_meaningful: '' });
   const [mnPreview, setMnPreview]   = useState(null);
 
   // ── Travel Log ─────────────────────────────────────────────────────────────
   const [travels, setTravels]       = useState([]); const [trLoad, setTrLoad] = useState(true);
   const [trModal, setTrModal]       = useState(false); const [trEdit, setTrEdit] = useState(null);
-  const [trForm, setTrForm]         = useState({ date: TODAY, destination: '', memories: '', photos_link: '' });
+  const [trForm, setTrForm]         = useState({ date: localDate(), destination: '', memories: '', photos_link: '' });
   const [trPreview, setTrPreview]   = useState(null);
 
   // ── Bucket List ────────────────────────────────────────────────────────────
@@ -163,8 +163,8 @@ export default function LifeCanvas() {
   const handleIdDel = crudDel('/passions/project-ideas', reloadId);
 
   // ── Creative Sessions CRUD ─────────────────────────────────────────────────
-  const openCrCreate = () => { setCrEdit(null); setCrForm({ date: TODAY, project_name: '', hours: '', output_notes: '' }); setCrModal(true); };
-  const openCrEdit   = (i) => { setCrEdit(i); setCrForm({ date: i.date||TODAY, project_name: i.project_name, hours: i.hours||'', output_notes: i.output_notes||'' }); setCrModal(true); };
+  const openCrCreate = () => { setCrEdit(null); setCrForm({ date: localDate(), project_name: '', hours: '', output_notes: '' }); setCrModal(true); };
+  const openCrEdit   = (i) => { setCrEdit(i); setCrForm({ date: i.date||localDate(), project_name: i.project_name, hours: i.hours||'', output_notes: i.output_notes||'' }); setCrModal(true); };
   const handleCrSave = () => {
     if (!crForm.project_name.trim() || !crForm.hours) return toast.error('Fill in project and hours');
     crudSave({ editItem: crEdit, postUrl: '/passions/creative-sessions', putUrl: id => `/passions/creative-sessions/${id}`, form: { ...crForm, hours: +crForm.hours },
@@ -174,8 +174,8 @@ export default function LifeCanvas() {
   const handleCrDel = crudDel('/passions/creative-sessions', reloadCr);
 
   // ── Meaning Log CRUD ───────────────────────────────────────────────────────
-  const openMnCreate = () => { setMnEdit(null); setMnForm({ date: TODAY, experience: '', why_meaningful: '' }); setMnModal(true); };
-  const openMnEdit   = (i) => { setMnEdit(i); setMnForm({ date: i.date||TODAY, experience: i.experience, why_meaningful: i.why_meaningful||'' }); setMnModal(true); };
+  const openMnCreate = () => { setMnEdit(null); setMnForm({ date: localDate(), experience: '', why_meaningful: '' }); setMnModal(true); };
+  const openMnEdit   = (i) => { setMnEdit(i); setMnForm({ date: i.date||localDate(), experience: i.experience, why_meaningful: i.why_meaningful||'' }); setMnModal(true); };
   const handleMnSave = () => {
     if (!mnForm.experience.trim()) return toast.error('Describe the experience');
     crudSave({ editItem: mnEdit, postUrl: '/passions/meaning-log', putUrl: id => `/passions/meaning-log/${id}`, form: mnForm,
@@ -185,8 +185,8 @@ export default function LifeCanvas() {
   const handleMnDel = crudDel('/passions/meaning-log', reloadMn);
 
   // ── Travel Log CRUD ────────────────────────────────────────────────────────
-  const openTrCreate = () => { setTrEdit(null); setTrForm({ date: TODAY, destination: '', memories: '', photos_link: '' }); setTrModal(true); };
-  const openTrEdit   = (i) => { setTrEdit(i); setTrForm({ date: i.date||TODAY, destination: i.destination, memories: i.memories||'', photos_link: i.photos_link||'' }); setTrModal(true); };
+  const openTrCreate = () => { setTrEdit(null); setTrForm({ date: localDate(), destination: '', memories: '', photos_link: '' }); setTrModal(true); };
+  const openTrEdit   = (i) => { setTrEdit(i); setTrForm({ date: i.date||localDate(), destination: i.destination, memories: i.memories||'', photos_link: i.photos_link||'' }); setTrModal(true); };
   const handleTrSave = () => {
     if (!trForm.destination.trim()) return toast.error('Where did you go?');
     crudSave({ editItem: trEdit, postUrl: '/passions/travel-log', putUrl: id => `/passions/travel-log/${id}`, form: trForm,
@@ -459,7 +459,7 @@ export default function LifeCanvas() {
       {/* Meaning Log */}
       {mnModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setMnModal(false)}><div className="modal">
         <div className="modal-header"><h3>{mnEdit ? 'Edit Event' : 'Log Meaningful Moment'}</h3><button className="modal-close" onClick={() => setMnModal(false)}>✕</button></div>
-        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={mnForm.date} onChange={e => setMnForm({ ...mnForm, date: e.target.value })} /></div>
+        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={mnForm.date} onChange={e => setMnForm({ ...mnForm, date: e.target.value })} /></div>
         <div className="form-group"><label className="form-label">The Experience</label><textarea maxLength={2000} className="form-textarea" value={mnForm.experience} onChange={e => setMnForm({ ...mnForm, experience: e.target.value })} placeholder="What happened that felt so deep?" style={{ minHeight: 90 }} /></div>
         <div className="form-group"><label className="form-label">Why was it meaningful? (optional)</label><textarea maxLength={2000} className="form-textarea" value={mnForm.why_meaningful} onChange={e => setMnForm({ ...mnForm, why_meaningful: e.target.value })} placeholder="What struck you about it?" style={{ minHeight: 80 }} /></div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={() => setMnModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleMnSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : mnEdit ? 'Save Changes' : 'Log Moment'}</button></div>
@@ -494,7 +494,7 @@ export default function LifeCanvas() {
         </div>
         <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Target Date (optional)</label><input maxLength={200} type="date" className="form-input" value={blForm.target_date} onChange={e => setBlForm({ ...blForm, target_date: e.target.value })} /></div>
-          {blForm.status === 'done' && <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed On</label><input maxLength={200} type="date" className="form-input" value={blForm.completed_date} onChange={e => setBlForm({ ...blForm, completed_date: e.target.value })} /></div>}
+          {blForm.status === 'done' && <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Completed On</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={blForm.completed_date} onChange={e => setBlForm({ ...blForm, completed_date: e.target.value })} /></div>}
         </div>
         <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}><button className="btn btn-outline" onClick={() => setBlModal(false)} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleBlSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : blEdit ? 'Save Changes' : 'Add to List'}</button></div>
       </div></div>)}

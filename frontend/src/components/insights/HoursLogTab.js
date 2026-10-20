@@ -4,7 +4,7 @@ import API from '../../utils/api';
 import { getErrorMessage } from '../../utils/errors';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, PALETTE, catColor, Skeletons, Empty, dateLabel, dayLabel, HoursBar, MultiRowEditor } from './shared';
+import { localDate, PALETTE, catColor, Skeletons, Empty, dateLabel, dayLabel, HoursBar, MultiRowEditor } from './shared';
 
 // Time Tracking and Screen Time are the same day-centric log with different wording
 export const TIME_TRACKING = {
@@ -57,7 +57,7 @@ export default function HoursLogTab({ config }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
-  const [date, setDate] = useState(TODAY);
+  const [date, setDate] = useState(localDate());
   const [rows, setRows] = useState([{ [keyField]: '', hours: '' }]);
   const [editEntry, setEditEntry] = useState(null); // single-entry edit
   const [editForm, setEditForm] = useState({ [keyField]: '', hours: '', notes: '' });
@@ -76,7 +76,7 @@ export default function HoursLogTab({ config }) {
 
   const byDate = useMemo(() => groupByDate(entries), [entries]);
 
-  const openAdd = (day = TODAY) => {
+  const openAdd = (day = localDate()) => {
     setDate(day);
     setRows([{ [keyField]: '', hours: '' }]);
     setEditEntry(null);
@@ -88,10 +88,18 @@ export default function HoursLogTab({ config }) {
     setModal(true);
   };
 
+  // Hours already saved for a day, leaving out the entry being edited
+  const dayTotal = (day, skipId) => entries
+    .filter(e => e.date === day && e.id !== skipId)
+    .reduce((s, e) => s + (+e.hours || 0), 0);
+
   const handleSave = async () => {
     if (editEntry) {
       // single edit
       if (!editForm[keyField].trim() || !editForm.hours) return toast.error('Fill all fields');
+      if (+editForm.hours <= 0) return toast.error('Hours must be more than 0');
+      const others = dayTotal(editEntry.date, editEntry.id);
+      if (others + +editForm.hours > 24) return toast.error(`Only ${+(24 - others).toFixed(2)}h left on this day`);
       setSaving(true);
       try {
         await API.put(`${endpoint}/${editEntry.id}`, { date: editEntry.date, ...editForm, hours: +editForm.hours });
@@ -102,7 +110,10 @@ export default function HoursLogTab({ config }) {
       const valid = rows.filter(r => r[keyField].trim() && +r.hours > 0);
       if (!valid.length) return toast.error('Add at least one valid entry');
       const total = valid.reduce((s, r) => s + +r.hours, 0);
-      if (total > 24) return toast.error('Total hours exceed 24h');
+      const logged = dayTotal(date);
+      if (logged + total > 24) {
+        return toast.error(logged ? `Only ${+(24 - logged).toFixed(2)}h left on this day` : 'Total hours exceed 24h');
+      }
       setSaving(true);
       try {
         await Promise.all(valid.map(r => API.post(endpoint, { date, [keyField]: r[keyField], hours: +r.hours, notes: '' })));
@@ -124,11 +135,11 @@ export default function HoursLogTab({ config }) {
     <>
       <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>{config.icon} {config.title}</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>{config.subtitle}</p></div>
-        <button className="btn btn-primary" onClick={() => openAdd(TODAY)} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
+        <button className="btn btn-primary" onClick={() => openAdd(localDate())} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
       </div>
 
       {loading ? <Skeletons n={2} h={140} /> : byDate.length === 0 ? (
-        <Empty icon={config.icon} title={config.emptyTitle} desc={config.emptyDesc} onAdd={() => openAdd(TODAY)} label={config.emptyLabel} />
+        <Empty icon={config.icon} title={config.emptyTitle} desc={config.emptyDesc} onAdd={() => openAdd(localDate())} label={config.emptyLabel} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {byDate.map(([day, dayEntries]) => {
@@ -181,7 +192,7 @@ export default function HoursLogTab({ config }) {
           <>
             <div className="grid-2" style={{ gap: 12 }}>
               <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">{config.keyLabel}</label><input maxLength={200} className="form-input" value={editForm[keyField]} onChange={e => setEditForm({ ...editForm, [keyField]: e.target.value })} /></div>
-              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input type="number" className="form-input" value={editForm.hours} onChange={e => setEditForm({ ...editForm, hours: e.target.value })} min="0.1" step="0.25" /></div>
+              <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Hours</label><input type="number" className="form-input" value={editForm.hours} onChange={e => setEditForm({ ...editForm, hours: e.target.value })} min="0.1" max="24" step="0.25" /></div>
             </div>
             <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">Notes (optional)</label><input maxLength={200} className="form-input" value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} placeholder="Any detail?" /></div>
           </>
@@ -201,7 +212,7 @@ export default function HoursLogTab({ config }) {
             <MultiRowEditor rows={rows} setRows={setRows} keyLabel={keyField} keyPlaceholder={config.keyPlaceholder} color={color} />
           </>
         )}
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button className="btn btn-outline" onClick={() => setModal(false)} style={{ flex: 1 }}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editEntry ? 'Save Changes' : config.logLabel}</button>
         </div>

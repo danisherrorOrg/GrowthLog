@@ -69,18 +69,18 @@ export default function WeaknessMapTab() {
         <div className="modal-header"><h3>{editing ? 'Edit Entry' : 'Map a Weakness'}</h3><button className="modal-close" onClick={closeModal}>✕</button></div>
         <div className="form-group"><label className="form-label">Weakness / Temptation</label><input maxLength={300} className="form-input" value={form.weakness} onChange={e => setForm({ ...form, weakness: e.target.value })} placeholder="e.g. I cave to social pressure to say yes" /></div>
         <div className="form-group"><label className="form-label">Description — how it manifests (optional)</label><textarea maxLength={2000} className="form-textarea" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="When does this show up? In what situations?" style={{ minHeight: 90 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="grid-2" style={{ gap: 12 }}>
+        <div className="grid-2" style={{ gap: 12, marginBottom: 20 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Severity — {form.severity}/5</label>
-            <input type="range" min={1} max={5} value={form.severity} onChange={e => setForm({ ...form, severity: +e.target.value })} style={{ width: '100%' }} />
+            <input type="range" className="rating-slider" aria-label="Severity" min={1} max={5} value={form.severity} onChange={e => setForm({ ...form, severity: +e.target.value })} style={{ width: '100%', '--val': `${(form.severity - 1) / 4 * 100}%` }} />
           </div>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Frequency — {form.frequency}/5</label>
-            <input type="range" min={1} max={5} value={form.frequency} onChange={e => setForm({ ...form, frequency: +e.target.value })} style={{ width: '100%' }} />
+            <input type="range" className="rating-slider" aria-label="Frequency" min={1} max={5} value={form.frequency} onChange={e => setForm({ ...form, frequency: +e.target.value })} style={{ width: '100%', '--val': `${(form.frequency - 1) / 4 * 100}%` }} />
           </div>
         </div>
         <div className="form-group"><label className="form-label">Guard System (optional)</label><textarea maxLength={1000} className="form-textarea" value={form.guard_system} onChange={e => setForm({ ...form, guard_system: e.target.value })} placeholder="What rule, system, or pre-commitment helps you resist this?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Map Weakness'}</button></div>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Map Weakness'}</button></div>
       </div></div>)}
 
       <PreviewModal item={preview} onClose={() => setPreview(null)} icon="🧩" iconBg="rgba(184,115,51,0.08)" titleColor="#b87333" title={preview?.weakness} subtitle={preview && `Severity ${preview.severity}/5 · Frequency ${preview.frequency}/5`} body={preview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

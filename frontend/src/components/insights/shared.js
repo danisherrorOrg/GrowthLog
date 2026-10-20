@@ -3,8 +3,9 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import API from '../../utils/api';
 import { getErrorMessage } from '../../utils/errors';
+import { localDate } from '../../utils/dates';
 
-export const TODAY = new Date().toISOString().slice(0, 10);
+export { localDate };
 
 // ── palette for categories ──────────────────────────────────────────────────
 export const PALETTE = ['#6b8c6b', '#5b8ba8', '#c9a84c', '#8b6bc4', '#c4623a', '#5b9e8f', '#c46b8b', '#7a8fa6', '#a89b6b'];
@@ -64,7 +65,7 @@ export function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color 
               placeholder={keyPlaceholder} />
             <input className="form-input hours-input" type="number" style={{ width: 90, flexShrink: 0 }} value={row.hours}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], hours: e.target.value }; setRows(r); }}
-              placeholder="hrs" min="0.1" step="0.25" />
+              placeholder="hrs" min="0.1" max="24" step="0.25" />
             {rows.length > 1 && (
               <button onClick={() => setRows(rows.filter((_, idx) => idx !== i))}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>
@@ -118,7 +119,9 @@ export function useInsightList(endpoint, emptyForm) {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  // emptyForm may be a function so date fields default to the day the form is opened
+  const freshForm = () => (typeof emptyForm === 'function' ? emptyForm() : emptyForm);
+  const [form, setForm] = useState(freshForm);
   const [preview, setPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(null);
@@ -132,7 +135,7 @@ export function useInsightList(endpoint, emptyForm) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setModal(true); };
+  const openCreate = () => { setEditing(null); setForm(freshForm()); setModal(true); };
   const openEdit = (item, itemForm) => { setEditing(item); setForm(itemForm); setModal(true); };
   const closeModal = () => setModal(false);
 

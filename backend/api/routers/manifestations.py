@@ -8,6 +8,7 @@ from core.database import db
 from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
+from utils.streak import _get_local_now
 from models.schemas import (
     ManifestationModel, ManifestationUpdateModel,
     ManifestationProgressModel, ManifestationProgressUpdateModel,
@@ -32,11 +33,11 @@ def get_manifestation(m_id: str, current_user=Depends(get_current_user)):
 
 @router.post("")
 def create_manifestation(data: ManifestationModel, current_user=Depends(get_current_user)):
-    start = utcnow()
+    # Day math uses the user's calendar day, not the UTC one
+    start = _get_local_now(current_user).date()
     if data.target_date:
         target_str = data.target_date
-        target_date_obj = datetime.strptime(data.target_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        target_days = (target_date_obj - start).days
+        target_days = (datetime.strptime(data.target_date, "%Y-%m-%d").date() - start).days
     elif data.target_days:
         target_str = (start + timedelta(days=data.target_days)).strftime("%Y-%m-%d")
         target_days = data.target_days

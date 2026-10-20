@@ -3,8 +3,8 @@ import API from '../../utils/api';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/errors';
 import ConfirmModal from '../ui/ConfirmModal';
+import { localDate } from '../../utils/dates';
 
-const TODAY = new Date().toISOString().slice(0, 10);
 
 export default function SleepTab() {
   const [logs, setLogs] = useState([]);
@@ -17,7 +17,7 @@ export default function SleepTab() {
   const [viewingLog, setViewingLog] = useState(null);
 
   const [form, setForm] = useState({
-    date: TODAY,
+    date: localDate(),
     bedtime: '23:00',
     wake_time: '07:00',
     quality: 7,
@@ -42,7 +42,7 @@ export default function SleepTab() {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ date: TODAY, bedtime: '23:00', wake_time: '07:00', quality: 7, notes: '' });
+    setForm({ date: localDate(), bedtime: '23:00', wake_time: '07:00', quality: 7, notes: '' });
     setShowModal(true);
   };
 

@@ -33,9 +33,9 @@ export default function CalendarView({ events, period, onDayClick }) {
   };
 
   return (
-    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px' }}>
+    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '8px' }}>
       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-         <div key={day} style={{ textAlign: 'center', fontWeight: '600', padding: '10px 0', color: '#888', fontSize: '13px', textTransform: 'uppercase' }}>
+         <div key={day} className="calendar-weekday" style={{ textAlign: 'center', fontWeight: '600', padding: '10px 0', color: '#888', fontSize: '13px', textTransform: 'uppercase' }}>
              {day}
          </div>
       ))}
@@ -47,6 +47,7 @@ export default function CalendarView({ events, period, onDayClick }) {
         return (
           <div 
             key={day.toString()} 
+            className="calendar-day"
             onClick={() => onDayClick(day)}
             style={{
               padding: '12px',

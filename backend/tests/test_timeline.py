@@ -372,3 +372,72 @@ def test_get_timeline_search_escaping_redos(client, auth_headers, test_user_data
     data = response.json()
     assert len(data["events"]) == 1
     assert data["events"][0]["description"] == "Testing special (parentheses) and [brackets]!"
+
+
+def test_timeline_search_never_returns_other_users_data(client, auth_headers, other_user_headers, test_user_data):
+    """A search must stay scoped to the signed-in user (the search $or used to replace the owner filter)."""
+    owner = db.users.find_one({"email": test_user_data["email"]})
+    uid = str(owner["_id"])
+    secret = "zebrasecret"
+
+    db.daily_logs.insert_one({
+        "user_id": uid, "date": "2026-04-01", "highlight": f"{secret} highlight",
+        "overall_rating": 7, "entries": [{"text": f"{secret} entry"}],
+    })
+    db.goals.insert_one({
+        "user_id": owner["_id"], "title": f"{secret} goal", "description": "",
+        "created_at": datetime(2026, 4, 2), "current_deadline": "2026-05-01", "status": "active",
+    })
+    db.manifestations.insert_one({
+        "user_id": uid, "vision": f"{secret} vision", "start_date": "2026-04-03",
+        "target_date": "2026-06-01", "status": "active",
+    })
+    db.snapshots.insert_one({"user_id": uid, "date": "2026-04-04", "description": f"{secret} snapshot"})
+
+    # The other user finds nothing, with or without a date range
+    for params in ({"q": secret}, {"q": secret, "start_date": "2026-01-01", "end_date": "2026-12-31"}):
+        res = client.get("/timeline", params=params, headers=other_user_headers)
+        assert res.status_code == 200
+        assert res.json()["events"] == [], res.json()
+
+    # The owner still finds all of it
+    res = client.get("/timeline", params={"q": secret}, headers=auth_headers)
+    types = sorted(e["type"] for e in res.json()["events"])
+    assert types == sorted([
+        "daily_log", "goal_created", "goal_deadline",
+        "manifestation_started", "manifestation_target", "snapshot",
+    ])
+
+
+def test_timeline_log_mood_is_entry_average_not_day_rating(client, auth_headers, test_user_data):
+    """A log's mood is the average of its entries' moods; overall_rating is sent as day_rating."""
+    uid = str(db.users.find_one({"email": test_user_data["email"]})["_id"])
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-07-01",
+        "highlight": "Good mood, average day",
+        "overall_rating": 5,
+        "gratitude": ["coffee"],
+        "regret": "stayed up late",
+        "entries": [
+            {"category_id": "c1", "text": "a", "mood": 8, "energy": 6},
+            {"category_id": "c2", "text": "b", "mood": 9, "energy": 7},
+        ],
+    })
+    db.daily_logs.insert_one({
+        "user_id": uid,
+        "date": "2026-07-02",
+        "overall_rating": 7,
+        "entries": [{"category_id": "c1", "text": "old entry without mood"}],
+    })
+
+    response = client.get("/timeline?start_date=2026-07-01&end_date=2026-07-02", headers=auth_headers)
+    assert response.status_code == 200
+    by_date = {e["date"]: e["data"] for e in response.json()["events"]}
+
+    assert by_date["2026-07-01"]["mood"] == 8.5
+    assert by_date["2026-07-01"]["day_rating"] == 5
+    assert by_date["2026-07-01"]["gratitude"] == ["coffee"]
+    assert by_date["2026-07-01"]["regret"] == "stayed up late"
+    assert by_date["2026-07-02"]["mood"] is None
+    assert by_date["2026-07-02"]["day_rating"] == 7

@@ -4,7 +4,9 @@ import API from '../utils/api';
 import { getErrorMessage } from '../utils/errors';
 import { parseISO, isPast, isToday } from 'date-fns';
 import { todayRank } from '../components/focus/quickCheck';
-import FocusTimer, { playZenChime } from '../components/todos/FocusTimer';
+import FocusTimer, { playZenChime, formatClock } from '../components/todos/FocusTimer';
+import useFocusSession from '../components/todos/useFocusSession';
+import { useAuth } from '../context/AuthContext';
 import AddTodoForm from '../components/todos/AddTodoForm';
 import TodoCard, { SkeletonCard } from '../components/todos/TodoCard';
 import { ConfirmModal, CompleteModal } from '../components/todos/TodoModals';
@@ -20,54 +22,35 @@ export default function Todos() {
   const [completeTarget, setCompleteTarget] = useState(null); // for complete-with-time modal
   const [completeDefaultMinutes, setCompleteDefaultMinutes] = useState(null);
 
-  // ── Pomodoro Focus Timer States ────────────────────────────────────────────
-  const [focusTodo, setFocusTodo] = useState(null);
-  const [timerSeconds, setTimerSeconds] = useState(1500); // 25 mins
-  const [timerDuration, setTimerDuration] = useState(1500); // chosen preset
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [focusSecondsSpent, setFocusSecondsSpent] = useState(0);
-
-  // ── Timer Effect ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    let interval = null;
-    if (isTimerRunning && timerSeconds > 0) {
-      interval = setInterval(() => {
-        setTimerSeconds(s => s - 1);
-        setFocusSecondsSpent(s => s + 1);
-      }, 1000);
-    } else if (timerSeconds === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
+  // ── Pomodoro focus session (saved, so it survives leaving the page) ───────
+  const userId = useAuth()?.user?.id;
+  const focus = useFocusSession(userId, {
+    onFinish: (todo, seconds) => {
       playZenChime();
       toast.success('⏱️ Focus session completed! Outstanding job.');
-      
-      if (focusTodo) {
-        const minutesSpent = Math.max(1, Math.round(focusSecondsSpent / 60));
-        setCompleteDefaultMinutes(minutesSpent);
-        setCompleteTarget(focusTodo);
-      }
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, timerSeconds, focusTodo, focusSecondsSpent]);
+      setCompleteDefaultMinutes(Math.max(1, Math.round(seconds / 60)));
+      setCompleteTarget(todos.find(t => t.id === todo.id) || todo);
+    },
+  });
+  const focusTodo = focus.focusTodo;
+  const [pendingDuration, setPendingDuration] = useState(null); // preset waiting for confirmation
 
   const handleStartFocus = (todo) => {
-    setFocusTodo(todo);
-    setFocusSecondsSpent(0);
-    setTimerSeconds(timerDuration);
-    setIsTimerRunning(true);
+    focus.start(todo);
     toast.success(`⏱️ Focus session started for: ${todo.title}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleClearFocus = () => {
-    setFocusTodo(null);
-    setIsTimerRunning(false);
-    setFocusSecondsSpent(0);
+  const handlePickDuration = (sec) => {
+    if (sec === focus.duration) return;
+    // Switching presets restarts the countdown, so ask first if it has started
+    if (focus.roundSeconds > 0 && focus.remaining > 0) setPendingDuration(sec);
+    else focus.pickDuration(sec);
   };
 
   const handleOpenCompleteModal = (todo) => {
-    if (focusTodo && focusTodo.id === todo.id && focusSecondsSpent > 5) {
-      const minutesSpent = Math.max(1, Math.round(focusSecondsSpent / 60));
-      setCompleteDefaultMinutes(minutesSpent);
+    if (focusTodo && focusTodo.id === todo.id && focus.totalSeconds > 5) {
+      setCompleteDefaultMinutes(Math.max(1, Math.round(focus.totalSeconds / 60)));
     } else {
       setCompleteDefaultMinutes(null);
     }
@@ -86,6 +69,14 @@ export default function Todos() {
   };
 
   useEffect(() => { fetchTodos(); }, []);
+
+  // Drop a saved session whose task was deleted or finished elsewhere; follow renames
+  useEffect(() => {
+    if (loading || !focusTodo) return;
+    const match = todos.find(t => t.id === focusTodo.id);
+    if (!match || match.status !== 'pending') focus.clear();
+    else if (match.title !== focusTodo.title) focus.renameTodo(match.title);
+  }, [loading, todos, focusTodo]);
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
   const handleAdd = async (newTodo) => {
@@ -111,9 +102,7 @@ export default function Todos() {
 
       // If the completed task was our active focus task, reset focus
       if (focusTodo && focusTodo.id === id) {
-        setFocusTodo(null);
-        setIsTimerRunning(false);
-        setFocusSecondsSpent(0);
+        focus.clear();
         toast.success('✦ Focus task completed! Great job!');
       } else {
         toast.success('✦ Task completed');
@@ -189,21 +178,14 @@ export default function Todos() {
       <div className="page-body">
         <FocusTimer
           focusTodo={focusTodo}
-          timerSeconds={timerSeconds}
-          timerDuration={timerDuration}
-          isTimerRunning={isTimerRunning}
-          onPickDuration={(sec) => {
-            setTimerDuration(sec);
-            setTimerSeconds(sec);
-            setIsTimerRunning(false);
-          }}
-          onToggle={() => setIsTimerRunning(!isTimerRunning)}
-          onReset={() => {
-            setTimerSeconds(timerDuration);
-            setIsTimerRunning(false);
-          }}
+          timerSeconds={focus.remaining}
+          timerDuration={focus.duration}
+          isTimerRunning={focus.isRunning}
+          onPickDuration={handlePickDuration}
+          onToggle={focus.toggle}
+          onReset={focus.reset}
           onComplete={() => handleOpenCompleteModal(focusTodo)}
-          onClear={handleClearFocus}
+          onClear={focus.clear}
         />
 
         {/* Overdue alert */}
@@ -392,6 +374,17 @@ export default function Todos() {
           body="This will permanently remove the task. This action cannot be undone."
           onConfirm={doDelete}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {pendingDuration && (
+        <ConfirmModal
+          title="Restart the timer?"
+          body={`You're ${formatClock(focus.roundSeconds)} into this ${focus.duration / 60}-minute session. Switching to ${pendingDuration / 60} minutes starts the countdown over. Time you've already focused still counts toward the task.`}
+          confirmLabel={`Switch to ${pendingDuration / 60}m`}
+          cancelLabel="Keep going"
+          onConfirm={() => { focus.pickDuration(pendingDuration); setPendingDuration(null); }}
+          onCancel={() => setPendingDuration(null)}
         />
       )}
       {completeTarget && (

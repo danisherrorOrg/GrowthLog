@@ -1,9 +1,9 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, Skeletons, Empty, onHover, offHover, dateLabel, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, dateLabel, PreviewModal, useInsightList } from './shared';
 
-const EMPTY_FORM = { date: TODAY, what: '', why: '', outcome: '' };
+const EMPTY_FORM = () => ({ date: localDate(), what: '', why: '', outcome: '' });
 
 export default function ProcrastinationTab() {
   const list = useInsightList('/insights/procrastination', EMPTY_FORM);
@@ -54,11 +54,11 @@ export default function ProcrastinationTab() {
 
       {modal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeModal()}><div className="modal">
         <div className="modal-header"><h3>{editing ? 'Edit Entry' : 'Log Procrastination'}</h3><button className="modal-close" onClick={closeModal}>✕</button></div>
-        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
+        <div className="form-group"><label className="form-label">Date</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
         <div className="form-group"><label className="form-label">What did you avoid?</label><input maxLength={200} className="form-input" value={form.what} onChange={e => setForm({ ...form, what: e.target.value })} placeholder="e.g. Writing that overdue report…" /></div>
         <div className="form-group"><label className="form-label">Why? (optional)</label><textarea maxLength={2000} className="form-textarea" value={form.why} onChange={e => setForm({ ...form, why: e.target.value })} placeholder="Fear, overwhelm, distraction?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
         <div className="form-group"><label className="form-label">Outcome (optional)</label><textarea maxLength={2000} className="form-textarea" value={form.outcome} onChange={e => setForm({ ...form, outcome: e.target.value })} placeholder="Did you eventually do it? What happened?" style={{ minHeight: 70 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Log Entry'}</button></div>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Log Entry'}</button></div>
       </div></div>)}
 
       <PreviewModal item={preview} onClose={() => setPreview(null)} icon="😬" iconBg="rgba(201,168,76,0.1)" titleColor="#c9a84c" title={preview?.what} subtitle={preview && dateLabel(preview.date)} body={preview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

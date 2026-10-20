@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     RegretModel, FutureAdviceModel,
     PastAdviceModel, LifeLessonModel
@@ -37,6 +37,7 @@ def get_regrets(current_user=Depends(get_current_user)):
 @router.post("/regrets")
 def create_regret(data: RegretModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {"user_id": uid, "text": data.text, "action_to_avoid": data.action_to_avoid or "",
            "date": data.date or utcnow().strftime("%Y-%m-%d"), "created_at": utcnow()}
     result = db.regrets.insert_one(doc)
@@ -46,6 +47,7 @@ def create_regret(data: RegretModel, current_user=Depends(get_current_user)):
 @router.put("/regrets/{item_id}")
 def update_regret(item_id: str, data: RegretModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.regrets.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"text": data.text, "action_to_avoid": data.action_to_avoid or "",
@@ -151,6 +153,7 @@ def get_life_lessons(current_user=Depends(get_current_user)):
 @router.post("/life-lessons")
 def create_life_lesson(data: LifeLessonModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date learned": data.date_learned})
     doc = {"user_id": uid, "principle": data.principle, "context": data.context or "",
            "date_learned": data.date_learned or utcnow().strftime("%Y-%m-%d"),
            "category": data.category or "", "created_at": utcnow()}
@@ -161,6 +164,7 @@ def create_life_lesson(data: LifeLessonModel, current_user=Depends(get_current_u
 @router.put("/life-lessons/{item_id}")
 def update_life_lesson(item_id: str, data: LifeLessonModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date learned": data.date_learned})
     result = db.life_lessons.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"principle": data.principle, "context": data.context or "",

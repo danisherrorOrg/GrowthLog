@@ -4,8 +4,11 @@ from core.config import MONGO_URL, DB_NAME
 
 logger = logging.getLogger(__name__)
 
+# tz_aware: stored datetimes come back as UTC-aware, so the API sends them with an offset
+# instead of naive strings the browser would read as local time
 client = MongoClient(
     MONGO_URL,
+    tz_aware=True,
     maxPoolSize=20,
     serverSelectionTimeoutMS=5000,
     connectTimeoutMS=5000

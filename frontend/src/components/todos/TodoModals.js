@@ -4,7 +4,7 @@ import MarkdownRenderer from '../ui/MarkdownRenderer';
 import { PRIORITY, fmtMinutes, TimeAccuracy, TimeEstimateInput, DueBadge } from './todoParts';
 
 // ── Confirm modal ───────────────────────────────────────────────────────────
-export function ConfirmModal({ title, body, onConfirm, onCancel }) {
+export function ConfirmModal({ title, body, onConfirm, onCancel, confirmLabel = 'Delete', cancelLabel = 'Cancel' }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
       <div className="modal" style={{ maxWidth: 400 }}>
@@ -14,10 +14,10 @@ export function ConfirmModal({ title, body, onConfirm, onCancel }) {
         </div>
         <p style={{ fontSize: 14, color: 'rgba(13,13,13,0.6)', lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-outline" onClick={onCancel} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn btn-outline" onClick={onCancel} style={{ flex: 1 }}>{cancelLabel}</button>
           <button className="btn" onClick={onConfirm}
             style={{ flex: 1, background: 'var(--rust)', color: 'white', border: 'none' }}>
-            Delete
+            {confirmLabel}
           </button>
         </div>
       </div>

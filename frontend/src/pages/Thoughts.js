@@ -9,6 +9,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 // ── Constants ───────────────────────────────────────────────────────────────
 const MAX_CHARS = 1000;
 const PREVIEW_CHARS = 220; // characters shown before "Read more"
+const SUBMIT_HINT = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘+Enter' : 'Ctrl+Enter';
 
 const SENTIMENT_STYLE = {
   Positive: { border: 'var(--sage)',               tag: 'tag-green', dot: 'var(--sage)' },
@@ -29,6 +30,14 @@ function highlightText(text, query) {
       ? <mark key={i} style={{ background: 'rgba(201,168,76,0.35)', borderRadius: 2, padding: '0 1px' }}>{part}</mark>
       : part
   );
+}
+
+// Cmd+Enter (Ctrl+Enter elsewhere) submits the form the textarea is in.
+function submitOnModEnter(e, submit) {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    submit(e);
+  }
 }
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
@@ -153,7 +162,10 @@ export default function Thoughts() {
   // ── CRUD ──────────────────────────────────────────────────────────────────
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!newThought.trim()) return;
+    if (!newThought.trim()) {
+      textareaRef.current?.focus();
+      return toast.error('Write a thought first.');
+    }
     if (newThought.length > MAX_CHARS) return toast.error(`Thoughts are capped at ${MAX_CHARS} characters.`);
     try {
       const res = await API.post('/thoughts', { content: newThought, sentiment: newSentiment });
@@ -188,7 +200,7 @@ export default function Thoughts() {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    if (!editContent.trim()) return;
+    if (!editContent.trim()) return toast.error("A thought can't be empty.");
     try {
       const res = await API.put(`/thoughts/${editingThought.id}`, { content: editContent, sentiment: editSentiment });
       setThoughts(thoughts.map(t => t.id === editingThought.id ? res.data : t));
@@ -220,6 +232,10 @@ export default function Thoughts() {
     return sentimentMatch && pinnedMatch && searchMatch;
   });
 
+  const filtersOn = filter !== 'All' || showOnlyPinned;
+  const clearFilters = () => { setFilter('All'); setShowOnlyPinned(false); };
+  const activeFilters = [showOnlyPinned && 'pinned', filter !== 'All' && filter.toLowerCase()].filter(Boolean).join(', ');
+
   const pinned   = filtered.filter(t => t.is_bookmarked);
   const unpinned = filtered.filter(t => !t.is_bookmarked);
 
@@ -248,17 +264,19 @@ export default function Thoughts() {
               placeholder="Capture a passing thought… the garden waits."
               value={newThought}
               onChange={e => setNewThought(e.target.value)}
+              onKeyDown={e => submitOnModEnter(e, handleAdd)}
               maxLength={MAX_CHARS}
+              aria-label="New thought"
               style={{
                 minHeight: 100, border: 'none', background: 'transparent', padding: 0,
                 fontSize: 18, fontFamily: 'Fraunces', fontStyle: 'italic', color: 'var(--ink)',
                 resize: 'vertical',
               }}
-              required
             />
 
             {/* Live char + word counter */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+              <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.3)' }}>{SUBMIT_HINT} to plant</span>
               <span style={{
                 fontSize: 11, color: charsLeft < 100 ? (charsLeft < 20 ? 'var(--rust)' : 'var(--gold)') : 'rgba(13,13,13,0.3)',
                 fontWeight: charsLeft < 100 ? 600 : 400,
@@ -290,7 +308,7 @@ export default function Thoughts() {
               </div>
               <button type="submit" className="btn btn-primary"
                 style={{ borderRadius: 30, padding: '10px 28px', boxShadow: '0 4px 12px rgba(13,13,13,0.1)' }}
-                disabled={!newThought.trim() || newThought.length > MAX_CHARS}>
+                disabled={newThought.length > MAX_CHARS}>
                 Plant Thought ✦
               </button>
             </div>
@@ -302,20 +320,26 @@ export default function Thoughts() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Sentiment filter */}
             <div className="filter-pills" style={{ display: 'flex', background: 'var(--mist)', padding: 3, borderRadius: 10 }}>
-              {['All', 'Positive', 'Neutral', 'Negative'].map(s => (
-                <button key={s}
-                  className={`btn btn-sm ${filter === s ? 'btn-primary' : 'btn-ghost'}`}
-                  onClick={() => setFilter(s)}
-                  style={{ borderRadius: 8, padding: '6px 14px', fontSize: 11,
-                    ...(filter !== s && { opacity: 0.6 }) }}>
-                  {s}
-                </button>
-              ))}
+              {['All', 'Positive', 'Neutral', 'Negative'].map(s => {
+                // "All" means no filters at all, so it also clears the Pinned toggle.
+                const active = s === 'All' ? !filtersOn : filter === s;
+                return (
+                  <button key={s}
+                    className={`btn btn-sm ${active ? 'btn-primary' : 'btn-ghost'}`}
+                    aria-pressed={active}
+                    onClick={() => (s === 'All' ? clearFilters() : setFilter(s))}
+                    style={{ borderRadius: 8, padding: '6px 14px', fontSize: 11,
+                      ...(!active && { opacity: 0.6 }) }}>
+                    {s}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Pinned toggle */}
             <button
               className={`btn btn-sm ${showOnlyPinned ? 'btn-primary' : 'btn-outline'}`}
+              aria-pressed={showOnlyPinned}
               onClick={() => setShowOnlyPinned(p => !p)}
               style={{ fontSize: 11, borderRadius: 8, padding: '6px 14px' }}>
               📌 Pinned{showOnlyPinned ? '' : ` (${thoughts.filter(t => t.is_bookmarked).length})`}
@@ -339,7 +363,9 @@ export default function Thoughts() {
               )}
             </div>
             <span style={{ fontSize: 12, opacity: 0.4, whiteSpace: 'nowrap' }}>
-              {filtered.length} thought{filtered.length !== 1 ? 's' : ''}
+              {filtersOn || search.trim()
+                ? `${filtered.length} of ${thoughts.length} thoughts`
+                : `${thoughts.length} thought${thoughts.length !== 1 ? 's' : ''}`}
             </span>
           </div>
         </div>
@@ -406,19 +432,28 @@ export default function Thoughts() {
                 <div className="empty-icon">🪴</div>
                 <h3>No thoughts found</h3>
                 <p>
-                  {search
-                    ? `No thoughts match "${search}".`
-                    : showOnlyPinned
-                    ? 'You have no pinned thoughts yet.'
-                    : filter === 'All'
+                  {thoughts.length === 0
                     ? 'Your mind garden is empty. Plant your first thought.'
-                    : `No ${filter.toLowerCase()} thoughts in your garden.`}
+                    : search.trim() && filtersOn
+                    ? `No ${activeFilters} thoughts match "${search}".`
+                    : search.trim()
+                    ? `No thoughts match "${search}".`
+                    : showOnlyPinned && filter === 'All'
+                    ? 'You have no pinned thoughts yet.'
+                    : `No ${activeFilters} thoughts in your garden.`}
                 </p>
-                {search && (
-                  <button className="btn btn-outline btn-sm" onClick={() => setSearch('')}>
-                    Clear search
-                  </button>
-                )}
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                  {filtersOn && thoughts.length > 0 && (
+                    <button className="btn btn-outline btn-sm" onClick={clearFilters}>
+                      Show all thoughts
+                    </button>
+                  )}
+                  {search && (
+                    <button className="btn btn-outline btn-sm" onClick={() => setSearch('')}>
+                      Clear search
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </>
@@ -452,13 +487,14 @@ export default function Thoughts() {
             <form onSubmit={handleUpdate}>
               <div className="form-group">
                 <label className="form-label">Thought</label>
-                <textarea maxLength={2000} className="form-textarea" value={editContent}
+                <textarea className="form-textarea" value={editContent}
                   onChange={e => setEditContent(e.target.value)}
+                  onKeyDown={e => submitOnModEnter(e, handleUpdate)}
                   maxLength={MAX_CHARS}
                   style={{ minHeight: 140, fontFamily: 'Fraunces', fontStyle: 'italic', fontSize: 16 }}
-                  required />
+                  />
                 <div style={{ textAlign: 'right', fontSize: 11, color: 'rgba(13,13,13,0.35)', marginTop: 4 }}>
-                  {MAX_CHARS - editContent.length} chars left · {wordCount(editContent)} words
+                  {SUBMIT_HINT} to save · {MAX_CHARS - editContent.length} chars left · {wordCount(editContent)} words
                 </div>
               </div>
               <div className="form-group">

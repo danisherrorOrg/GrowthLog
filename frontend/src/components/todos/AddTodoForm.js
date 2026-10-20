@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PRIORITY, TimeEstimateInput } from './todoParts';
+import { localDate } from '../../utils/dates';
 
 const EMPTY_TODO = { title: '', description: '', priority: 'medium', due_date: '', estimated_minutes: null };
 
@@ -60,7 +61,7 @@ export default function AddTodoForm({ onAdd, onClose }) {
             <label className="form-label" style={{ fontSize: 10 }}>Due Date (optional)</label>
             <input maxLength={200} type="date" className="form-input" value={newTodo.due_date}
               onChange={e => setNewTodo({ ...newTodo, due_date: e.target.value })}
-              min={new Date().toISOString().split('T')[0]}
+              min={localDate()}
               style={{ fontSize: 13 }} />
           </div>
         </div>

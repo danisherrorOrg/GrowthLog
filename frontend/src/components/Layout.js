@@ -7,6 +7,7 @@ import { getErrorMessage } from '../utils/errors';
 import QuickCheckModal from './focus/QuickCheckModal';
 import CommandPalette from './CommandPalette';
 import { OPEN_EVENT, localDate, markPlanPrompted, shouldPromptPlan } from './focus/quickCheck';
+import TimezoneBanner from './TimezoneBanner';
 
 const NAV_GROUPS = [
   {
@@ -288,8 +289,9 @@ export default function Layout() {
     return () => window.removeEventListener(OPEN_EVENT, open);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    // Wait until the user is cleared, or the login page sends us straight back to the dashboard
+    await logout();
     navigate('/login');
   };
 
@@ -531,6 +533,7 @@ export default function Layout() {
             </button>
           </div>
         )}
+        <TimezoneBanner />
         <Outlet />
       </main>
 

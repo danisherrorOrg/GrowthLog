@@ -4,7 +4,8 @@ from bson import ObjectId
 from core.config import JWT_SECRET, AUTH_COOKIE_NAME, AUTH_COOKIE_SECURE, AUTH_COOKIE_SAMESITE, CSRF_HEADER
 from core.database import db
 from core.security import TOKEN_TTL
-from utils.streak import check_and_apply_streak_shields
+from utils.cache import utcnow
+from utils.streak import check_and_apply_streak_shields, user_tz
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -71,3 +72,11 @@ def validate_user_owns_category(category_id: str, user_id: str):
     cat = db.categories.find_one({"_id": ObjectId(category_id), "user_id": user_id})
     if not cat:
         raise HTTPException(status_code=403, detail="Category not found or access denied")
+
+
+def reject_future_dates(user: dict, dates: dict):
+    """422 if any of {label: "YYYY-MM-DD"} is after today in the user's timezone. Empty dates are skipped."""
+    today = utcnow().astimezone(user_tz(user)).strftime("%Y-%m-%d")
+    for label, value in dates.items():
+        if value and value > today:
+            raise HTTPException(status_code=422, detail=f"{label} can't be in the future.")

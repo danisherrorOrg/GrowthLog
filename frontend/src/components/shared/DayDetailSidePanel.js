@@ -35,16 +35,31 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
           // Default to Daily Log
           const existingLog = events.find(e => e.type === 'daily_log');
           const existingEntries = existingLog?.data?.entries || [];
-          const newEntry = { 
-            category_id: quickAdd?.category?.id || (events.find(e => e.category)?.category?.id), 
-            text: reflectionText 
+          // The API needs mood and energy on every entry; a quick reflection gets neutral values.
+          const newEntry = {
+            category_id: quickAdd?.category?.id || (events.find(e => e.category)?.category?.id),
+            text: reflectionText,
+            mood: 5,
+            energy: 5,
           };
+
+          // Saving replaces the whole log, so send back every field we already have.
+          const keptEntries = existingEntries.map(e => ({
+            category_id: e.category_id,
+            text: e.text,
+            mood: e.mood ?? 5,
+            energy: e.energy ?? 5,
+            emotions: e.emotions || [],
+            time_spent: e.time_spent || 0,
+          }));
 
           const payload = {
             date: dateStr,
-            entries: [...existingEntries.map(e => ({ category_id: e.category_id, text: e.text })), newEntry],
+            entries: [...keptEntries, newEntry],
             highlight: existingLog?.description || '',
-            overall_rating: existingLog?.data?.mood || 5
+            overall_rating: existingLog?.data?.day_rating || 5,
+            gratitude: existingLog?.data?.gratitude || [],
+            regret: existingLog?.data?.regret || '',
           };
 
           await API.post('/logs', payload);
@@ -179,9 +194,18 @@ export default function DayDetailSidePanel({ date, events, onClose, quickAdd }) 
                                         </>
                                     )}
                                 </div>
-                                {e.data && e.data.mood && (
-                                    <div style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 8px', borderRadius: 12, color: '#666' }}>
-                                        Mood: {e.data.mood}/10
+                                {e.data && (e.data.mood || e.data.day_rating) && (
+                                    <div style={{ display: 'flex', gap: 6 }}>
+                                        {e.data.mood && (
+                                            <div style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 8px', borderRadius: 12, color: '#666' }}>
+                                                Mood: {e.data.mood}/10
+                                            </div>
+                                        )}
+                                        {e.data.day_rating && (
+                                            <div style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 8px', borderRadius: 12, color: '#666' }}>
+                                                Day rating: {e.data.day_rating}/10
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

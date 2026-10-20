@@ -110,7 +110,7 @@ export default function CalendarTimeline() {
 
   return (
     <div className="page timeline-page" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 0 }}>
+      <div className="history-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 0 }}>
         <div>
           <p style={{ color: 'rgba(0,0,0,0.4)', fontSize: '15px', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{total} events found • {format(period, 'MMMM yyyy')}</p>
         </div>
@@ -144,9 +144,9 @@ export default function CalendarTimeline() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '40px', marginTop: '20px', alignItems: 'flex-start' }}>
+      <div className="history-layout" style={{ display: 'flex', gap: '40px', marginTop: '20px', alignItems: 'flex-start' }}>
         {/* Left Sidebar: Fixed Top / Scroll Middle / Fixed Bottom */}
-        <aside style={{ 
+        <aside className="history-filters" style={{ 
             width: '220px', 
             height: 'calc(100vh - 180px)', 
             flexShrink: 0, 
@@ -203,7 +203,7 @@ export default function CalendarTimeline() {
             <div style={{ position: 'relative', flex: 1, minHeight: 0, margin: '8px -8px' }}>
                 <div className="sidebar-fade-top" />
                 <div 
-                    className="category-scroll"
+                    className="category-scroll history-category-list"
                     style={{ 
                         height: '100%', 
                         overflowY: 'auto', 
@@ -298,10 +298,10 @@ export default function CalendarTimeline() {
         </aside>
 
         {/* Main Content Area */}
-        <main style={{ flex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px', alignItems: 'center', gap: '24px' }}>
+        <main style={{ flex: 1, minWidth: 0 }}>
+            <div className="history-month-nav" style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px', alignItems: 'center', gap: '24px' }}>
                 <button className="btn btn-ghost" style={{ borderRadius: '50%', width: '40px', height: '40px', padding: 0, justifyContent: 'center' }} onClick={handlePrevMonth}>&larr;</button>
-                <div style={{ textAlign: 'center', minWidth: '200px' }}>
+                <div className="history-month-label" style={{ textAlign: 'center', minWidth: '200px' }}>
                     <h3 style={{ margin: 0, fontFamily: 'Fraunces, serif', fontSize: '2rem' }}>{format(period, 'MMMM')}</h3>
                     <span style={{ fontSize: '14px', color: '#888', letterSpacing: '2px', fontWeight: 300 }}>{format(period, 'yyyy')}</span>
                 </div>
