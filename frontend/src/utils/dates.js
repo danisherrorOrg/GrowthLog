@@ -4,6 +4,9 @@ import { format, parseISO } from 'date-fns';
 // yesterday or tomorrow for part of the day anywhere outside UTC.
 export const localDate = (d = new Date()) => format(d, 'yyyy-MM-dd');
 
+// True for a YYYY-MM-DD day before the user's today
+export const isBeforeToday = (day) => day < localDate();
+
 // Older API responses had naive UTC datetimes; without a zone they'd be read as local time
 export const parseServerTime = (s) => parseISO(/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? s : `${s}Z`);
 

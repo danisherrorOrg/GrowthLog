@@ -6,6 +6,7 @@ from typing import Optional
 from core.database import db
 from utils.cache import utcnow, cache_invalidate_exact, cache_invalidate_prefix
 from utils.helpers import serialize, serialize_list, clean_update
+from utils.streak import user_tz
 from api.deps import get_current_user, validate_user_owns_category
 from models.schemas import (
     GoalModel, GoalUpdateModel, GoalReflectModel,
@@ -13,6 +14,13 @@ from models.schemas import (
 )
 
 router = APIRouter(prefix="/goals", tags=["goals"])
+
+
+def reject_past_deadline(deadline: str, user: dict):
+    """Deadlines are YYYY-MM-DD; "past" means before today in the user's timezone."""
+    today = utcnow().astimezone(user_tz(user)).strftime("%Y-%m-%d")
+    if deadline < today:
+        raise HTTPException(status_code=422, detail="The deadline can't be in the past")
 
 @router.get("")
 def get_goals(sort_by: str = "created_at", sort_order: str = "desc",
@@ -42,6 +50,7 @@ def get_goal(goal_id: str, current_user=Depends(get_current_user)):
 def create_goal(data: GoalModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
     validate_user_owns_category(data.category_id, uid)
+    reject_past_deadline(data.deadline, current_user)
     goal = {
         "user_id": uid, "category_id": data.category_id,
         "title": data.title, "description": data.description,
@@ -65,6 +74,12 @@ def update_goal(goal_id: str, data: GoalUpdateModel, current_user=Depends(get_cu
     fields = clean_update(data.model_dump())
     if "deadline" in fields:
         fields["current_deadline"] = fields.pop("deadline")
+        goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid}, {"current_deadline": 1})
+        if not goal:
+            raise HTTPException(status_code=404, detail="Goal not found")
+        # Editing an overdue goal sends its old deadline back unchanged; only a new date must be ahead
+        if fields["current_deadline"] != goal.get("current_deadline"):
+            reject_past_deadline(fields["current_deadline"], current_user)
     if "category_id" in fields:
         validate_user_owns_category(fields["category_id"], uid)
     if not fields:
@@ -97,6 +112,7 @@ def reflect_goal(goal_id: str, data: GoalReflectModel, current_user=Depends(get_
     update = {"status": data.status, "reflection": data.reflection, "reflected_at": utcnow()}
     ref_entry = {"text": data.reflection, "status_change": data.status, "date": utcnow().isoformat()}
     if data.status == "extended" and data.new_deadline:
+        reject_past_deadline(data.new_deadline, current_user)
         goal = db.goals.find_one({"_id": ObjectId(goal_id), "user_id": uid})
         if not goal:
             raise HTTPException(status_code=404, detail="Goal not found")

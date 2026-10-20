@@ -94,7 +94,7 @@ def test_security_xss_in_goal_titles(client, auth_headers):
     resp = client.post("/goals", headers=auth_headers, json={
         "category_id": cat_id,
         "title": xss,
-        "deadline": "2025-12-31"
+        "deadline": "2099-12-31"
     })
     
     assert resp.status_code == 200

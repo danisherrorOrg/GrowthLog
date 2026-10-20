@@ -7,6 +7,7 @@ import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
+import { localDate, isBeforeToday } from '../utils/dates';
 
 
 const SORT_OPTIONS = [
@@ -89,7 +90,11 @@ export default function Goals() {
   };
 
   const handleSave = async () => {
-    if (!form.title || !form.category_id || !form.deadline) return toast.error('Fill all required fields');
+    if (!form.category_id) return toast.error('Pick a category');
+    if (!form.title.trim()) return toast.error('Give the goal a title');
+    if (!form.deadline) return toast.error('Pick a target deadline');
+    // An overdue goal can still be edited as long as its deadline isn't moved to another past day
+    if (isBeforeToday(form.deadline) && form.deadline !== editGoal?.current_deadline) return toast.error("The deadline can't be in the past");
     setLoading(true);
     try {
       if (editGoal) {
@@ -130,6 +135,7 @@ export default function Goals() {
   const handleReflect = async () => {
     if (!reflectForm.reflection.trim()) return toast.error('Write your reflection');
     if (reflectForm.status === 'extended' && !reflectForm.new_deadline) return toast.error('Set a new deadline');
+    if (reflectForm.status === 'extended' && isBeforeToday(reflectForm.new_deadline)) return toast.error("The new deadline can't be in the past");
     setLoading(true);
     try {
       await API.put(`/goals/${reflectGoal.id}/reflect`, reflectForm);
@@ -365,7 +371,7 @@ export default function Goals() {
             </div>
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <label className="form-label" style={{ margin: 0 }}>Category</label>
+                <label className="form-label" style={{ margin: 0 }}>Category *</label>
                 <button className="btn btn-ghost btn-sm" onClick={() => setShowCreateCat(!showCreateCat)} style={{ fontSize: 12, color: 'var(--sage)' }}>
                   {showCreateCat ? '← Pick existing' : '+ New Category'}
                 </button>
@@ -398,8 +404,8 @@ export default function Goals() {
               )}
             </div>
             <div className="form-group">
-              <label className="form-label">Goal Title</label>
-              <input maxLength={200} className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="What do you want to achieve?" />
+              <label className="form-label">Goal Title *</label>
+              <input maxLength={200} required className="form-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="What do you want to achieve?" />
             </div>
             <div className="form-group">
               <label className="form-label">Description (optional)</label>
@@ -407,8 +413,8 @@ export default function Goals() {
               <div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div>
             </div>
             <div className="form-group">
-              <label className="form-label">Target Deadline</label>
-              <input maxLength={200} type="date" className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
+              <label className="form-label">Target Deadline *</label>
+              <input type="date" required min={localDate()} className="form-input" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               <button className="btn btn-outline" onClick={() => setShowModal(false)} style={{ flex: 1 }}>Cancel</button>
@@ -478,8 +484,8 @@ export default function Goals() {
             </div>
             {reflectForm.status === 'extended' && (
               <div className="form-group">
-                <label className="form-label">New Deadline</label>
-                <input maxLength={200} type="date" className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
+                <label className="form-label">New Deadline *</label>
+                <input type="date" required min={localDate()} className="form-input" value={reflectForm.new_deadline} onChange={(e) => setReflectForm({ ...reflectForm, new_deadline: e.target.value })} />
               </div>
             )}
             <div style={{ display: 'flex', gap: 12 }}>

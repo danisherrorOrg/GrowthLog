@@ -28,7 +28,7 @@ def test_deep_unprocessable_entity_mapping(client, auth_headers):
     goal_resp = client.post("/goals", headers=auth_headers, json={
         "category_id": cat_id,
         "title": "Deep Validation",
-        "deadline": "2025-12-31"
+        "deadline": "2099-12-31"
     })
     goal_id = goal_resp.json()["id"]
 

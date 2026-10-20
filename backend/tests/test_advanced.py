@@ -9,7 +9,7 @@ def test_idempotent_deletions(client, auth_headers):
     # Create a goal
     cat = client.post("/categories", headers=auth_headers, json={"name": "Temp", "icon": "🗑️", "color": "#000"}).json()
     goal = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat["id"], "title": "Delete Me", "deadline": "2025-12-31"
+        "category_id": cat["id"], "title": "Delete Me", "deadline": "2099-12-31"
     }).json()
     goal_id = goal["id"]
 
@@ -41,7 +41,7 @@ async def test_concurrent_microgoal_updates(async_client, auth_headers):
     cat_resp = await async_client.post("/categories", headers=auth_headers, json={"name": "Race", "icon": "🏁", "color": "#ff0"})
     cat = cat_resp.json()
     goal_resp = await async_client.post("/goals", headers=auth_headers, json={
-        "category_id": cat["id"], "title": "Concurrency Test", "deadline": "2025-12-31"
+        "category_id": cat["id"], "title": "Concurrency Test", "deadline": "2099-12-31"
     })
     goal_id = goal_resp.json()["id"]
 

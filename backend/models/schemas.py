@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator, EmailStr, Field
 from typing import Optional, List, Literal
 import re
 from zoneinfo import ZoneInfo
+from datetime import date
 
 def is_valid_timezone(tz: str) -> bool:
     try:
@@ -13,6 +14,22 @@ def is_valid_timezone(tz: str) -> bool:
 def _browser_timezone(v):
     # Sent automatically by the browser; an unknown zone is dropped so it can never block sign-in
     return v if v and is_valid_timezone(v) else None
+
+def _iso_date(v):
+    """A calendar day as YYYY-MM-DD; empty means not set, for optional fields."""
+    if not v:
+        return None
+    if len(v) == 10:
+        try:
+            return date.fromisoformat(v).isoformat()
+        except ValueError:
+            pass
+    raise ValueError("Use a date in YYYY-MM-DD format")
+
+def _required_iso_date(v):
+    if not v:
+        raise ValueError("A date is required")
+    return _iso_date(v)
 
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{6}")
 MAX_THEME_ITEMS = 24
@@ -141,16 +158,22 @@ class GoalModel(BaseModel):
     description: Optional[str] = Field("", max_length=2000)
     deadline: str = Field(..., max_length=30)
 
+    _check_deadline = field_validator("deadline")(_required_iso_date)
+
 class GoalUpdateModel(BaseModel):
     title: Optional[str] = Field(None, max_length=500)
     description: Optional[str] = Field(None, max_length=2000)
     deadline: Optional[str] = Field(None, max_length=30)
     category_id: Optional[str] = Field(None, max_length=500)
 
+    _check_deadline = field_validator("deadline")(_iso_date)
+
 class GoalReflectModel(BaseModel):
     status: str = Field(..., max_length=200)
     reflection: str = Field(..., max_length=2000)
     new_deadline: Optional[str] = Field(None, max_length=30)
+
+    _check_deadline = field_validator("new_deadline")(_iso_date)
 
 class MicroGoalModel(BaseModel):
     text: str = Field(..., max_length=2000)

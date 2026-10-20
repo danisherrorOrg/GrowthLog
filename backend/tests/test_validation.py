@@ -49,20 +49,20 @@ def test_goal_validation(client, auth_headers):
     cat_id = cats[0]["id"]
     
     # Correct
-    valid_data = {"category_id": cat_id, "title": "Good Goal", "deadline": "2025-12-31", "description": "A test"}
+    valid_data = {"category_id": cat_id, "title": "Good Goal", "deadline": "2099-12-31", "description": "A test"}
     resp = client.post("/goals", headers=auth_headers, json=valid_data)
     assert resp.status_code == 200
 
     # Partially Correct: Missing optional description
-    resp = client.post("/goals", headers=auth_headers, json={"category_id": cat_id, "title": "Partial Goal", "deadline": "2025-12-31"})
+    resp = client.post("/goals", headers=auth_headers, json={"category_id": cat_id, "title": "Partial Goal", "deadline": "2099-12-31"})
     assert resp.status_code == 200
 
     # Wrong: Malformed Date
     resp = client.post("/goals", headers=auth_headers, json={"category_id": cat_id, "title": "Bad Date", "deadline": "not-a-date"})
-    assert resp.status_code == 200 # Note: Backend doesn't strictly validate date format via Pydantic, but let's check it handles it
+    assert resp.status_code == 422
     
-    # Actually, GoalModel has deadline: str. Let's check a missing required category_id
-    resp = client.post("/goals", headers=auth_headers, json={"title": "No Cat", "deadline": "2025-12-31"})
+    # Missing required category_id
+    resp = client.post("/goals", headers=auth_headers, json={"title": "No Cat", "deadline": "2099-12-31"})
     assert resp.status_code == 422
 
 # --- 4. Daily Log Validation ---
@@ -122,7 +122,7 @@ def test_snapshot_validation(client, auth_headers):
     cat_id = cat["id"]
     
     # User 2 tries to create a goal in User 1's category -> Should return 403 Forbidden
-    resp = client.post("/goals", headers=u2_headers, json={"category_id": cat_id, "title": "Steal Cat", "deadline": "2025-12-31"})
+    resp = client.post("/goals", headers=u2_headers, json={"category_id": cat_id, "title": "Steal Cat", "deadline": "2099-12-31"})
     assert resp.status_code == 403
     assert "access denied" in resp.json()["detail"]
 

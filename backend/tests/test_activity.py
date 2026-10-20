@@ -54,7 +54,7 @@ def test_api_activity_history(client, auth_headers):
 
     # 7. Goal
     goal_id = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat_id, "title": "Act Goal", "deadline": "2025-01-01"
+        "category_id": cat_id, "title": "Act Goal", "deadline": "2099-12-31"
     }).json()["id"]
 
     # 8. Manifestation

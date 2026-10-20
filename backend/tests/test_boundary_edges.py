@@ -24,19 +24,19 @@ def test_boundary_extreme_dates(client, auth_headers):
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
     
-    # Boundary: EXACTLY Jan 1, 1970
+    # Boundary: EXACTLY Jan 1, 1970 is in the past, so it's rejected
     epoch_goal = client.post("/goals", headers=auth_headers, json={
         "category_id": cat_id,
         "title": "Epoch Goal",
         "deadline": "1970-01-01"
     })
-    assert epoch_goal.status_code == 200
+    assert epoch_goal.status_code == 422
     
     # Boundary: Leap Year Extreme
     leap_goal = client.post("/goals", headers=auth_headers, json={
         "category_id": cat_id,
         "title": "Leap Goal",
-        "deadline": "2024-02-29"
+        "deadline": "2028-02-29"
     })
     assert leap_goal.status_code == 200
 

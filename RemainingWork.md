@@ -57,9 +57,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * The sign-out button navigated to `/login` before `logout()` had cleared the user, so the login route sent them back to `/dashboard`, whose requests then got 401s from the cleared cookie and the interceptor redirected to `/login?expired=true`. In-flight polling could do the same.
     * **Done:** `logout()` sets a "signing out" flag in `utils/api.js` that stops the 401 redirect (cleared on the next login or sign-up), and the sidebar and account-deletion flows wait for `logout()` before going to plain `/login`. Test in `utils/api.test.js`.
 
-12. **Goals accept a deadline in the past**
+12. ✅ **Completed — Goals accepted a deadline in the past**
     * A goal with a 2020 deadline was saved and immediately shown as "2484d overdue". The deadline is required but not marked as required, and leaving it empty only gives "Fill all required fields".
-    * **Fix:** reject past deadlines in the API and the form, and mark the field as required.
+    * **Done:** goal deadlines must be a real `YYYY-MM-DD` date, and creating, editing or extending a goal rejects a day before today in the user's timezone (422). Editing an overdue goal still works as long as its deadline isn't moved to another past day. The forms mark required fields, set `min` on the date pickers, and name the missing field instead of "Fill all required fields". Tests in `test_goals.py` and `Goals.test.js`; older tests that used 2025 deadlines now use 2099.
 
 13. **No 404 page**
     * `frontend/src/App.js` has no catch-all route, so an unknown URL renders a blank page.

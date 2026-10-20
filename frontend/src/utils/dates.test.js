@@ -1,4 +1,4 @@
-import { localDate, parseServerTime, timezoneOptions } from './dates';
+import { localDate, parseServerTime, timezoneOptions, isBeforeToday } from './dates';
 
 test('localDate uses the local calendar day, not the UTC one', () => {
   // 23:30 local on Oct 20 is a different UTC day in every zone east or west of UTC
@@ -18,4 +18,10 @@ test('timezoneOptions lists UTC first and keeps a saved zone', () => {
   expect(zones[0]).toBe('UTC');
   expect(zones).toEqual(expect.arrayContaining(['Asia/Kolkata', 'Old/Custom_Zone']));
   expect(new Set(zones).size).toBe(zones.length);
+});
+
+test('isBeforeToday compares against the local day', () => {
+  expect(isBeforeToday('2020-01-01')).toBe(true);
+  expect(isBeforeToday(localDate())).toBe(false);
+  expect(isBeforeToday('2099-12-31')).toBe(false);
 });

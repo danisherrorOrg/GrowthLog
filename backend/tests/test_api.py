@@ -237,7 +237,7 @@ def test_goal_detailed_notes(client, auth_headers):
     cats = client.get("/categories", headers=auth_headers).json()
     cat_id = cats[0]["id"]
     goal = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat_id, "title": "Notes Test", "deadline": "2025-12-31"
+        "category_id": cat_id, "title": "Notes Test", "deadline": "2099-12-31"
     }).json()
     goal_id = goal["id"]
 
@@ -391,7 +391,7 @@ def test_cascading_category_deletion(client, auth_headers):
     cat = client.post("/categories", headers=auth_headers, json={"name": "Delete Me", "icon": "🗑️", "color": "#ff0000"}).json()
     cat_id = cat["id"]
     goal = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat_id, "title": "Cascader", "deadline": "2025-12-31"
+        "category_id": cat_id, "title": "Cascader", "deadline": "2099-12-31"
     }).json()
     
     # 2. Log an entry for this category
@@ -480,7 +480,7 @@ def test_cross_user_isolation(client, auth_headers, other_user_headers):
     cat_id = cat["id"]
     
     goal = client.post("/goals", headers=auth_headers, json={
-        "category_id": cat_id, "title": "User A Goal", "deadline": "2025-12-31"
+        "category_id": cat_id, "title": "User A Goal", "deadline": "2099-12-31"
     }).json()
     goal_id = goal["id"]
     

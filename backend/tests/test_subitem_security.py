@@ -8,7 +8,7 @@ def test_goal_subitem_isolation(client, auth_headers, other_user_headers):
     cat_id = cat_resp.json()["id"]
     
     goal_resp = client.post("/goals", headers=other_user_headers, json={
-        "category_id": cat_id, "title": "B Goal", "deadline": "2025-01-01"
+        "category_id": cat_id, "title": "B Goal", "deadline": "2099-12-31"
     })
     goal_id = goal_resp.json()["id"]
     
