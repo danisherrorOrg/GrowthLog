@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://growthlog-1.onrender.com/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
