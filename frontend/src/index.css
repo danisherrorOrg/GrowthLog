@@ -236,6 +236,8 @@ h4 {
   margin-left: 240px;
   min-height: 100vh;
   padding: 40px;
+  /* Room for the fixed top bar (search + notifications) */
+  padding-top: 80px;
   background: var(--paper);
   transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -267,9 +269,10 @@ h4 {
 
 .sidebar-toggle-floating {
   position: fixed;
-  top: 20px;
+  top: 12px;
   left: 20px;
-  z-index: 101;
+  /* Above the top bar, which spans the full width when the sidebar is hidden */
+  z-index: 1000;
   background: var(--ink);
   color: var(--paper);
   border: 1px solid rgba(245, 240, 232, 0.1);
@@ -1056,6 +1059,11 @@ h4 {
 @media (max-width: 1024px) {
   .main-content {
     padding: 28px 24px;
+    padding-top: 80px;
+  }
+
+  .top-navbar {
+    padding: 0 24px;
   }
 
   .page-header {
@@ -2141,14 +2149,27 @@ h4 {
 /* ==============================================================================
    IN-APP NOTIFICATION CENTER & ACTIVITY TRAY STYLING
    ============================================================================== */
+/* A solid bar across the top of the content area, so the buttons never sit on top of page content */
 .top-navbar {
   position: fixed;
-  top: 20px;
-  right: 40px;
+  top: 0;
+  left: 240px;
+  right: 0;
+  height: 64px;
+  padding: 0 40px;
+  background: rgba(245, 240, 232, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 999;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app-shell.sidebar-hidden .top-navbar {
+  left: 0;
 }
 
 .nav-bell-container {

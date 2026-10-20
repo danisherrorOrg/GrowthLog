@@ -67,7 +67,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Toaster position="top-right" toastOptions={{ style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14 } }} />
+        <Toaster position="top-right" containerStyle={{ top: 72 }} toastOptions={{ style: { fontFamily: 'DM Sans, sans-serif', fontSize: 14 } }} />
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />

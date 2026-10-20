@@ -69,9 +69,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * At 380px wide, `/history` was 646px wide: the filter sidebar and the calendar sat side by side instead of stacking.
     * **Done:** below 768px the filter panel stacks above the calendar at full width (no longer a fixed-height sticky column; the category list scrolls inside 180px), and the calendar cells shrink (`minmax(0, 1fr)` columns, smaller padding and height) so all 7 days fit. Checked at 380px in both Calendar and Timeline views: the page is 370px wide with nothing overflowing. Desktop is unchanged.
 
-15. **Floating search and bell buttons cover page content**
-    * They overlap the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
-    * **Fix:** reserve space for them in the page header, or move toasts below them.
+15. ✅ **Completed — Floating search and bell buttons covered page content**
+    * They overlapped the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
+    * **Done:** on desktop the buttons now sit in a 64px top bar with a solid background (like the phone layout already had), and the content area reserves room for it, so nothing sits or scrolls under them. The bar starts at the sidebar's edge and spans the full width when the sidebar is hidden; the "show sidebar" button stays clickable above it. Toasts start 72px from the top, below the bar. Checked at 1414px, 1000px and 380px.
 
 16. **Sign-up accepts emails in the browser that the API rejects**
     * The form shows "✓ Looks good" for an address like `name@example.test`, and the API's raw Pydantic error is shown as the toast.
