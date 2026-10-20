@@ -101,7 +101,8 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * The elapsed time lived only in page memory, so it was lost on navigation or refresh and never recorded. Switching the timer preset also reset the countdown with no warning.
     * **Done:** the session (task, preset, start time and time already banked) is saved in localStorage per user by `components/todos/useFocusSession.js`, and the countdown is worked out from the clock, so it keeps running across navigation and refreshes. If it ran out while you were away, the complete dialog opens on return with the countdown's time (not the time away). A saved session is dropped if its task was deleted or completed elsewhere. Changing the preset after the countdown has started asks first ("Restart the timer?"); time already focused still counts toward the task. Tests in `Todos.test.js`; checked in the browser across navigation, a refresh and the preset dialog.
 
-21. **Task Check-ins: "Quick (5 questions)" shows only 4 questions.**
+21. ✅ **Completed — Task Check-ins: "Quick (5 questions)" showed only 4 questions**
+    * **Done:** quick mode has 4 questions by design (the API stores 4 quick answers), so the label was wrong. Both mode labels and the completion bar now count the question lists, so they can't drift again. The form uses one quick-question list keyed by the API's field names instead of a second hard-coded copy. Test in `TaskCheckins.test.js`.
 
 22. **Mind Garden filter and input issues**
     * "All" looks selected while the Pinned filter is still on, so searching "stuck" showed no results.
