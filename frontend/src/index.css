@@ -84,7 +84,7 @@ h4 {
 
 .sidebar-logo span {
   font-size: 11px;
-  color: rgba(245, 240, 232, 0.4);
+  color: rgba(245, 240, 232, 0.6);
   font-family: 'DM Sans', sans-serif;
   font-weight: 300;
   letter-spacing: 2px;
@@ -97,6 +97,20 @@ h4 {
   padding: 24px 0;
   flex: 1;
   overflow-y: auto;
+  /* Scrolling past the end of the nav shouldn't scroll the page behind it */
+  overscroll-behavior: contain;
+}
+
+.nav-group-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(245, 240, 232, 0.6);
+  font-weight: 700;
+  padding: 0 16px;
+  margin: 0 0 8px;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -154,7 +168,7 @@ h4 {
 .nav-shortcut {
   margin-left: auto;
   font-size: 10px;
-  color: rgba(245, 240, 232, 0.45);
+  color: rgba(245, 240, 232, 0.6);
   background: rgba(245, 240, 232, 0.06);
   border-radius: 4px;
   padding: 2px 5px;
@@ -236,8 +250,8 @@ h4 {
   margin-right: auto;
 }
 
-/* Compact footer and logo on laptop-height screens, so more nav links fit */
-@media (max-height: 860px) {
+/* Compact footer and logo on laptop-height screens and in the phone drawer, so more nav links fit */
+@media (max-height: 1000px), (max-width: 900px) {
   .streak-shields-indicator {
     margin-top: 0;
     margin-left: 0;

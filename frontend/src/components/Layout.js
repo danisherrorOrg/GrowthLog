@@ -105,6 +105,12 @@ export default function Layout() {
   const closeBtnRef = useRef(null);
   const showBtnRef = useRef(null);
   const moreBtnRef = useRef(null);
+  const navRef = useRef(null);
+  const topBarRef = useRef(null);
+  const mainRef = useRef(null);
+  const fabRef = useRef(null);
+  // Set when the user opens the sidebar, so focus moves into it (not on page load)
+  const focusOnOpenRef = useRef(false);
   const [showShortcutHelp, setShowShortcutHelp] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [showQuickCheck, setShowQuickCheck] = useState(false);
@@ -248,13 +254,43 @@ export default function Layout() {
     if (!el) return;
     if (isSidebarVisible) {
       el.removeAttribute('inert');
-      if (isMobile) closeBtnRef.current?.focus();
+      // The button that opened it is gone (desktop) or covered (phone), so focus the close button
+      if (focusOnOpenRef.current) closeBtnRef.current?.focus();
+      focusOnOpenRef.current = false;
       return;
     }
     const hadFocus = el.contains(document.activeElement);
     el.setAttribute('inert', '');
     if (hadFocus) (isMobile ? moreBtnRef : showBtnRef).current?.focus();
   }, [isSidebarVisible, isMobile]);
+
+  // The open phone drawer is modal: the page behind it can't be focused, read or scrolled
+  const isDrawerOpen = isMobile && isSidebarVisible;
+  useEffect(() => {
+    if (!isDrawerOpen) return undefined;
+    const behind = [topBarRef.current, mainRef.current, fabRef.current].filter(Boolean);
+    behind.forEach(node => node.setAttribute('inert', ''));
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      behind.forEach(node => node.removeAttribute('inert'));
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isDrawerOpen]);
+
+  // Keep the current page's link in view: it can sit below the fold of a long nav
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector('.nav-item.active');
+    if (!active) return;
+    const navBox = nav.getBoundingClientRect();
+    const box = active.getBoundingClientRect();
+    if (box.top < navBox.top) {
+      nav.scrollTop += box.top - navBox.top;
+    } else if (box.bottom > navBox.bottom) {
+      nav.scrollTop += box.bottom - navBox.bottom;
+    }
+  }, [location.pathname, isSidebarVisible]);
 
   // ── Keyboard shortcuts ──────────────────────────────────────
   useEffect(() => {
@@ -337,7 +373,10 @@ export default function Layout() {
     navigate('/login');
   };
 
-  const toggleSidebar = () => setIsSidebarVisible(v => !v);
+  const toggleSidebar = () => {
+    focusOnOpenRef.current = !isSidebarVisible;
+    setIsSidebarVisible(v => !v);
+  };
 
   return (
     <div className={`app-shell ${!isSidebarVisible ? 'sidebar-hidden' : ''}`}>
@@ -370,6 +409,7 @@ export default function Layout() {
         id={SIDEBAR_ID}
         ref={sidebarRef}
         className={`sidebar ${isSidebarVisible ? 'visible' : 'hidden'}`}
+        {...(isDrawerOpen ? { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Menu' } : {})}
       >
         <div className="sidebar-logo">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -392,19 +432,14 @@ export default function Layout() {
         </div>
 
         <nav
+          ref={navRef}
           className="sidebar-nav"
           aria-label="Main navigation"
           style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
         >
           {NAV_GROUPS.map((group, gIdx) => (
             <div key={gIdx} className="nav-group">
-              <div style={{
-                fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.5,
-                color: 'rgba(245,240,232,0.4)', fontWeight: 700,
-                padding: '0 16px', marginBottom: 8
-              }}>
-                {group.group}
-              </div>
+              <h2 className="nav-group-label">{group.group}</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {group.items.map(({ to, icon, label, shortcut }) => (
                   <NavLink
@@ -447,7 +482,7 @@ export default function Layout() {
             <button
               className="btn btn-ghost"
               onClick={handleLogout}
-              style={{ color: 'rgba(245,240,232,0.4)', flex: 1, justifyContent: 'center', fontSize: 13 }}
+              style={{ color: 'rgba(245,240,232,0.6)', flex: 1, justifyContent: 'center', fontSize: 13 }}
             >
               Sign out
             </button>
@@ -460,7 +495,7 @@ export default function Layout() {
                 border: '1px solid rgba(245,240,232,0.1)',
                 borderRadius: 6,
                 cursor: 'pointer',
-                color: 'rgba(245,240,232,0.3)',
+                color: 'rgba(245,240,232,0.6)',
                 width: 32, height: 32,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 13, fontFamily: 'monospace', flexShrink: 0,
@@ -473,7 +508,7 @@ export default function Layout() {
       </aside>
 
       {/* Top Navbar with Notification Bell */}
-      <div className="top-navbar">
+      <div className="top-navbar" ref={topBarRef}>
         <button
           className="nav-bell-btn nav-search-btn"
           onClick={() => setShowSearch(true)}
@@ -487,6 +522,8 @@ export default function Layout() {
             className="nav-bell-btn"
             onClick={() => setShowNotifications(prev => !prev)}
             title="Notifications"
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+            aria-expanded={showNotifications}
           >
             🔔
             {unreadCount > 0 && (
@@ -543,7 +580,7 @@ export default function Layout() {
         </div>
       </div>
 
-      <main className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
+      <main ref={mainRef} className={`main-content ${!isSidebarVisible ? 'expanded' : ''}`}>
         {!user?.is_verified && (
           <div style={{
             margin: 'clamp(16px, 4vw, 24px)',
@@ -583,6 +620,7 @@ export default function Layout() {
 
       {/* ── "Should I do this?" quick check ───────────────────── */}
       <button
+        ref={fabRef}
         className="qc-fab"
         onClick={() => setShowQuickCheck(true)}
         title="Should I do this? (Q)"
