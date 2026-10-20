@@ -124,6 +124,48 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * In the Bad Decision form, the Domain dropdown crowded the next label. The Weakness Map sliders used plain browser-blue styling, unlike the rest of the app.
     * **Done:** the two-column rows in the Bad Decision and Weakness Map forms now leave the usual 20px before the next field. The Weakness Map's Severity and Frequency sliders use the app's `.rating-slider` style (sage fill up to the value, dark thumb) and have accessible names. `.rating-slider` also gets a styled thumb in Firefox and a gold outline on keyboard focus, which applies to every slider using it. Checked in the browser at 1400px.
 
+### Sidebar issues found on 2026-10-20
+
+Checked in the browser at 1414×820 and at 390px wide. All in `frontend/src/components/Layout.js` and `frontend/src/index.css`.
+
+27. **On phones, the drawer's ✕ button is hidden and can't be tapped**
+    * Under 900px the top bar is `position: sticky` with `z-index: 900` (`index.css`, the `.top-navbar` rule in the 900px media query), while `.sidebar` is `z-index: 100`. The top bar covers the drawer's header, so the logo and the ✕ button sit underneath it. The only way to close the drawer is tapping the dark backdrop or picking a page.
+    * **Fix:** put the open drawer and its backdrop above the top bar (for example `.sidebar` at 1001 and `.sidebar-backdrop` at 1000 on mobile), or hide the top bar while the drawer is open.
+
+28. **The 🧭 quick-check button floats over the open phone drawer**
+    * `.qc-fab` has `z-index: 998`, so it sits on top of the drawer and backdrop and covers part of the sidebar footer.
+    * **Fix:** same as #27, keep the drawer above it, or hide the button while the drawer is open.
+
+29. **Resizing the window undoes the user's show/hide choice**
+    * The resize handler (`Layout.js:211-218`) runs `setIsSidebarVisible(!nowMobile)` on every resize. On desktop, a hidden sidebar pops back open on any resize. On phones, the open drawer snaps shut when the browser bar collapses on scroll or the keyboard opens, because both fire `resize`.
+    * **Fix:** only change visibility when the width actually crosses the 900px breakpoint (compare with the previous `isMobile`).
+
+30. **A hidden sidebar can still be reached with Tab**
+    * The hidden sidebar is only moved off-screen with `transform`, so its 25 links and buttons stay in the tab order. Keyboard users tab through invisible items, and screen readers still read them.
+    * **Fix:** set `inert` (or `visibility: hidden` after the slide-out transition) on `.sidebar.hidden`.
+
+31. **Escape doesn't close the phone drawer**
+    * The Escape handler (`Layout.js:227`) only closes `.modal-overlay` dialogs and the shortcut help.
+    * **Fix:** on mobile, close the drawer on Escape too, and move focus back to the "More" button.
+
+32. **Most nav items are hidden below the fold on laptop screens**
+    * At 820px tall, the logo (79px) and the streak/profile/sign-out footer (245px) leave 464px for the nav, so about 7 of the 21 links show. The scrollbar is 4px wide at 10% opacity, so it's easy to miss that the list scrolls. The compact layout only applies at `max-height: 700px`.
+    * **Fix:** raise the compact breakpoint (for example to 860px), or shrink the streak badge to one line by default.
+
+33. **Effects depend on `user._id`, which is always undefined**
+    * `/auth/me` returns `id`, not `_id`. The notification refresh (`Layout.js:202`) and the Morning Plan redirect (`Layout.js:283`) both list `user ? user._id : null` as a dependency, so it never changes. For example, signing in as a different user without a page reload won't re-run them.
+    * **Fix:** use `user?.id`.
+
+34. **Sidebar controls have no accessible names**
+    * The ✕ and ☰ toggle buttons and the mobile "More" button have no `aria-label` or `aria-expanded`, the `<nav>` has no `aria-label`, and the decorative icons aren't `aria-hidden`.
+    * **Fix:** add `aria-label`, `aria-expanded` and `aria-controls` to the toggles, `aria-label="Main navigation"` to the nav, and `aria-hidden` to the icon spans.
+
+35. **Smaller sidebar polish**
+    * The shortcut letter chips are at 20% opacity, too faint to read, and they still show on phones, which have no keyboard. Hide them under 900px.
+    * The profile button at the bottom isn't a `NavLink`, so it doesn't highlight when you're on `/profile`.
+    * Growth Analytics is the only nav item without a keyboard shortcut.
+    * Whether the sidebar is shown or hidden on desktop isn't saved, so it resets on every reload. Keep it in localStorage.
+
 ### Smaller issues and gaps
 
 * **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
