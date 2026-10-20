@@ -272,7 +272,7 @@ export default function Reviews() {
   return (
     <div>
       <div className="page-header">
-        <h2>Periodic Reviews 📋</h2>
+        <h1>Periodic Reviews 📋</h1>
         <p>Reflect on your progress across time — weekly, monthly, and yearly.</p>
       </div>
 

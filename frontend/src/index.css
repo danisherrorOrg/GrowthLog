@@ -42,6 +42,11 @@ h4 {
   line-height: 1.2;
 }
 
+/* Page titles moved from <h2> to <h1>; keep them at the size they had */
+h1 {
+  font-size: 1.5em;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -76,7 +81,10 @@ h4 {
   border-bottom: 1px solid rgba(245, 240, 232, 0.1);
 }
 
-.sidebar-logo h1 {
+.sidebar-logo .sidebar-brand {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  line-height: 1.2;
   font-size: 22px;
   color: var(--gold);
   letter-spacing: -0.5px;
@@ -430,7 +438,7 @@ h4 {
   border-bottom: 1px solid rgba(13, 13, 13, 0.08);
 }
 
-.page-header h2 {
+.page-header h1 {
   font-size: 32px;
   color: var(--ink);
 }
@@ -1023,7 +1031,7 @@ h4 {
   max-width: 400px;
 }
 
-.auth-form-box h2 {
+.auth-form-box h1 {
   font-size: 28px;
   margin-bottom: 8px;
 }
@@ -1344,7 +1352,7 @@ h4 {
     line-height: 1.25;
   }
 
-  .page-header h2 {
+  .page-header h1 {
     font-size: 22px;
   }
 
@@ -1854,7 +1862,7 @@ h4 {
 
 /* Very small phones — 400px */
 @media (max-width: 400px) {
-  .page-header h2 {
+  .page-header h1 {
     font-size: 20px;
   }
 
@@ -1862,7 +1870,7 @@ h4 {
     padding: 32px 16px;
   }
 
-  .auth-form-box h2 {
+  .auth-form-box h1 {
     font-size: 24px;
   }
 

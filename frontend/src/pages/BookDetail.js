@@ -158,7 +158,7 @@ export default function BookDetail() {
             {book.cover_emoji}
           </div>
           <div>
-            <h2 style={{ fontSize: 28, marginBottom: 4 }}>{book.title}</h2>
+            <h1 style={{ fontSize: 28, marginBottom: 4 }}>{book.title}</h1>
             <p style={{ color: 'rgba(13,13,13,0.5)', margin: 0, fontSize: 16 }}>by {book.author}</p>
             {!editMode && (
               <div className="wrap-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>

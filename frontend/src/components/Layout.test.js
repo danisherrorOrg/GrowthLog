@@ -240,3 +240,9 @@ test('"Skip to content" is not offered while the phone drawer is open', () => {
   fireEvent.click(screen.getByRole('button', { name: 'More pages' }));
   expect(screen.queryByRole('link', { name: 'Skip to content' })).not.toBeInTheDocument();
 });
+
+test('the layout leaves the <h1> to the page, so the logo is not a heading', () => {
+  renderLayout();
+  expect(screen.getByText('GrowthLog').tagName).toBe('P');
+  expect(document.querySelector('.app-shell h1')).toBeNull();
+});

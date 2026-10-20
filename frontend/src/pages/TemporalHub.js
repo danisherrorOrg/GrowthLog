@@ -28,7 +28,7 @@ export default function TemporalHub() {
   return (
     <div>
       <div className="page-header">
-        <h2>Temporal Space 🕰️</h2>
+        <h1>Temporal Space 🕰️</h1>
         <p>Capture who you are today, compare it to your past, and send messages to your future.</p>
       </div>
 

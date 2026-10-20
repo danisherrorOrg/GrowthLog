@@ -212,7 +212,7 @@ export default function MorningPlan() {
     <div>
       <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Morning Plan ☀️</h2>
+          <h1>Morning Plan ☀️</h1>
           <p>Two minutes to pick what's worth doing today — and let the rest go.</p>
         </div>
         <div className="page-header-actions">

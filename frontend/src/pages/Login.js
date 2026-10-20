@@ -106,7 +106,7 @@ export default function Login() {
 
       <div className="auth-right">
         <div className="auth-form-box">
-          <h2>Welcome back</h2>
+          <h1>Welcome back</h1>
           <p style={{ marginBottom: isExpired ? 16 : 28 }}>Your growth journal is waiting for you.</p>
 
           {isExpired && (

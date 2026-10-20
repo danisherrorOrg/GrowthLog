@@ -211,6 +211,10 @@ Checked in the browser at 1414×876, 960×700, exactly 900px and 390×844, with 
     * Keyboard users tabbed through about 27 stops (sidebar and top bar) on every page before reaching the content.
     * **Done:** a "Skip to content" link is the first tab stop. It is hidden until focused and moves focus to `<main>`. It isn't shown while the phone drawer is open, since the page behind is inert then.
 
+44. ✅ **Completed — Page titles weren't `<h1>`**
+    * Every page title was an `<h2>`, and the only `<h1>` was the "GrowthLog" logo in the sidebar. Screen-reader users jumping by heading landed on the logo and the sidebar's group names before the page title.
+    * **Done:** the title of every signed-in page, the sign-in/sign-up/password pages and the public profile is now its `<h1>`. The sidebar logo (and the public profile's "GrowthLog") is plain text. The Lotus Blossom editor, whose title is an editable field, gets a screen-reader-only `<h1>`, and the field is labelled "Blossom title". Titles keep their old sizes (`.page-header h1`, `.auth-form-box h1`, and a 1.5em `h1` default). Checked in the browser: each of the 23 sidebar pages and the 404 page has exactly one `<h1>`. Tests in `Layout.test.js` and `NotFound.test.js`.
+
 ### Smaller issues and gaps
 
 * **"AI-generated patterns" label is wrong.** The dashboard's Behavioral Insights are rule-based checks in `backend/api/routers/dashboard.py`; no AI is involved. Rename the label.
@@ -223,7 +227,6 @@ Checked in the browser at 1414×876, 960×700, exactly 900px and 390×844, with 
 * **After saving a log, the dashboard opens scrolled halfway down.**
 * **Empty gratitude fields are saved** as `['', '', '']`.
 * **Duplicate "Goal not found" toasts** when opening a missing goal (an effect that runs twice).
-* **Page titles aren't `<h1>`.** Every page title is an `<h2>` in `.page-header` (25 pages), and the only `<h1>` is the "GrowthLog" logo in the sidebar, so screen-reader heading navigation starts at the logo and the sidebar's group headings. Make page titles `<h1>` and the logo plain text.
 * **Deleting a category template always reports success.** `DELETE /categories/templates/{id}` (`backend/api/routers/categories.py:67`) returns `{"success": true}` and logs a "Deleted a category template" activity even when no template matched. Return 404 when nothing was deleted.
 
 ---

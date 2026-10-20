@@ -26,7 +26,7 @@ export default function Insights() {
   return (
     <div>
       <div className="page-header">
-        <h2>Insight Lab 🔬</h2>
+        <h1>Insight Lab 🔬</h1>
         <p>Clarity through contrast — define what you reject, track your time, and learn from patterns.</p>
       </div>
 

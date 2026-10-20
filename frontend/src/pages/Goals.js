@@ -197,7 +197,7 @@ export default function Goals() {
   return (
     <div>
       <div className="page-header">
-        <h2>Goals ◇</h2>
+        <h1>Goals ◇</h1>
         <p>Set meaningful targets. Reflect honestly. Grow deliberately.</p>
       </div>
 

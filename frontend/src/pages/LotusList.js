@@ -97,7 +97,7 @@ export default function LotusList() {
     <div>
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h2>Lotus Blossoms</h2>
+          <h1>Lotus Blossoms</h1>
           <p>Organize your ideas systematically in expanding grids.</p>
         </div>
         <button className="btn btn-primary" onClick={handleCreate}>

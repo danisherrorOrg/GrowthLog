@@ -125,7 +125,7 @@ export default function Register() {
 
       <div className="auth-right">
         <div className="auth-form-box">
-          <h2>Begin your journey</h2>
+          <h1>Begin your journey</h1>
           <p style={{ marginBottom: 20 }}>Track, reflect, and become who you want to be.</p>
 
           <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', borderRadius: 10, border: '1px solid rgba(201,168,76,0.2)', marginBottom: 24, fontSize: 13, color: 'rgba(13,13,13,0.6)', lineHeight: 1.6 }}>

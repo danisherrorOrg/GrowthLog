@@ -15,7 +15,7 @@ export default function HistoryHub() {
   return (
     <div>
       <div className="page-header">
-        <h2>History & Timeline 🕰️</h2>
+        <h1>History & Timeline 🕰️</h1>
         <p>A chronological archive of your growth, reflections, and system activity.</p>
       </div>
 

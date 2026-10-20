@@ -38,7 +38,7 @@ export default function ResetPassword() {
         {done ? (
           <>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h2>Password updated</h2>
+            <h1>Password updated</h1>
             <p style={{ marginBottom: 28 }}>You've been signed out everywhere. Sign in with your new password.</p>
             {/* Full reload so AuthContext forgets any user loaded from the old token */}
             <a href="/login" className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
@@ -47,7 +47,7 @@ export default function ResetPassword() {
           </>
         ) : (
           <>
-            <h2>Choose a new password</h2>
+            <h1>Choose a new password</h1>
             <p style={{ marginBottom: 28 }}>Make it at least 8 characters.</p>
             <form onSubmit={handleSubmit}>
               <div className="form-group">

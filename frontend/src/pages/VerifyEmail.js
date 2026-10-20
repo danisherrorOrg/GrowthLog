@@ -41,7 +41,7 @@ export default function VerifyEmail() {
         {status === 'verifying' && (
           <>
             <div className="skeleton" style={{ width: 60, height: 60, borderRadius: '50%', margin: '0 auto 24px' }} />
-            <h2 style={{ marginBottom: 12 }}>Verifying your email...</h2>
+            <h1 style={{ marginBottom: 12 }}>Verifying your email...</h1>
             <p style={{ color: 'rgba(13,13,13,0.5)', fontSize: 14 }}>One moment while we confirm your address.</p>
           </>
         )}
@@ -49,7 +49,7 @@ export default function VerifyEmail() {
         {status === 'success' && (
           <>
             <div style={{ fontSize: 64, marginBottom: 20 }}>✅</div>
-            <h2 style={{ marginBottom: 12 }}>Email Verified!</h2>
+            <h1 style={{ marginBottom: 12 }}>Email Verified!</h1>
             <p style={{ color: 'rgba(13,13,13,0.5)', fontSize: 14, marginBottom: 24 }}>
               Your account is now secure. You can now receive reminders and stay consistent.
             </p>
@@ -62,7 +62,7 @@ export default function VerifyEmail() {
         {status === 'error' && (
           <>
             <div style={{ fontSize: 64, marginBottom: 20 }}>❌</div>
-            <h2 style={{ marginBottom: 12 }}>Verification Failed</h2>
+            <h1 style={{ marginBottom: 12 }}>Verification Failed</h1>
             <p style={{ color: 'rgba(13,13,13,0.5)', fontSize: 14, marginBottom: 24 }}>
               The link may be expired or invalid. Please try sending a new one from your profile.
             </p>

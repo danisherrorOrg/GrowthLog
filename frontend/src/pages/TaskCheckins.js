@@ -281,7 +281,7 @@ export default function TaskCheckins() {
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2>15-Min Task Check-In ⏱️</h2>
+            <h1>15-Min Task Check-In ⏱️</h1>
             <p>Pause every 15 minutes. Honestly assess your task. Make a verdict.</p>
           </div>
           <button

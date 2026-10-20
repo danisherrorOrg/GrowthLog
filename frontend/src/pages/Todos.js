@@ -171,7 +171,7 @@ export default function Todos() {
   return (
     <div>
       <div className="page-header">
-        <h2>Action Board 🎯</h2>
+        <h1>Action Board 🎯</h1>
         <p>Capture intentions. Ship them. Reflect on the effort.</p>
       </div>
 

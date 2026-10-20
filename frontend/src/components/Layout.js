@@ -439,7 +439,8 @@ export default function Layout() {
         <div className="sidebar-logo">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1>GrowthLog</h1>
+              {/* The page's own title is its <h1>, so the logo is plain text */}
+              <p className="sidebar-brand">GrowthLog</p>
               <span>Personal Journal</span>
             </div>
             <button

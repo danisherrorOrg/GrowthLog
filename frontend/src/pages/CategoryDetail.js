@@ -90,7 +90,7 @@ export default function CategoryDetail() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ fontSize: 48, lineHeight: 1 }}>{category.icon}</span>
           <div>
-            <h2 style={{ fontSize: 28, marginBottom: 4 }}>{category.name}</h2>
+            <h1 style={{ fontSize: 28, marginBottom: 4 }}>{category.name}</h1>
             <div className="markdown-body" style={{ color: 'rgba(13,13,13,0.6)', margin: 0 }}>
               {category.description ? <MarkdownRenderer content={category.description} /> : 'No description provided.'}
             </div>

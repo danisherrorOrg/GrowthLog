@@ -19,7 +19,7 @@ export default function HealthHub() {
   return (
     <div>
       <div className="page-header">
-        <h2>Health & Body 🧬</h2>
+        <h1>Health & Body 🧬</h1>
         <p>Monitor your physical vessel: sleep, nutrition, workouts, and track muscle progression.</p>
       </div>
 

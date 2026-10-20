@@ -11,7 +11,7 @@ test('unknown URLs show a not-found page with a way back', () => {
       </Routes>
     </MemoryRouter>
   );
-  expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 1, name: 'Page not found' })).toBeInTheDocument();
   expect(screen.getByText('/no-such-page')).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Go to Dashboard' })).toHaveAttribute('href', '/dashboard');
 });

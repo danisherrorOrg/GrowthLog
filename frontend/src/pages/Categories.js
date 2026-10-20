@@ -151,7 +151,7 @@ export default function Categories() {
   return (
     <div>
       <div className="page-header">
-        <h2>Categories</h2>
+        <h1>Categories</h1>
         <p>The arenas of your life you want to grow in</p>
       </div>
 

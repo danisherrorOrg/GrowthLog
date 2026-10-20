@@ -286,12 +286,12 @@ export default function GoalDetail() {
           </button>
           {cat && <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 1 }}>{cat.icon} {cat.name}</span>}
         </div>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <h1 style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {goal.title}
           <span className={`tag ${goal.status === 'completed' ? 'tag-green' : goal.status === 'extended' ? 'tag-gold' : goal.status === 'abandoned' ? 'tag-rust' : 'tag-mist'}`} style={{ fontSize: 13 }}>
             {goal.status}
           </span>
-        </h2>
+        </h1>
         <p style={{ color: isOverdue ? 'var(--rust)' : 'rgba(13,13,13,0.5)' }}>
           {isOverdue ? `⚠️ ${Math.abs(daysLeft)} days overdue` : isActive ? `◇ ${daysLeft} days remaining · Due ${format(deadline, 'MMM d, yyyy')}` : `Deadline: ${format(deadline, 'MMM d, yyyy')}`}
         </p>
