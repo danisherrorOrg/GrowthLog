@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list, clean_update
 from api.deps import get_current_user
+from models.schemas import _optional_iso_date
 
 router = APIRouter(prefix="/checkins", tags=["Task Check-Ins"])
 
@@ -56,6 +57,8 @@ class TaskCheckInModel(BaseModel):
     date: Optional[str] = Field(None, max_length=30)
     custom_questions: Optional[List[dict]] = []  # [{"text": str, "answer": str}]
     notes: Optional[List[dict]] = []  # [{"text": str, "added_at": str}]
+
+    _check_dates = field_validator("date")(_optional_iso_date)
 
 
 class TaskCheckInUpdateModel(BaseModel):

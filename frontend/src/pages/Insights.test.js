@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import toast from 'react-hot-toast';
 import API from '../utils/api';
 import Insights from './Insights';
 
@@ -43,6 +44,24 @@ test('edits a time entry from the Time Tracking tab', async () => {
   await waitFor(() => expect(API.put).toHaveBeenCalledWith(
     '/insights/time-entries/t1', { date: '2026-10-19', category: 'Deep work', hours: 4, notes: '' }
   ));
+});
+
+test('an edit that would push a day past 24 hours is stopped before saving', async () => {
+  const day = [
+    { id: 't1', date: '2026-10-19', category: 'Deep work', hours: 3, notes: '' },
+    { id: 't2', date: '2026-10-19', category: 'Sleep', hours: 20, notes: '' },
+  ];
+  API.get.mockImplementation(url => Promise.resolve({ data: url === '/insights/time-entries' ? day : [] }));
+  render(<Insights />);
+  fireEvent.click(screen.getByRole('button', { name: /Time Tracking/ }));
+  expect(await screen.findByText('Deep work')).toBeInTheDocument();
+
+  fireEvent.click(screen.getAllByRole('button', { name: '✎' })[0]);
+  fireEvent.change(screen.getByDisplayValue('3'), { target: { value: '5' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+  expect(toast.error).toHaveBeenCalledWith('Only 4h left on this day');
+  expect(API.put).not.toHaveBeenCalled();
 });
 
 test('logs screen time using a quick-pick category', async () => {

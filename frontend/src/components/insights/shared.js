@@ -65,7 +65,7 @@ export function MultiRowEditor({ rows, setRows, keyLabel, keyPlaceholder, color 
               placeholder={keyPlaceholder} />
             <input className="form-input hours-input" type="number" style={{ width: 90, flexShrink: 0 }} value={row.hours}
               onChange={e => { const r = [...rows]; r[i] = { ...r[i], hours: e.target.value }; setRows(r); }}
-              placeholder="hrs" min="0.1" step="0.25" />
+              placeholder="hrs" min="0.1" max="24" step="0.25" />
             {rows.length > 1 && (
               <button onClick={() => setRows(rows.filter((_, idx) => idx !== i))}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'rgba(13,13,13,0.25)', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✕</button>

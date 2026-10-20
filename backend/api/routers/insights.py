@@ -14,6 +14,21 @@ from models.schemas import (
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
+
+def _check_day_total(collection, uid: str, day: str, hours: float, label: str, exclude_id=None):
+    """Hours logged for one day can't add up to more than 24."""
+    match = {"user_id": uid, "date": day}
+    if exclude_id is not None:
+        match["_id"] = {"$ne": exclude_id}
+    logged = sum(d.get("hours") or 0 for d in collection.find(match, {"hours": 1}))
+    total = round(logged + hours, 6)  # avoid float noise like 23.999999999
+    if total > 24:
+        left = round(max(0.0, 24 - logged), 6)
+        raise HTTPException(
+            status_code=422,
+            detail=f"{label} for {day} would come to {total:g}h. A day has 24 hours, and {left:g}h are left.",
+        )
+
 # ──────────────────────────────────────────────
 #  Anti-Goals
 # ──────────────────────────────────────────────
@@ -121,9 +136,11 @@ def get_time_entries(current_user=Depends(get_current_user)):
 @router.post("/time-entries")
 def create_time_entry(data: TimeEntryModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.time_entries, uid, day, data.hours, "Time tracked")
     doc = {
         "user_id": uid,
-        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "date": day,
         "category": data.category,
         "hours": data.hours,
         "notes": data.notes or "",
@@ -137,9 +154,11 @@ def create_time_entry(data: TimeEntryModel, current_user=Depends(get_current_use
 @router.put("/time-entries/{item_id}")
 def update_time_entry(item_id: str, data: TimeEntryModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.time_entries, uid, day, data.hours, "Time tracked", exclude_id=ObjectId(item_id))
     result = db.time_entries.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
-        {"$set": {"date": data.date or utcnow().strftime("%Y-%m-%d"), "category": data.category, "hours": data.hours, "notes": data.notes or ""}}
+        {"$set": {"date": day, "category": data.category, "hours": data.hours, "notes": data.notes or ""}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Time entry not found")
@@ -166,9 +185,11 @@ def get_screen_time(current_user=Depends(get_current_user)):
 @router.post("/screen-time")
 def create_screen_time(data: ScreenTimeModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.screen_time, uid, day, data.hours, "Screen time")
     doc = {
         "user_id": uid,
-        "date": data.date or utcnow().strftime("%Y-%m-%d"),
+        "date": day,
         "app_category": data.app_category,
         "hours": data.hours,
         "notes": data.notes or "",
@@ -182,9 +203,11 @@ def create_screen_time(data: ScreenTimeModel, current_user=Depends(get_current_u
 @router.put("/screen-time/{item_id}")
 def update_screen_time(item_id: str, data: ScreenTimeModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    day = data.date or utcnow().strftime("%Y-%m-%d")
+    _check_day_total(db.screen_time, uid, day, data.hours, "Screen time", exclude_id=ObjectId(item_id))
     result = db.screen_time.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
-        {"$set": {"date": data.date or utcnow().strftime("%Y-%m-%d"), "app_category": data.app_category, "hours": data.hours, "notes": data.notes or ""}}
+        {"$set": {"date": day, "app_category": data.app_category, "hours": data.hours, "notes": data.notes or ""}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Screen time entry not found")

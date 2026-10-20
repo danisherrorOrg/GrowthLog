@@ -85,10 +85,9 @@ Ownership checks hold everywhere except the timeline (#7): signed in as a second
 
 Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review ritual, Knowledge Vault (books, courses, quotes), Health (5 tabs), Growth Hub, Life Canvas, category edit/delete, goal detail (milestones, extend) and Manifestations, Profile (edit, export, change password, public profile), the notifications panel, keyboard shortcuts, and History's Daily Logs and Audit Trail tabs.
 
-17. **Insight Lab time entries aren't checked on the server**
-    * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit exists only in the browser form, and the `"not-a-date"` entry now shows up as a day heading in Time Tracking.
-    * About 27 date fields in `backend/models/schemas.py` are plain strings with no format check. Daily logs, by contrast, already reject out-of-range mood, energy, time spent and overall rating (422).
-    * **Fix:** add range limits to hours and use real date types (or a date-format validator) for the date fields.
+17. ✅ **Completed — Insight Lab time entries weren't checked on the server**
+    * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit existed only in the browser form.
+    * **Done:** Time Tracking, Screen Time and creative-session hours must be more than 0 and at most 24, and the API rejects a Time Tracking or Screen Time entry that would push a day past 24 hours (an edit doesn't count its own old hours). The form now counts hours already saved that day too ("Only 4h left on this day"). Every date-only field in `models/schemas.py`, plus to-do due dates and check-in dates, must be a real `YYYY-MM-DD` date; empty optional dates are still allowed and kept as sent. Health numbers (calories, macros, water, workout minutes, sets, reps, weights) can't be negative, and nutrition quality is 1–10. Entries saved before this (like the `"not-a-date"` one) are left as they are. Tests in `test_insight_validation.py` and `Insights.test.js`.
 
 18. **No range or order checks on several forms**
     * Habit Graveyard saved a habit that ended a month before it started.
