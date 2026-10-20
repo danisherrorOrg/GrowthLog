@@ -24,8 +24,9 @@ SMTP_SENDER = os.getenv("SMTP_SENDER", "noreply@growthlog.app")
 DB_NAME = os.getenv("DB_NAME", "growthlog")
 
 # Auth cookie. Secure needs HTTPS (browsers make an exception for http://localhost).
-# If the frontend and API are on different sites (e.g. app.vercel.app + api.onrender.com),
-# set AUTH_COOKIE_SAMESITE=none so the browser sends the cookie on cross-site API calls.
+# Serve the API through the frontend's domain (see frontend/vercel.json) so the cookie is
+# first-party. A cross-site API needs AUTH_COOKIE_SAMESITE=none, which browsers that block
+# third-party cookies still refuse.
 AUTH_COOKIE_NAME = "growthlog_session"
 AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true").lower() != "false"
 AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax").lower()
