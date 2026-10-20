@@ -8,11 +8,13 @@ from bson import ObjectId
 from core.database import db
 from api.deps import get_current_user
 from core.rate_limit import limiter
+from utils.streak import user_tz, local_date
 
 
 router = APIRouter(prefix="/timeline", tags=["timeline"])
 
 logger = logging.getLogger(__name__)
+
 
 @router.get("")
 @limiter.limit("30/minute")
@@ -27,6 +29,7 @@ def get_timeline(
     current_user=Depends(get_current_user)
 ):
     uid = str(current_user["_id"])
+    tz = user_tz(current_user)
     events = []
 
     # Escape search query for regex safety to prevent ReDoS
@@ -140,12 +143,7 @@ def get_timeline(
         main_cat = cat_map.get(str(goal.get("category_id")), {"id": str(goal.get("category_id")), "name": "General", "icon": "📁", "color": "#888"})
         
         # Goal Created Event
-        created_at = goal.get("created_at")
-        created_date = None
-        if isinstance(created_at, datetime):
-            created_date = created_at.strftime("%Y-%m-%d")
-        elif isinstance(created_at, str):
-            created_date = created_at[:10]
+        created_date = local_date(goal.get("created_at"), tz)
             
         if created_date and ((not start_date or created_date >= start_date) and (not end_date or created_date <= end_date)):
             events.append({
@@ -177,12 +175,7 @@ def get_timeline(
 
         # Goal Completed Event
         if goal.get("status") in ["completed", "completed_late"]:
-            completed_at = goal.get("completed_at")
-            comp_date = None
-            if isinstance(completed_at, datetime):
-                comp_date = completed_at.strftime("%Y-%m-%d")
-            elif isinstance(completed_at, str):
-                comp_date = completed_at[:10]
+            comp_date = local_date(goal.get("completed_at"), tz)
             
             if comp_date and ((not start_date or comp_date >= start_date) and (not end_date or comp_date <= end_date)):
                 events.append({

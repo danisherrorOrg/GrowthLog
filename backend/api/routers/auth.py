@@ -56,7 +56,7 @@ def register(request: Request, response: Response, data: RegisterModel, backgrou
         "password": hash_password(data.password),
         "created_at": utcnow(),
         "streak": 0, "longest_streak": 0, "last_log_date": None,
-        "bio": "", "avatar_emoji": "🌱", "timezone": "UTC",
+        "bio": "", "avatar_emoji": "🌱", "timezone": data.timezone or "UTC",
         "is_verified": False, "verification_token": None,
         "email_notifications": True,
         "category_colors": ['#6b8c6b', '#c9a84c', '#c4623a', '#5b8ba8', '#8b6bc4', '#c46b8b', '#6bc4b8', '#a8895b'],
@@ -79,7 +79,7 @@ def register(request: Request, response: Response, data: RegisterModel, backgrou
     token = create_token(uid_str, 1)
     set_auth_cookie(response, token)
     return {"token": token,
-            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": []}}
+            "user": {"id": uid_str, "name": data.name, "email": data.email, "created_at": utcnow().isoformat(), "is_verified": False, "streak_shields": 0, "shield_milestones": [], "timezone": data.timezone or "UTC"}}
 
 @router.post("/verify/send")
 @limiter.limit("3/minute")
@@ -137,8 +137,14 @@ def login(request: Request, response: Response, data: LoginModel):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_token(str(user["_id"]), user.get("token_version", 1))
     set_auth_cookie(response, token)
+    # Accounts made before the browser timezone was sent are stuck on UTC; fill it in,
+    # unless the user chose a timezone themselves in Profile
+    tz = user.get("timezone") or "UTC"
+    if data.timezone and tz == "UTC" and not user.get("timezone_set_manually"):
+        tz = data.timezone
+        db.users.update_one({"_id": user["_id"]}, {"$set": {"timezone": tz}})
     return {"token": token,
-            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", [])}}
+            "user": {"id": str(user["_id"]), "name": user["name"], "email": user["email"], "created_at": user.get("created_at", utcnow()).isoformat(), "streak_shields": user.get("streak_shields", 0), "shield_milestones": user.get("shield_milestones", []), "timezone": tz}}
 
 def _hash_reset_token(token: str) -> str:
     # Only the hash is stored, so a leaked database can't be used to reset passwords
@@ -238,6 +244,10 @@ def update_profile(data: ProfileUpdateModel, current_user=Depends(get_current_us
     fields = clean_update(data.model_dump())
     if not fields:
         raise HTTPException(status_code=400, detail="No fields to update")
+    if "timezone" in fields and fields["timezone"] != (current_user.get("timezone") or "UTC"):
+        # Stops login from replacing a timezone the user picked. The profile form resends the
+        # current value on every save, so only an actual change counts.
+        fields["timezone_set_manually"] = True
     db.users.update_one({"_id": current_user["_id"]}, {"$set": fields})
     uid = str(current_user["_id"])
     from utils.activity import log_activity

@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../../utils/errors';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
+import { localDate } from '../../utils/dates';
 
 export default function Snapshots() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export default function Snapshots() {
 
   const openCreate = () => {
     setEditSnap(null);
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDate();
     setForm({ description: '', values: '', mood: 5, date: today });
     setShowModal(true);
   };

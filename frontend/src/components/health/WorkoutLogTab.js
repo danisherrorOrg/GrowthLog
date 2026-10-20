@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../../utils/errors';
 import ConfirmModal from '../ui/ConfirmModal';
+import { localDate } from '../../utils/dates';
 
-const TODAY = new Date().toISOString().slice(0, 10);
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Legs', 'Arms', 'Shoulders', 'Core', 'Cardio'];
 
 const EXERCISES_BY_GROUP = {
@@ -246,7 +246,7 @@ export default function WorkoutLogTab() {
   const [viewingWorkout, setViewingWorkout] = useState(null);
 
   const [form, setForm] = useState({
-    date: TODAY,
+    date: localDate(),
     type: 'Gym',
     duration_minutes: 60,
     intensity: 7,
@@ -307,7 +307,7 @@ export default function WorkoutLogTab() {
 
   const openAdd = useCallback(() => {
     setEditingId(null);
-    setForm({ date: TODAY, type: 'Gym', duration_minutes: 60, intensity: 7, notes: '' });
+    setForm({ date: localDate(), type: 'Gym', duration_minutes: 60, intensity: 7, notes: '' });
     setExercises([makeEmptyExercise()]);
     setShowModal(true);
   }, []);

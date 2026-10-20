@@ -4,7 +4,7 @@ import API from '../../utils/api';
 import { getErrorMessage } from '../../utils/errors';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, PALETTE, catColor, Skeletons, Empty, dateLabel, dayLabel, HoursBar, MultiRowEditor } from './shared';
+import { localDate, PALETTE, catColor, Skeletons, Empty, dateLabel, dayLabel, HoursBar, MultiRowEditor } from './shared';
 
 // Time Tracking and Screen Time are the same day-centric log with different wording
 export const TIME_TRACKING = {
@@ -57,7 +57,7 @@ export default function HoursLogTab({ config }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
-  const [date, setDate] = useState(TODAY);
+  const [date, setDate] = useState(localDate());
   const [rows, setRows] = useState([{ [keyField]: '', hours: '' }]);
   const [editEntry, setEditEntry] = useState(null); // single-entry edit
   const [editForm, setEditForm] = useState({ [keyField]: '', hours: '', notes: '' });
@@ -76,7 +76,7 @@ export default function HoursLogTab({ config }) {
 
   const byDate = useMemo(() => groupByDate(entries), [entries]);
 
-  const openAdd = (day = TODAY) => {
+  const openAdd = (day = localDate()) => {
     setDate(day);
     setRows([{ [keyField]: '', hours: '' }]);
     setEditEntry(null);
@@ -124,11 +124,11 @@ export default function HoursLogTab({ config }) {
     <>
       <div className="stack-on-mobile" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div><h3 style={{ fontSize: 20, marginBottom: 4 }}>{config.icon} {config.title}</h3><p style={{ fontSize: 13, color: 'rgba(13,13,13,0.5)', margin: 0 }}>{config.subtitle}</p></div>
-        <button className="btn btn-primary" onClick={() => openAdd(TODAY)} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
+        <button className="btn btn-primary" onClick={() => openAdd(localDate())} style={{ borderRadius: 30, padding: '10px 22px' }}>+ Log Today</button>
       </div>
 
       {loading ? <Skeletons n={2} h={140} /> : byDate.length === 0 ? (
-        <Empty icon={config.icon} title={config.emptyTitle} desc={config.emptyDesc} onAdd={() => openAdd(TODAY)} label={config.emptyLabel} />
+        <Empty icon={config.icon} title={config.emptyTitle} desc={config.emptyDesc} onAdd={() => openAdd(localDate())} label={config.emptyLabel} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {byDate.map(([day, dayEntries]) => {

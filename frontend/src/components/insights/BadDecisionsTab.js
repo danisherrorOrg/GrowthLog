@@ -1,15 +1,15 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
 
-const EMPTY_FORM = { decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: TODAY };
+const EMPTY_FORM = () => ({ decision: '', what_went_wrong: '', root_cause: '', do_differently: '', domain: 'General', date: localDate() });
 
 export default function BadDecisionsTab() {
   const list = useInsightList('/insights/bad-decisions', EMPTY_FORM);
   const { items, loading, form, setForm, editing, modal, openCreate, closeModal, saving, preview, setPreview } = list;
 
-  const openEdit = (i) => list.openEdit(i, { decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || TODAY });
+  const openEdit = (i) => list.openEdit(i, { decision: i.decision, what_went_wrong: i.what_went_wrong || '', root_cause: i.root_cause || '', do_differently: i.do_differently || '', domain: i.domain || 'General', date: i.date || localDate() });
   const handleSave = () => {
     if (!form.decision.trim()) return toast.error('Describe the decision');
     list.save('💀 Logged');

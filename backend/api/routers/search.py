@@ -1,10 +1,10 @@
 import re
-from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Request
 
 from core.database import db
 from api.deps import get_current_user
 from core.rate_limit import limiter
+from utils.streak import user_tz, local_date
 
 router = APIRouter(prefix="/search", tags=["search"])
 
@@ -80,14 +80,6 @@ def _snippet(text, pattern):
     return ("…" if start > 0 else "") + text[start:end] + ("…" if end < len(text) else "")
 
 
-def _date_str(value):
-    if isinstance(value, datetime):
-        return value.strftime("%Y-%m-%d")
-    if isinstance(value, str):
-        return value[:10]
-    return None
-
-
 @router.get("")
 @limiter.limit("60/minute")
 def search(
@@ -96,6 +88,7 @@ def search(
     current_user=Depends(get_current_user),
 ):
     uid = str(current_user["_id"])
+    tz = user_tz(current_user)
     q = q.strip()
     if len(q) < 2:
         return {"query": q, "results": []}
@@ -119,7 +112,7 @@ def search(
             cursor = cursor.sort(src["date"], -1)
 
         for doc in cursor.limit(PER_TYPE_LIMIT):
-            date = _date_str(doc.get(src["date"])) if src["date"] else None
+            date = local_date(doc.get(src["date"]), tz) if src["date"] else None
             matched = next(
                 (v for f in src["fields"] for v in _values_at(doc, f) if pattern.search(v)),
                 "",

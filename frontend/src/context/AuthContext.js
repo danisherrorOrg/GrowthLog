@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import API from '../utils/api';
+import { browserTimezone } from '../utils/dates';
 
 const AuthContext = createContext();
 
@@ -18,13 +19,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const res = await API.post('/auth/login', { email, password });
+    const res = await API.post('/auth/login', { email, password, timezone: browserTimezone() });
     setUser(res.data.user);
     return res.data;
   };
 
   const register = async (name, email, password) => {
-    const res = await API.post('/auth/register', { name, email, password });
+    const res = await API.post('/auth/register', { name, email, password, timezone: browserTimezone() });
     setUser(res.data.user);
     return res.data;
   };

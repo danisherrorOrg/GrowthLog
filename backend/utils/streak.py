@@ -1,17 +1,29 @@
 from bson import ObjectId
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import Optional
 from zoneinfo import ZoneInfo
 from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 
-def _get_local_now(user: dict):
-    tz_str = user.get("timezone", "UTC")
+def user_tz(user: dict):
     try:
-        tz = ZoneInfo(tz_str)
+        return ZoneInfo(user.get("timezone") or "UTC")
     except Exception:
-        tz = ZoneInfo("UTC")
-    return utcnow().astimezone(tz)
+        return ZoneInfo("UTC")
+
+def _get_local_now(user: dict):
+    return utcnow().astimezone(user_tz(user))
+
+def local_date(value, tz) -> Optional[str]:
+    """The user's calendar day (YYYY-MM-DD) for a stored timestamp; date strings pass through."""
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(tz).strftime("%Y-%m-%d")
+    if isinstance(value, str):
+        return value[:10]
+    return None
 
 def recalculate_user_streak(uid: str):
     """Accurately calculates the current and longest streak using a paginated query that stops on gaps."""

@@ -45,11 +45,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
    * `docker compose up --build` stopped at `npm ci` in the frontend image: `package-lock.json` was out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).
    * **Done:** regenerated the lock file with the image's Node 20 / npm 10 (adds Tailwind's optional `yaml@2` peer). Also fixed the frontend healthcheck, which always failed because `localhost` resolved to IPv6 while nginx listens on IPv4 only. All three containers now come up healthy.
 
-9. **Dates are wrong for anyone outside UTC**
-   * The browser timezone is never detected, so every user is stored with `timezone: "UTC"` unless they change it in Profile.
-   * Reproduced at 02:47 IST (still Oct 19 in UTC): after logging Oct 20, the bell still said "Protect your 1-day streak! Write today's daily log"; a to-do completed on Oct 20 shows "✓ Oct 19".
-   * The API also returns naive timestamps (`"created_at": "2026-10-19T21:18:55.272000"`, no `Z`), so `parseISO` reads them as local time. Profile shows "Member since October 19".
-   * **Fix:** send the browser timezone on register/login (and offer to update it when it changes), and return timestamps as UTC with an offset.
+9. ✅ **Completed — Dates were wrong for anyone outside UTC**
+   * Every user was stored with `timezone: "UTC"`, and the API returned naive timestamps (`"2026-10-19T21:18:55.272000"`) that the browser read as local time.
+   * **Done:** the Mongo client is now `tz_aware`, so every stored timestamp goes out as UTC with `+00:00`. Sign-up stores the browser timezone. Login fills it in for accounts still on the default UTC, unless the user picked UTC in Profile. Profile has a timezone picker and rejects unknown zones. A banner offers to switch when the device's timezone differs from the account's ("Keep" is remembered per pair of zones). Timeline goal dates, search result dates and manifestation start dates now use the user's day. Tests in `backend/tests/test_timezones.py`, `TimezoneBanner.test.js` and `utils/dates.test.js`.
 
 10. **Timeline "Mood" is really the overall day rating**
     * `backend/api/routers/timeline.py:123` sends `overall_rating` as `mood`. Logging mood 8 showed "Mood: 5/10" and "Avg Mood: 5.0" in `JourneyFeed.js`.
@@ -98,10 +96,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * Task Check-ins saved check-in number −3, shown as "Check-in #-3".
     * **Fix:** validate in the API (end ≥ start, no future dates where they make no sense, positive check-in numbers) and mirror it in the forms.
 
-19. **More of the UTC-date bug (see #9)**
-    * In Mind Garden, a thought planted seconds earlier says "About 6 hours ago"; all Mind Garden times show 6 hours too old.
-    * Several date pickers default to Oct 19 instead of today (Oct 20 local): Insight Lab's "Log Today" for time, procrastination, trigger and bad-decision entries, the "Take a Snapshot" date, and the check-in date.
-    * **Fix:** comes with #9; default the pickers to the local date, not the UTC one.
+19. ✅ **Completed — More of the UTC-date bug (see #9)**
+    * Mind Garden times were 6 hours too old, and several date pickers defaulted to the UTC day.
+    * **Done:** fixed by the timestamp offsets in #9. Every "today" default (Insight Lab, Health, Snapshots, Time Capsule, Growth Hub, Life Canvas, To-Dos, Manifestations, PDF export file name) now uses `localDate()` from `utils/dates.js`. Each one is computed when the form opens, so it doesn't go stale if the tab stays open overnight.
 
 20. **Leaving the To-Dos page ends a running focus session without warning**
     * The elapsed time lives only in page memory (`Todos.js:28`), so it's lost on navigation or refresh and never recorded.

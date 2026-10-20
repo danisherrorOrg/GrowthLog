@@ -1,9 +1,9 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, Skeletons, Empty, onHover, offHover, dateLabel, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, dateLabel, PreviewModal, useInsightList } from './shared';
 
-const EMPTY_FORM = { date: TODAY, what: '', why: '', outcome: '' };
+const EMPTY_FORM = () => ({ date: localDate(), what: '', why: '', outcome: '' });
 
 export default function ProcrastinationTab() {
   const list = useInsightList('/insights/procrastination', EMPTY_FORM);

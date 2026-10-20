@@ -1,15 +1,15 @@
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import ConfirmModal from '../ui/ConfirmModal';
-import { TODAY, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
+import { localDate, Skeletons, Empty, onHover, offHover, PreviewModal, useInsightList } from './shared';
 
-const EMPTY_FORM = { trigger: '', behavior: '', consequence: '', guard: '', date: TODAY };
+const EMPTY_FORM = () => ({ trigger: '', behavior: '', consequence: '', guard: '', date: localDate() });
 
 export default function TriggerJournalTab() {
   const list = useInsightList('/insights/triggers', EMPTY_FORM);
   const { items, loading, form, setForm, editing, modal, openCreate, closeModal, saving, preview, setPreview } = list;
 
-  const openEdit = (i) => list.openEdit(i, { trigger: i.trigger, behavior: i.behavior, consequence: i.consequence || '', guard: i.guard || '', date: i.date || TODAY });
+  const openEdit = (i) => list.openEdit(i, { trigger: i.trigger, behavior: i.behavior, consequence: i.consequence || '', guard: i.guard || '', date: i.date || localDate() });
   const handleSave = () => {
     if (!form.trigger.trim() || !form.behavior.trim()) return toast.error('Trigger and behavior are required');
     list.save('🎯 Logged');

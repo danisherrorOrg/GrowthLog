@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { localDate } from './dates';
 
 // ─── Design tokens ────────────────────────────────────────────────
 const C = {
@@ -461,5 +462,5 @@ export async function generateGrowthLogPDF({ user, stats, sparklineData, goals, 
     text(doc, 'Keep growing. — GrowthLog', PW / 2, PH - 7, { align: 'center' });
   }
 
-  doc.save(`GrowthLog_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`GrowthLog_Report_${localDate()}.pdf`);
 }

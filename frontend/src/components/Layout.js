@@ -7,6 +7,7 @@ import { getErrorMessage } from '../utils/errors';
 import QuickCheckModal from './focus/QuickCheckModal';
 import CommandPalette from './CommandPalette';
 import { OPEN_EVENT, localDate, markPlanPrompted, shouldPromptPlan } from './focus/quickCheck';
+import TimezoneBanner from './TimezoneBanner';
 
 const NAV_GROUPS = [
   {
@@ -531,6 +532,7 @@ export default function Layout() {
             </button>
           </div>
         )}
+        <TimezoneBanner />
         <Outlet />
       </main>
 

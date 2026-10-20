@@ -1,6 +1,18 @@
 from pydantic import BaseModel, field_validator, EmailStr, Field
 from typing import Optional, List, Literal
 import re
+from zoneinfo import ZoneInfo
+
+def is_valid_timezone(tz: str) -> bool:
+    try:
+        ZoneInfo(tz)
+        return True
+    except Exception:
+        return False
+
+def _browser_timezone(v):
+    # Sent automatically by the browser; an unknown zone is dropped so it can never block sign-in
+    return v if v and is_valid_timezone(v) else None
 
 HEX_COLOR = re.compile(r"#[0-9A-Fa-f]{6}")
 MAX_THEME_ITEMS = 24
@@ -9,6 +21,9 @@ class RegisterModel(BaseModel):
     name: str = Field(..., max_length=100)
     email: EmailStr
     password: str = Field(..., max_length=128)
+    timezone: Optional[str] = Field(None, max_length=60)
+
+    _check_timezone = field_validator("timezone")(_browser_timezone)
 
     @field_validator("name")
     @classmethod
@@ -27,6 +42,9 @@ class RegisterModel(BaseModel):
 class LoginModel(BaseModel):
     email: EmailStr
     password: str = Field(..., max_length=128)
+    timezone: Optional[str] = Field(None, max_length=60)
+
+    _check_timezone = field_validator("timezone")(_browser_timezone)
 
 class ProfileUpdateModel(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
@@ -36,6 +54,13 @@ class ProfileUpdateModel(BaseModel):
     email_notifications: Optional[bool] = None
     category_colors: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
     category_icons: Optional[List[str]] = Field(None, min_length=1, max_length=MAX_THEME_ITEMS)
+
+    @field_validator("timezone")
+    @classmethod
+    def timezone_known(cls, v):
+        if v is not None and not is_valid_timezone(v):
+            raise ValueError("Unknown timezone")
+        return v
 
     @field_validator("category_colors")
     @classmethod

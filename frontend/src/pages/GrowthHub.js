@@ -5,6 +5,7 @@ import { format, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { localDate } from '../utils/dates';
 
 // ── Tab config ────────────────────────────────────────────────────────────────
 const SECTIONS = [
@@ -25,7 +26,6 @@ const SECTIONS = [
 ];
 
 const ALL_TABS = SECTIONS.flatMap(s => s.tabs);
-const TODAY = new Date().toISOString().slice(0, 10);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const dateLabel = (d) => { try { return format(parseISO(d), 'MMM d, yyyy'); } catch { return d || '—'; } };
@@ -101,7 +101,7 @@ export default function GrowthHub() {
   // ── Failure Log ────────────────────────────────────────────────────────────
   const [failures, setFailures] = useState([]); const [flLoad, setFlLoad] = useState(true);
   const [flModal, setFlModal] = useState(false); const [flEdit, setFlEdit] = useState(null);
-  const [flForm, setFlForm] = useState({ date: TODAY, what_happened: '', lesson: '', domain: '' });
+  const [flForm, setFlForm] = useState({ date: localDate(), what_happened: '', lesson: '', domain: '' });
   const [flPreview, setFlPreview] = useState(null);
 
   // ── Skills Gap ─────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export default function GrowthHub() {
   // ── Feedback ───────────────────────────────────────────────────────────────
   const [feedbacks, setFeedbacks] = useState([]); const [fbLoad, setFbLoad] = useState(true);
   const [fbModal, setFbModal] = useState(false); const [fbEdit, setFbEdit] = useState(null);
-  const [fbForm, setFbForm] = useState({ date: TODAY, from_person: '', feedback_type: 'positive', content: '', action_taken: '' });
+  const [fbForm, setFbForm] = useState({ date: localDate(), from_person: '', feedback_type: 'positive', content: '', action_taken: '' });
   const [fbPreview, setFbPreview] = useState(null);
 
   // ── Shared ─────────────────────────────────────────────────────────────────
@@ -168,8 +168,8 @@ export default function GrowthHub() {
 
 
   // ── Failure Log CRUD ───────────────────────────────────────────────────────
-  const openFlCreate = () => { setFlEdit(null); setFlForm({ date: TODAY, what_happened: '', lesson: '', domain: '' }); setFlModal(true); };
-  const openFlEdit = (i) => { setFlEdit(i); setFlForm({ date: i.date || TODAY, what_happened: i.what_happened, lesson: i.lesson || '', domain: i.domain || '' }); setFlModal(true); };
+  const openFlCreate = () => { setFlEdit(null); setFlForm({ date: localDate(), what_happened: '', lesson: '', domain: '' }); setFlModal(true); };
+  const openFlEdit = (i) => { setFlEdit(i); setFlForm({ date: i.date || localDate(), what_happened: i.what_happened, lesson: i.lesson || '', domain: i.domain || '' }); setFlModal(true); };
   const handleFlSave = () => {
     if (!flForm.what_happened.trim()) return toast.error('Describe what happened');
     crudSave({
@@ -192,8 +192,8 @@ export default function GrowthHub() {
   const handleSgDel = crudDel('/growth-hub/skills-gap', reloadSg);
 
   // ── Feedback CRUD ──────────────────────────────────────────────────────────
-  const openFbCreate = () => { setFbEdit(null); setFbForm({ date: TODAY, from_person: '', feedback_type: 'positive', content: '', action_taken: '' }); setFbModal(true); };
-  const openFbEdit = (i) => { setFbEdit(i); setFbForm({ date: i.date || TODAY, from_person: i.from_person || '', feedback_type: i.feedback_type || 'positive', content: i.content, action_taken: i.action_taken || '' }); setFbModal(true); };
+  const openFbCreate = () => { setFbEdit(null); setFbForm({ date: localDate(), from_person: '', feedback_type: 'positive', content: '', action_taken: '' }); setFbModal(true); };
+  const openFbEdit = (i) => { setFbEdit(i); setFbForm({ date: i.date || localDate(), from_person: i.from_person || '', feedback_type: i.feedback_type || 'positive', content: i.content, action_taken: i.action_taken || '' }); setFbModal(true); };
   const handleFbSave = () => {
     if (!fbForm.content.trim()) return toast.error('Enter the feedback');
     crudSave({

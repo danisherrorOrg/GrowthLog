@@ -6,6 +6,7 @@ import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import MarkdownRenderer from '../components/ui/MarkdownRenderer';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { localDate } from '../utils/dates';
 
 
 const PROGRESS_TYPES = [
@@ -329,7 +330,7 @@ export default function Manifestations() {
               </div>
               {form.use_custom_date ? (
                 <input maxLength={200} type="date" className="form-input" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })}
-                  min={new Date().toISOString().split('T')[0]} />
+                  min={localDate()} />
               ) : (
                 <div className="mfst-day-picker" style={{ display: 'flex', gap: 8 }}>
                   {[7, 14, 21, 30, 60, 90].map(d => (
