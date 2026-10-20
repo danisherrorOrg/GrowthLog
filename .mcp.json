@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "growthlog": {
+      "command": "uv",
+      "args": ["run", "--directory", "mcp-server", "growthlog_mcp.py"],
+      "env": {
+        "GROWTHLOG_API_URL": "https://growthlog-1.onrender.com"
+      }
+    }
+  }
+}
