@@ -136,8 +136,13 @@ async def validation_exception_handler(request, exc):
             field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
             messages.append(f"'{field_name}' must be at most {limit} characters.")
         elif err.get("msg"):
+            msg = err["msg"].removeprefix("Value error, ")
+            if field == "body":
+                # A check across several fields (e.g. end date before start date) reads fine on its own
+                messages.append(msg if msg.endswith(".") else f"{msg}.")
+                continue
             field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
-            messages.append(f"{field_name}: {err['msg']}")
+            messages.append(f"{field_name}: {msg}")
             
     # Combine messages into a single cleanly formatted string for toast notifications
     return JSONResponse(status_code=422, content={"detail": " ".join(messages)})

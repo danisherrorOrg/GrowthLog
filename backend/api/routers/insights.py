@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize, serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     AntiGoalModel, HabitGraveyardModel,
     TimeEntryModel, ScreenTimeModel, ProcrastinationLogModel, NotToDoModel,
@@ -87,6 +87,7 @@ def get_habit_graveyard(current_user=Depends(get_current_user)):
 @router.post("/habit-graveyard")
 def create_habit_graveyard(data: HabitGraveyardModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Start date": data.started_at, "Abandoned date": data.abandoned_at})
     doc = {
         "user_id": uid,
         "habit": data.habit,
@@ -103,6 +104,7 @@ def create_habit_graveyard(data: HabitGraveyardModel, current_user=Depends(get_c
 @router.put("/habit-graveyard/{item_id}")
 def update_habit_graveyard(item_id: str, data: HabitGraveyardModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Start date": data.started_at, "Abandoned date": data.abandoned_at})
     result = db.habit_graveyard.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"habit": data.habit, "reason": data.reason or "", "started_at": data.started_at or "", "abandoned_at": data.abandoned_at or ""}}
@@ -234,6 +236,7 @@ def get_procrastination(current_user=Depends(get_current_user)):
 @router.post("/procrastination")
 def create_procrastination(data: ProcrastinationLogModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "date": data.date or utcnow().strftime("%Y-%m-%d"),
@@ -250,6 +253,7 @@ def create_procrastination(data: ProcrastinationLogModel, current_user=Depends(g
 @router.put("/procrastination/{item_id}")
 def update_procrastination(item_id: str, data: ProcrastinationLogModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.procrastination_log.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"date": data.date or "", "what": data.what, "why": data.why or "", "outcome": data.outcome or ""}}
@@ -322,6 +326,7 @@ def get_triggers(current_user=Depends(get_current_user)):
 @router.post("/triggers")
 def create_trigger(data: TriggerModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "trigger": data.trigger,
@@ -337,6 +342,7 @@ def create_trigger(data: TriggerModel, current_user=Depends(get_current_user)):
 @router.put("/triggers/{item_id}")
 def update_trigger(item_id: str, data: TriggerModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.trigger_journal.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"trigger": data.trigger, "behavior": data.behavior,
@@ -368,6 +374,7 @@ def get_bad_decisions(current_user=Depends(get_current_user)):
 @router.post("/bad-decisions")
 def create_bad_decision(data: BadDecisionModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "decision": data.decision,
@@ -384,6 +391,7 @@ def create_bad_decision(data: BadDecisionModel, current_user=Depends(get_current
 @router.put("/bad-decisions/{item_id}")
 def update_bad_decision(item_id: str, data: BadDecisionModel, current_user=Depends(get_current_user)):
     uid = str(current_user["_id"])
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.bad_decisions.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"decision": data.decision, "what_went_wrong": data.what_went_wrong or "",

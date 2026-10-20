@@ -60,8 +60,10 @@ def test_goals_completed_counts_only_the_period(client, auth_headers, test_user_
 
 
 def test_previous_intentions_come_from_the_last_review_before_the_period(client, auth_headers):
-    for start, intentions in (("2026-09-28", "Old focus"), ("2026-10-05", "Ship the ritual"), ("2026-10-19", "Later")):
-        res = client.post("/reviews", headers=auth_headers, json={**WEEK, "start_date": start, "intentions": intentions})
+    for start, end, intentions in (("2026-09-28", "2026-10-04", "Old focus"), ("2026-10-05", "2026-10-11", "Ship the ritual"),
+                                   ("2026-10-19", "2026-10-25", "Later")):
+        res = client.post("/reviews", headers=auth_headers,
+                          json={**WEEK, "start_date": start, "end_date": end, "intentions": intentions})
         assert res.status_code == 200
 
     stats = _stats(client, auth_headers, period_type="weekly")

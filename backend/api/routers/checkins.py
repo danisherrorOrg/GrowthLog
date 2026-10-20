@@ -42,7 +42,7 @@ class CheckInAnswers(BaseModel):
 
 class TaskCheckInModel(BaseModel):
     task_name: str = Field(..., max_length=300)
-    check_in_number: Optional[int] = Field(1)
+    check_in_number: Optional[int] = Field(1, ge=1, le=99)
     mode: Optional[str] = Field("full", max_length=20)   # "full" | "quick"
     answers: Optional[CheckInAnswers] = None
     # Quick-mode fields
@@ -63,7 +63,7 @@ class TaskCheckInModel(BaseModel):
 
 class TaskCheckInUpdateModel(BaseModel):
     task_name: Optional[str] = Field(None, max_length=300)
-    check_in_number: Optional[int] = None
+    check_in_number: Optional[int] = Field(None, ge=1, le=99)
     mode: Optional[str] = Field(None, max_length=20)
     answers: Optional[CheckInAnswers] = None
     quick_most_important: Optional[str] = Field(None, max_length=2000)

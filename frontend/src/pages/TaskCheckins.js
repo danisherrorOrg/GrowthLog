@@ -233,6 +233,7 @@ export default function TaskCheckins() {
 
   const handleSave = async () => {
     if (!taskName.trim()) return toast.error('Please enter a task name');
+    if (!Number.isInteger(checkInNum) || checkInNum < 1 || checkInNum > 99) return toast.error('Check-in number must be between 1 and 99');
     setSaving(true);
     try {
       const payload = {

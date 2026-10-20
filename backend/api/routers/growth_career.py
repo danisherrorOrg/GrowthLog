@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     SkillModel, CourseModel, FailureLogEntryModel,
     SkillsGapModel, FeedbackModel,
@@ -78,6 +78,7 @@ def get_courses(current_user=Depends(get_current_user)):
 @router.post("/courses")
 def create_course(data: CourseModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_at})
     doc = {"user_id": uid, "title": data.title, "provider": data.provider or "",
            "hours_spent": data.hours_spent or 0.0, "status": data.status or "in_progress",
            "what_learned": data.what_learned or "", "started_at": data.started_at or "",
@@ -89,6 +90,7 @@ def create_course(data: CourseModel, current_user=Depends(get_current_user)):
 @router.put("/courses/{item_id}")
 def update_course(item_id: str, data: CourseModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_at})
     result = db.courses.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"title": data.title, "provider": data.provider or "",
@@ -120,6 +122,7 @@ def get_failures(current_user=Depends(get_current_user)):
 @router.post("/failures")
 def create_failure(data: FailureLogEntryModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {"user_id": uid, "date": data.date or utcnow().strftime("%Y-%m-%d"),
            "what_happened": data.what_happened, "lesson": data.lesson or "",
            "domain": data.domain or "", "created_at": utcnow()}
@@ -130,6 +133,7 @@ def create_failure(data: FailureLogEntryModel, current_user=Depends(get_current_
 @router.put("/failures/{item_id}")
 def update_failure(item_id: str, data: FailureLogEntryModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.failure_log.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {"date": data.date or "", "what_happened": data.what_happened,

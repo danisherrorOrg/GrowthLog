@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, EmailStr, Field
+from pydantic import BaseModel, field_validator, model_validator, EmailStr, Field
 from typing import Optional, List, Literal
 import re
 from zoneinfo import ZoneInfo
@@ -29,6 +29,11 @@ def _iso_date(v):
 def _optional_iso_date(v):
     """Like _iso_date, but an empty value is kept as sent ("" or None) so stored data keeps its shape."""
     return _iso_date(v) if v else v
+
+def _check_order(start, end, message):
+    """Both dates are YYYY-MM-DD (or empty), so string order is date order."""
+    if start and end and end < start:
+        raise ValueError(message)
 
 def _required_iso_date(v):
     if not v:
@@ -305,6 +310,11 @@ class HabitGraveyardModel(BaseModel):
     abandoned_at: Optional[str] = Field("", max_length=30)
     _check_dates = field_validator("started_at", "abandoned_at")(_optional_iso_date)
 
+    @model_validator(mode="after")
+    def abandoned_after_start(self):
+        _check_order(self.started_at, self.abandoned_at, "The abandoned date can't be before the start date")
+        return self
+
     @field_validator("habit")
     @classmethod
     def habit_not_empty(cls, v):
@@ -519,6 +529,11 @@ class CourseModel(BaseModel):
     completed_at: Optional[str] = Field("", max_length=30)
     _check_dates = field_validator("started_at", "completed_at")(_optional_iso_date)
 
+    @model_validator(mode="after")
+    def completed_after_start(self):
+        _check_order(self.started_at, self.completed_at, "The completion date can't be before the start date")
+        return self
+
     @field_validator("title")
     @classmethod
     def title_not_empty(cls, v):
@@ -688,6 +703,11 @@ class ReviewModel(BaseModel):
     intentions: Optional[str] = Field("", max_length=5000)
     tags: Optional[List[str]] = []
     _check_dates = field_validator("start_date", "end_date")(_required_iso_date)
+
+    @model_validator(mode="after")
+    def end_after_start(self):
+        _check_order(self.start_date, self.end_date, "The end date can't be before the start date")
+        return self
 
     @field_validator("rating")
     @classmethod

@@ -78,3 +78,18 @@ test('logs screen time using a quick-pick category', async () => {
   ));
   expect(API.get).not.toHaveBeenCalledWith('/insights/weaknesses');
 });
+
+test('a habit that ends before it starts is stopped before saving', async () => {
+  const { container } = render(<Insights />);
+  fireEvent.click(screen.getByRole('button', { name: /Habit Graveyard/ }));
+  fireEvent.click((await screen.findAllByRole('button', { name: /Log/ }))[0]);
+
+  fireEvent.change(screen.getByPlaceholderText('e.g. Cold showers…'), { target: { value: 'Running' } });
+  const [started, abandoned] = container.querySelectorAll('.modal input[type="date"]');
+  fireEvent.change(started, { target: { value: '2026-05-01' } });
+  fireEvent.change(abandoned, { target: { value: '2026-04-01' } });
+  fireEvent.click(screen.getByRole('button', { name: /Lay to rest|Save|Bury|Add/ }));
+
+  expect(toast.error).toHaveBeenCalledWith("The abandoned date can't be before the start date");
+  expect(API.post).not.toHaveBeenCalled();
+});

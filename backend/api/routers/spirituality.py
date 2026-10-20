@@ -5,7 +5,7 @@ from pymongo import DESCENDING
 from core.database import db
 from utils.cache import utcnow
 from utils.helpers import serialize_list
-from api.deps import get_current_user
+from api.deps import get_current_user, reject_future_dates
 from models.schemas import (
     MeaningLogModel, TravelLogModel, BucketListModel
 )
@@ -36,6 +36,7 @@ def get_meaning_logs(current_user=Depends(get_current_user)):
 @router.post("/meaning")
 def create_meaning_log(data: MeaningLogModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     doc = {
         "user_id": uid,
         "date": data.date or utcnow().strftime("%Y-%m-%d"),
@@ -50,6 +51,7 @@ def create_meaning_log(data: MeaningLogModel, current_user=Depends(get_current_u
 @router.put("/meaning/{item_id}")
 def update_meaning_log(item_id: str, data: MeaningLogModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Date": data.date})
     result = db.meaning_log.update_one(
         {"_id": ObjectId(item_id), "user_id": uid},
         {"$set": {
@@ -130,6 +132,7 @@ def get_bucket_list(current_user=Depends(get_current_user)):
 @router.post("/bucket-list")
 def create_bucket_list_item(data: BucketListModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_date})
     doc = {
         "user_id": uid,
         "title": data.title,
@@ -146,6 +149,7 @@ def create_bucket_list_item(data: BucketListModel, current_user=Depends(get_curr
 @router.put("/bucket-list/{item_id}")
 def update_bucket_list_item(item_id: str, data: BucketListModel, current_user=Depends(get_current_user)):
     uid = _uid(current_user)
+    reject_future_dates(current_user, {"Completion date": data.completed_date})
     update_data = {
         "title": data.title,
         "description": data.description or "",

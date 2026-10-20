@@ -89,11 +89,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * `POST /insights/time-entries` saved 500 hours, −8 hours and the date `"not-a-date"`. The 24-hour limit existed only in the browser form.
     * **Done:** Time Tracking, Screen Time and creative-session hours must be more than 0 and at most 24, and the API rejects a Time Tracking or Screen Time entry that would push a day past 24 hours (an edit doesn't count its own old hours). The form now counts hours already saved that day too ("Only 4h left on this day"). Every date-only field in `models/schemas.py`, plus to-do due dates and check-in dates, must be a real `YYYY-MM-DD` date; empty optional dates are still allowed and kept as sent. Health numbers (calories, macros, water, workout minutes, sets, reps, weights) can't be negative, and nutrition quality is 1–10. Entries saved before this (like the `"not-a-date"` one) are left as they are. Tests in `test_insight_validation.py` and `Insights.test.js`.
 
-18. **No range or order checks on several forms**
-    * Habit Graveyard saved a habit that ended a month before it started.
-    * Procrastination saved an entry dated Jan 1, 2030.
-    * Task Check-ins saved check-in number −3, shown as "Check-in #-3".
-    * **Fix:** validate in the API (end ≥ start, no future dates where they make no sense, positive check-in numbers) and mirror it in the forms.
+18. ✅ **Completed — No range or order checks on several forms**
+    * Habit Graveyard saved a habit that ended a month before it started, Procrastination saved an entry dated Jan 1, 2030, and Task Check-ins saved check-in number −3.
+    * **Done:** the API rejects an end date before its start date (Habit Graveyard, courses, reviews) and a future date on things that already happened: procrastination, triggers, bad decisions, regrets, life lessons, failures, meaning logs, abandoned habits, and completion dates on courses and bucket-list items. "Future" means after today in the user's timezone (`reject_future_dates` in `api/deps.py`). Planned dates (bucket-list targets, course start dates, goal deadlines) can still be in the future. Check-in numbers must be 1–99, which matches the form. The forms cap those date pickers at today, the end-date pickers can't go before the start date, and Habit Graveyard, Courses and Task Check-ins check before saving. Errors that involve two fields now read as a plain sentence ("The abandoned date can't be before the start date.") instead of "Body: Value error, …". Tests in `test_range_checks.py` and `Insights.test.js`.
 
 19. ✅ **Completed — More of the UTC-date bug (see #9)**
     * Mind Garden times were 6 hours too old, and several date pickers defaulted to the UTC day.

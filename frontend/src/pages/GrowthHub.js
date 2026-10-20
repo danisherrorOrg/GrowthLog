@@ -503,7 +503,7 @@ export default function GrowthHub() {
       {flModal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && setFlModal(false)}><div className="modal">
         <div className="modal-header"><h3>{flEdit ? 'Edit Entry' : 'Log a Failure'}</h3><button className="modal-close" onClick={() => setFlModal(false)}>✕</button></div>
         <div className="grid-2" style={{ gap: 12 }}>
-          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" className="form-input" value={flForm.date} onChange={e => setFlForm({ ...flForm, date: e.target.value })} /></div>
+          <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input maxLength={200} type="date" max={localDate()} className="form-input" value={flForm.date} onChange={e => setFlForm({ ...flForm, date: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label><input maxLength={200} className="form-input" value={flForm.domain} onChange={e => setFlForm({ ...flForm, domain: e.target.value })} placeholder="Work / Health / Relationships…" /></div>
         </div>
         <div className="form-group" style={{ marginTop: 12 }}><label className="form-label">What happened?</label><textarea maxLength={2000} className="form-textarea" value={flForm.what_happened} onChange={e => setFlForm({ ...flForm, what_happened: e.target.value })} placeholder="Be specific and honest…" style={{ minHeight: 90 }} /></div>
