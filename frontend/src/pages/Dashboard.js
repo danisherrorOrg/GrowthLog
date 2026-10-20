@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
 import toast from 'react-hot-toast';
-import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
+import { format, subDays, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, parseISO } from 'date-fns';
 import { getErrorMessage } from '../utils/errors';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -174,7 +174,7 @@ export default function Dashboard() {
           <div style={{ marginBottom: 28 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
               <span>Behavioral Insights ✦</span>
-              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>AI-generated patterns from your logs</span>
+              <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Patterns spotted in your logs</span>
             </div>
             <div className="wrap-on-mobile" style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
               {data.insights.map((insight, i) => (
@@ -463,7 +463,9 @@ export default function Dashboard() {
                   <div key={cat.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
                       <span>{cat.icon} {cat.name}</span>
-                      <span style={{ color: 'rgba(13,13,13,0.45)' }}>{cat.count} / {data.total_logs} days</span>
+                      <span style={{ color: 'rgba(13,13,13,0.45)' }}>
+                        {data.total_logs > 0 ? `${cat.count} / ${data.total_logs} days` : 'No days logged yet'}
+                      </span>
                     </div>
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${cat.percentage}%`, background: cat.color }} />
@@ -517,6 +519,11 @@ export default function Dashboard() {
               <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)', fontFamily: 'DM Sans' }}>Time & Mood Distribution</span>
             </div>
             <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
+              {(data?.total_logs || 0) === 0 ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(13,13,13,0.3)', fontSize: 14, textAlign: 'center' }}>
+                  Log a few days to see your life balance ✦
+                </div>
+              ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data?.radar_data || []}>
                   <PolarGrid stroke="rgba(13,13,13,0.05)" />
@@ -540,6 +547,7 @@ export default function Dashboard() {
                   <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', fontSize: 12 }} />
                 </RadarChart>
               </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>

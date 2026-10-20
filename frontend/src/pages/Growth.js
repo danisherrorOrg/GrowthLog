@@ -70,14 +70,6 @@ export default function Growth() {
     .slice(0, 10)
     .map(([name, count]) => ({ name, count }));
 
-  const catMoodData = (data?.category_consistency || []).map(cat => ({
-    name: cat.name,
-    icon: cat.icon,
-    color: cat.color,
-    avgMood: cat.avg_mood || 5,
-    consistency: cat.percentage,
-  })).sort((a, b) => b.avgMood - a.avgMood);
-
   const weeklyData = (data?.weekly_summary || []).map(w => ({
     week: w.week,
     logs: w.logs,
@@ -291,7 +283,9 @@ export default function Growth() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 18 }}>{cat.icon}</span>
                         <span style={{ fontWeight: 500 }}>{cat.name}</span>
-                        <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>avg mood {cat.avg_mood}/10</span>
+                        {cat.avg_mood != null && (
+                          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.4)' }}>avg mood {cat.avg_mood}/10</span>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ textAlign: 'right' }}>

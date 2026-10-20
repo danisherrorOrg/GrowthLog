@@ -74,6 +74,8 @@ export default function App() {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/u/:userId" element={<PublicProfile />} />
+          {/* Outside PrivateRoute: the link may be opened on a device that isn't signed in */}
+          <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -109,7 +111,6 @@ export default function App() {
             <Route path="growth" element={<Growth />} />
 
             <Route path="profile" element={<Profile />} />
-            <Route path="verify/:token" element={<VerifyEmail />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

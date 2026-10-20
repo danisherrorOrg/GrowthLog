@@ -62,18 +62,28 @@ export default function GoalDetail() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ category_id: '', title: '', description: '', deadline: '' });
 
-  const load = async () => {
+  // isStale tells a superseded load (StrictMode's double effect, or a newer goalId) to do nothing
+  const load = async (isStale = () => false) => {
     try {
       const [g, c] = await Promise.all([API.get(`/goals/${goalId}`), API.get('/categories')]);
+      if (isStale()) return;
       setGoal(g.data);
       setCategories(c.data);
-    } catch (e) { toast.error(getErrorMessage(e, 'Failed to load goal')); navigate('/goals'); }
-
-    finally { setLoading(false); }
-
+    } catch (e) {
+      if (isStale()) return;
+      // A fixed id keeps a repeated failure to one toast
+      toast.error(getErrorMessage(e, 'Failed to load goal'), { id: 'goal-load-error' });
+      navigate('/goals');
+    } finally {
+      if (!isStale()) setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [goalId]);
+  useEffect(() => {
+    let stale = false;
+    load(() => stale);
+    return () => { stale = true; };
+  }, [goalId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cat = categories.find(c => c.id === goal?.category_id);
 

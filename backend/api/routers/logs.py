@@ -57,10 +57,12 @@ def create_log(request: Request, data: DailyLogModel, current_user=Depends(get_c
 
     existing = db.daily_logs.find_one({"user_id": uid, "date": today})
     entries = [e.model_dump() for e in data.entries]
+    # Blank gratitude lines are just unfilled inputs, not something to store
+    gratitude = [g.strip() for g in (data.gratitude or []) if g and g.strip()]
     if existing:
         db.daily_logs.update_one({"_id": existing["_id"]},
             {"$set": {"entries": entries, "highlight": data.highlight, "overall_rating": data.overall_rating,
-                      "gratitude": data.gratitude or [], "regret": data.regret or "",
+                      "gratitude": gratitude, "regret": data.regret or "",
                       "utc_date": utc_today, "local_date": today}})
         cache_invalidate_prefix(f"dashboard:{uid}:")
         cache_invalidate_exact(f"stats:{uid}")
@@ -71,7 +73,7 @@ def create_log(request: Request, data: DailyLogModel, current_user=Depends(get_c
     result = db.daily_logs.insert_one({
         "user_id": uid, "date": today, "local_date": today, "utc_date": utc_today, "entries": entries,
         "highlight": data.highlight, "overall_rating": data.overall_rating,
-        "gratitude": data.gratitude or [], "regret": data.regret or "",
+        "gratitude": gratitude, "regret": data.regret or "",
         "created_at": utcnow(),
     })
     

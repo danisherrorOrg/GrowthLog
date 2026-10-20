@@ -78,3 +78,17 @@ def test_category_templates(client, auth_headers):
     assert resp.status_code == 200
     resp = client.get("/categories/templates", headers=auth_headers)
     assert not any(t["id"] == t_id for t in resp.json())
+
+
+def test_delete_missing_category_template_is_404(client, auth_headers, other_user_headers):
+    """Deleting a template that doesn't exist (or isn't yours) reports it and logs nothing."""
+    resp = client.delete("/categories/templates/000000000000000000000000", headers=auth_headers)
+    assert resp.status_code == 404
+    resp = client.delete("/categories/templates/not-an-id", headers=auth_headers)
+    assert resp.status_code == 404
+
+    t_id = client.post("/categories/templates", headers=auth_headers,
+                       json={"name": "Mine", "icon": "📋", "color": "#ccc", "description": ""}).json()["id"]
+    assert client.delete(f"/categories/templates/{t_id}", headers=other_user_headers).status_code == 404
+    assert client.delete(f"/categories/templates/{t_id}", headers=auth_headers).status_code == 200
+    assert client.delete(f"/categories/templates/{t_id}", headers=auth_headers).status_code == 404
