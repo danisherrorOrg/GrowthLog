@@ -61,9 +61,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * A goal with a 2020 deadline was saved and immediately shown as "2484d overdue". The deadline is required but not marked as required, and leaving it empty only gives "Fill all required fields".
     * **Done:** goal deadlines must be a real `YYYY-MM-DD` date, and creating, editing or extending a goal rejects a day before today in the user's timezone (422). Editing an overdue goal still works as long as its deadline isn't moved to another past day. The forms mark required fields, set `min` on the date pickers, and name the missing field instead of "Fill all required fields". Tests in `test_goals.py` and `Goals.test.js`; older tests that used 2025 deadlines now use 2099.
 
-13. **No 404 page**
-    * `frontend/src/App.js` has no catch-all route, so an unknown URL renders a blank page.
-    * **Fix:** add a `*` route with a "Page not found" view and a link to the dashboard.
+13. ✅ **Completed — No 404 page**
+    * `frontend/src/App.js` had no catch-all route, so an unknown URL rendered a blank page.
+    * **Done:** a `*` route inside the signed-in layout shows `pages/NotFound.js` ("Page not found", the URL that was asked for, and a link to the dashboard), with the sidebar still there. Signed-out visitors are sent to login as before. Vercel and nginx already serve the app for every path, so no server change was needed. Test in `NotFound.test.js`.
 
 14. **History page overflows on phones**
     * At 380px wide, `/history` is 646px wide: the filter sidebar and the calendar sit side by side instead of stacking. Every other page fits.
