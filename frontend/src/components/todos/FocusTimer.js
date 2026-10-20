@@ -5,6 +5,12 @@ const PRESETS = [
   { label: '5m', sec: 300 },
 ];
 
+export function formatClock(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 export function playZenChime() {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -43,7 +49,7 @@ export function playZenChime() {
   }
 }
 
-// Pomodoro widget at the top of the Action Board; the timer state lives in pages/Todos.js
+// Pomodoro widget at the top of the Action Board; the session state lives in useFocusSession.js
 export default function FocusTimer({
   focusTodo, timerSeconds, timerDuration, isTimerRunning,
   onPickDuration, onToggle, onReset, onComplete, onClear,
@@ -163,11 +169,7 @@ export default function FocusTimer({
                 alignItems: 'baseline',
                 gap: 8,
               }}>
-                {(() => {
-                  const m = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-                  const s = (timerSeconds % 60).toString().padStart(2, '0');
-                  return `${m}:${s}`;
-                })()}
+                {formatClock(timerSeconds)}
                 <span style={{ fontSize: 12, fontWeight: 500, fontFamily: 'sans-serif', color: 'rgba(13,13,13,0.4)' }}>
                   / {timerDuration / 60}m
                 </span>

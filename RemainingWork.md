@@ -97,10 +97,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * Mind Garden times were 6 hours too old, and several date pickers defaulted to the UTC day.
     * **Done:** fixed by the timestamp offsets in #9. Every "today" default (Insight Lab, Health, Snapshots, Time Capsule, Growth Hub, Life Canvas, To-Dos, Manifestations, PDF export file name) now uses `localDate()` from `utils/dates.js`. Each one is computed when the form opens, so it doesn't go stale if the tab stays open overnight.
 
-20. **Leaving the To-Dos page ends a running focus session without warning**
-    * The elapsed time lives only in page memory (`Todos.js:28`), so it's lost on navigation or refresh and never recorded.
-    * Switching the timer preset while paused also resets the elapsed time with no warning.
-    * **Fix:** persist the running session (start time + task) so it survives navigation, and confirm before a preset change discards time.
+20. ✅ **Completed — Leaving the To-Dos page ended a running focus session**
+    * The elapsed time lived only in page memory, so it was lost on navigation or refresh and never recorded. Switching the timer preset also reset the countdown with no warning.
+    * **Done:** the session (task, preset, start time and time already banked) is saved in localStorage per user by `components/todos/useFocusSession.js`, and the countdown is worked out from the clock, so it keeps running across navigation and refreshes. If it ran out while you were away, the complete dialog opens on return with the countdown's time (not the time away). A saved session is dropped if its task was deleted or completed elsewhere. Changing the preset after the countdown has started asks first ("Restart the timer?"); time already focused still counts toward the task. Tests in `Todos.test.js`; checked in the browser across navigation, a refresh and the preset dialog.
 
 21. **Task Check-ins: "Quick (5 questions)" shows only 4 questions.**
 
