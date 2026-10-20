@@ -63,7 +63,7 @@ export default function BadDecisionsTab() {
 
       {modal && (<div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeModal()}><div className="modal">
         <div className="modal-header"><h3>{editing ? 'Edit Entry' : 'Log a Bad Decision'}</h3><button className="modal-close" onClick={closeModal}>✕</button></div>
-        <div className="grid-2" style={{ gap: 12 }}>
+        <div className="grid-2" style={{ gap: 12, marginBottom: 20 }}>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Date</label><input type="date" max={localDate()} className="form-input" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
           <div className="form-group" style={{ marginBottom: 0 }}><label className="form-label">Domain</label>
             <select className="form-input" value={form.domain} onChange={e => setForm({ ...form, domain: e.target.value })}>

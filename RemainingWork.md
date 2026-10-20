@@ -120,9 +120,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * Their buttons were cut off.
     * **Done:** the box already scrolled, but the buttons were at the end of it. A new `.modal-footer` class in `index.css` pins the button row to the bottom of the box while the fields scroll behind it. All eight Insight Lab forms use it, since they share the same button row. The modal's padding is now in `--modal-pad-y` / `--modal-pad-x` variables so the footer reaches the box's edges at every width. A side effect: phones under 480px now get the 20px/16px padding the stylesheet already asked for, which a `!important` rule had been overriding. Checked in the browser at 1414×719 (Trigger and Bad Decision, top and scrolled to the end) and at 380×700.
 
-26. **Smaller UI issues in Insight Lab**
-    * In the Bad Decision form, the Domain dropdown crowds the next label.
-    * The Weakness Map sliders use plain browser-blue styling, unlike the rest of the app.
+26. ✅ **Completed — Smaller UI issues in Insight Lab**
+    * In the Bad Decision form, the Domain dropdown crowded the next label. The Weakness Map sliders used plain browser-blue styling, unlike the rest of the app.
+    * **Done:** the two-column rows in the Bad Decision and Weakness Map forms now leave the usual 20px before the next field. The Weakness Map's Severity and Frequency sliders use the app's `.rating-slider` style (sage fill up to the value, dark thumb) and have accessible names. `.rating-slider` also gets a styled thumb in Firefox and a gold outline on keyboard focus, which applies to every slider using it. Checked in the browser at 1400px.
 
 ### Smaller issues and gaps
 

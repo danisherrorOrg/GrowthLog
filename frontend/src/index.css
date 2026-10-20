@@ -539,6 +539,26 @@ h4 {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.rating-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.rating-slider:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.rating-slider:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .rating-val {
   font-family: 'Fraunces', serif;
   font-size: 20px;
