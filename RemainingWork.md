@@ -116,9 +116,9 @@ Not yet tested: Snapshots and Time Capsule, Lotus Blossom, the weekly review rit
     * Keyboard and screen-reader users couldn't select them.
     * **Done:** the verdict cards are now a labelled radio group built on real radio inputs, so Tab reaches the group and the arrow keys change the choice. The stat cards above the list (Total / Continued / Paused / Dropped), which filter it, had the same problem and are now buttons that report whether their filter is on. Both get a gold focus outline on keyboard focus. Added a shared `.sr-only` class in `index.css`. Tests in `TaskCheckins.test.js`.
 
-25. **"Log a Trigger" and "Log a Bad Decision" forms are taller than the window**
-    * Their buttons are cut off.
-    * **Fix:** make the modal body scroll and keep the buttons in a fixed footer.
+25. ✅ **Completed — "Log a Trigger" and "Log a Bad Decision" forms were taller than the window**
+    * Their buttons were cut off.
+    * **Done:** the box already scrolled, but the buttons were at the end of it. A new `.modal-footer` class in `index.css` pins the button row to the bottom of the box while the fields scroll behind it. All eight Insight Lab forms use it, since they share the same button row. The modal's padding is now in `--modal-pad-y` / `--modal-pad-x` variables so the footer reaches the box's edges at every width. A side effect: phones under 480px now get the 20px/16px padding the stylesheet already asked for, which a `!important` rule had been overriding. Checked in the browser at 1414×719 (Trigger and Bad Decision, top and scrolled to the end) and at 380×700.
 
 26. **Smaller UI issues in Insight Lab**
     * In the Bad Decision form, the Domain dropdown crowds the next label.

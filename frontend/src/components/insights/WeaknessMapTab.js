@@ -80,7 +80,7 @@ export default function WeaknessMapTab() {
           </div>
         </div>
         <div className="form-group"><label className="form-label">Guard System (optional)</label><textarea maxLength={1000} className="form-textarea" value={form.guard_system} onChange={e => setForm({ ...form, guard_system: e.target.value })} placeholder="What rule, system, or pre-commitment helps you resist this?" style={{ minHeight: 80 }} /><div style={{ fontSize: 11, color: 'rgba(13,13,13,0.4)', marginTop: 4 }}>Markdown supported</div></div>
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Map Weakness'}</button></div>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12 }}><button className="btn btn-outline" onClick={closeModal} style={{ flex: 1 }}>Cancel</button><button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#b87333', borderColor: '#b87333' }}>{saving ? 'Saving…' : editing ? 'Save Changes' : 'Map Weakness'}</button></div>
       </div></div>)}
 
       <PreviewModal item={preview} onClose={() => setPreview(null)} icon="🧩" iconBg="rgba(184,115,51,0.08)" titleColor="#b87333" title={preview?.weakness} subtitle={preview && `Severity ${preview.severity}/5 · Frequency ${preview.frequency}/5`} body={preview && (<div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

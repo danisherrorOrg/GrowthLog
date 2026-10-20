@@ -212,7 +212,7 @@ export default function HoursLogTab({ config }) {
             <MultiRowEditor rows={rows} setRows={setRows} keyLabel={keyField} keyPlaceholder={config.keyPlaceholder} color={color} />
           </>
         )}
-        <div className="stack-on-mobile" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+        <div className="stack-on-mobile modal-footer" style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button className="btn btn-outline" onClick={() => setModal(false)} style={{ flex: 1 }}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>{saving ? 'Saving…' : editEntry ? 'Save Changes' : config.logLabel}</button>
         </div>

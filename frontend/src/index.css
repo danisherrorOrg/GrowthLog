@@ -562,14 +562,28 @@ h4 {
 }
 
 .modal {
+  --modal-pad-y: clamp(24px, 5vw, 40px);
+  --modal-pad-x: clamp(24px, 5vw, 40px);
   background: white;
   border-radius: 20px;
-  padding: clamp(24px, 5vw, 40px);
+  padding: var(--modal-pad-y) var(--modal-pad-x);
   width: 100%;
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.25s ease;
+}
+
+/* A modal's action buttons: pinned to the bottom of the box while a tall form
+   scrolls behind them. The negative margins stretch it to the box's edges. */
+.modal-footer {
+  position: sticky;
+  bottom: calc(-1 * var(--modal-pad-y));
+  margin: 0 calc(-1 * var(--modal-pad-x)) calc(-1 * var(--modal-pad-y));
+  padding: 16px var(--modal-pad-x) var(--modal-pad-y);
+  background: white;
+  border-top: 1px solid rgba(13, 13, 13, 0.06);
+  z-index: 1;
 }
 
 .modal-sm { max-width: 400px; }
@@ -1238,7 +1252,9 @@ h4 {
   }
 
   .modal {
-    padding: 24px 20px !important;
+    --modal-pad-y: 24px;
+    --modal-pad-x: 20px;
+    padding: var(--modal-pad-y) var(--modal-pad-x) !important;
     border-radius: 20px 20px 0 0 !important;
     max-height: 92vh !important;
     max-width: 100% !important;
@@ -1706,7 +1722,8 @@ h4 {
   }
 
   .modal {
-    padding: 20px 16px;
+    --modal-pad-y: 20px;
+    --modal-pad-x: 16px;
   }
 
   .stat-card .stat-value {
