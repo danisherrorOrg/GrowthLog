@@ -116,12 +116,22 @@ async def server_timeout_handler(request, exc):
     return JSONResponse(status_code=503, content={"detail": "Service unavailable: Database connection timeout. Please try again later."})
 
 from fastapi.exceptions import RequestValidationError
+
+def _email_error_message(err):
+    """A readable message for an address the email validator rejected (it's shown as a toast)."""
+    reason = (err.get("ctx") or {}).get("reason", "")
+    if "special-use or reserved name" in reason:
+        return "Please use a real email address. That domain is reserved and can't receive email."
+    return f"Please enter a valid email address. {reason}".strip()
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     messages = []
     for err in exc.errors():
         field = err.get("loc", [""])[-1]
-        if err.get("type", "").startswith("string_too_long"):
+        if field == "email" and err.get("msg", "").startswith("value is not a valid email address"):
+            messages.append(_email_error_message(err))
+        elif err.get("type", "").startswith("string_too_long"):
             limit = err.get("ctx", {}).get("max_length", "its limit")
             field_name = field.replace('_', ' ').capitalize() if isinstance(field, str) else field
             messages.append(f"'{field_name}' must be at most {limit} characters.")

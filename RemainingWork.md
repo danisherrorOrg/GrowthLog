@@ -73,9 +73,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
     * They overlapped the "Resend Link" button on the email banner, the "Close" button on To-Dos, and success toasts.
     * **Done:** on desktop the buttons now sit in a 64px top bar with a solid background (like the phone layout already had), and the content area reserves room for it, so nothing sits or scrolls under them. The bar starts at the sidebar's edge and spans the full width when the sidebar is hidden; the "show sidebar" button stays clickable above it. Toasts start 72px from the top, below the bar. Checked at 1414px, 1000px and 380px.
 
-16. **Sign-up accepts emails in the browser that the API rejects**
-    * The form shows "✓ Looks good" for an address like `name@example.test`, and the API's raw Pydantic error is shown as the toast.
-    * **Fix:** show a friendly message for 422 email errors.
+16. ✅ **Completed — Sign-up showed a raw error for emails the API rejects**
+    * The form shows "✓ Looks good" for an address like `name@example.test`, and the toast read "Email: value is not a valid email address: The part after the @-sign is a special-use or reserved name…".
+    * **Done:** the API's validation handler (`backend/main.py`) now words email errors for people: reserved domains get "Please use a real email address. That domain is reserved and can't receive email.", and other bad addresses get "Please enter a valid email address." plus the validator's reason. This covers every endpoint that takes an email (sign-up, login, forgot password). Test: `test_invalid_email_gives_a_readable_message`.
 
 ### Found in a second browser pass on 2026-10-20
 

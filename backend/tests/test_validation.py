@@ -333,3 +333,16 @@ def test_category_theme_is_validated(client, auth_headers):
 
     # Rejected updates leave the saved theme alone
     assert client.get("/auth/me", headers=auth_headers).json()["category_colors"] == colors
+
+
+def test_invalid_email_gives_a_readable_message(client):
+    # Reserved domains (like .test) pass the browser's check but the API rejects them
+    resp = client.post("/auth/register", json={"name": "Reserved", "email": "name@example.test", "password": "password123"})
+    assert resp.status_code == 422
+    assert resp.json()["detail"] == "Please use a real email address. That domain is reserved and can't receive email."
+
+    resp = client.post("/auth/register", json={"name": "Dots", "email": "a@b..com", "password": "password123"})
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert detail.startswith("Please enter a valid email address.")
+    assert "value is not a valid email address" not in detail
