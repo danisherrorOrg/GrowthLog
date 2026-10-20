@@ -37,10 +37,9 @@ Already done and no longer tracked here: timeline search escapes regex input, ba
 
 ### Found in a browser walkthrough on 2026-10-20
 
-7. **🔴 Timeline search shows other users' private data**
-   * `backend/api/routers/timeline.py:66`, `:135`, `:210`. When `q` is set, the code replaces the `$or` that holds the user filter with the search conditions, so the search runs across every user's daily logs, goals and manifestations.
-   * Reproduced: a second account searching `/timeline?q=habits` got the first account's full daily log text. All 264 tests pass, so nothing covers this.
-   * **Fix:** combine the user filter and the search with `$and` instead of overwriting `$or`, and add a test that one user's timeline search never returns another user's data. (`GET /search` is scoped correctly.)
+7. ✅ **Completed — Timeline search showed other users' private data**
+   * `backend/api/routers/timeline.py`. When `q` was set, the code replaced the `$or` that held the user filter with the search conditions, so the search ran across every user's daily logs, goals and manifestations.
+   * **Done:** the owner check is now a separate `user_id: {$in: [...]}` filter shared by every timeline query, so the search `$or` can't replace it. It also no longer matches documents with no `user_id`. `test_timeline_search_never_returns_other_users_data` covers logs, goals, manifestations and snapshots.
 
 8. **One-command Docker setup fails**
    * `docker compose up --build` stops at `npm ci` in the frontend image: `package-lock.json` is out of sync with `package.json` (`Missing: yaml@2.9.1 from lock file`).

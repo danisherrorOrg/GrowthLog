@@ -38,8 +38,10 @@ def get_timeline(
         cat_list = category_ids.split(",")
 
     # Fetch categories for enrichment with dual-type support
+    # user_id may be stored as a string or an ObjectId. Keep this filter on its own key:
+    # the search below adds a "$or", which must not replace the owner check.
     uid_obj = ObjectId(uid) if ObjectId.is_valid(uid) else None
-    uid_query = {"user_id": {"$in": [uid, uid_obj]}}
+    uid_query = {"user_id": {"$in": [uid, uid_obj] if uid_obj else [uid]}}
     db_categories = list(db.categories.find(uid_query))
     logger.debug(f"uid={uid}, uid_obj={uid_obj}, found_cats={len(db_categories)}")
     for c in db_categories:
@@ -53,10 +55,7 @@ def get_timeline(
     } for c in db_categories}
 
     # 1. Daily Logs
-    log_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    log_query = dict(uid_query)
     if start_date or end_date:
         log_query["date"] = {}
         if start_date: log_query["date"]["$gte"] = start_date
@@ -127,10 +126,7 @@ def get_timeline(
         })
 
     # 2. Goals
-    goal_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    goal_query = dict(uid_query)
     if q:
         goal_query["$or"] = [
             {"title": {"$regex": escaped_q, "$options": "i"}},
@@ -202,10 +198,7 @@ def get_timeline(
                 })
 
     # 3. Manifestations
-    manif_query = {"$or": [
-        {"user_id": uid},
-        {"user_id": ObjectId(uid) if ObjectId.is_valid(uid) else None}
-    ]}
+    manif_query = dict(uid_query)
     if q:
         manif_query["$or"] = [
             {"vision": {"$regex": escaped_q, "$options": "i"}},
@@ -259,7 +252,7 @@ def get_timeline(
  
     # 4. Snapshots
     if not cat_list: # Snapshots don't have categories in schema yet
-        snap_query = {"user_id": uid}
+        snap_query = dict(uid_query)
         if start_date or end_date:
             snap_query["date"] = {}
             if start_date: snap_query["date"]["$gte"] = start_date
