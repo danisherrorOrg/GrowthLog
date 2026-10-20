@@ -111,3 +111,57 @@ test('every nav item has a keyboard shortcut', () => {
   fireEvent.keyDown(document.body, { key: 'y' });
   expect(screen.getByRole('link', { name: 'Growth Analytics' })).toHaveClass('active');
 });
+
+test('reopening the desktop sidebar moves focus into it', () => {
+  renderLayout();
+  fireEvent.click(screen.getByRole('button', { name: 'Hide sidebar' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Show sidebar' }));
+  expect(screen.getByRole('button', { name: 'Hide sidebar' })).toHaveFocus();
+});
+
+test('loading the page does not steal focus into the sidebar', () => {
+  renderLayout();
+  expect(document.body).toHaveFocus();
+});
+
+test('the open phone drawer is a modal: the page behind is inert and does not scroll', () => {
+  window.innerWidth = 390;
+  renderLayout();
+  const main = document.querySelector('main');
+  fireEvent.click(screen.getByRole('button', { name: 'More pages' }));
+
+  expect(screen.getByRole('dialog', { name: 'Menu' })).toBe(sidebar());
+  expect(main).toHaveAttribute('inert');
+  expect(document.querySelector('.top-navbar')).toHaveAttribute('inert');
+  expect(document.body.style.overflow).toBe('hidden');
+
+  fireEvent.keyDown(document.body, { key: 'Escape' });
+  expect(main).not.toHaveAttribute('inert');
+  expect(document.body.style.overflow).toBe('');
+  expect(sidebar()).not.toHaveAttribute('role');
+});
+
+test('the desktop sidebar is not a modal', () => {
+  renderLayout();
+  expect(sidebar()).not.toHaveAttribute('role');
+  expect(document.querySelector('main')).not.toHaveAttribute('inert');
+});
+
+test('the current page link is scrolled into view', () => {
+  const box = (top, height) => ({ top, bottom: top + height, height, left: 0, right: 240, width: 240, x: 0, y: top });
+  const spy = jest.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function rect() {
+    if (this.classList.contains('sidebar-nav')) return box(100, 500);
+    if (this.classList.contains('active')) return box(1400, 44);
+    return box(0, 0);
+  });
+  renderLayout('/history');
+  // Scrolled just enough for the link's bottom (1444) to meet the nav's bottom (600)
+  expect(document.querySelector('.sidebar-nav').scrollTop).toBe(844);
+  spy.mockRestore();
+});
+
+test('nav groups are headings and the bell has a label', () => {
+  renderLayout();
+  expect(screen.getByRole('heading', { name: 'Daily Actions' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
+});
