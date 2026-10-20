@@ -245,7 +245,7 @@ export default function Thoughts() {
   return (
     <div>
       <div className="page-header">
-        <h2>Mind Garden 🪴</h2>
+        <h1>Mind Garden 🪴</h1>
         <p>A stream of consciousness for your passing thoughts.</p>
       </div>
 

@@ -663,8 +663,11 @@ export default function LotusBlossom() {
             >
               ← Back to List
             </button>
+            {/* The title is an editable field, so the page heading is for screen readers only */}
+            <h1 className="sr-only">Lotus Blossom: {blossomData?.title || 'Untitled Blossom'}</h1>
             <input
               type="text"
+              aria-label="Blossom title"
               value={blossomData?.title || ''}
               onChange={handleTitleChange}
               placeholder="Untitled Blossom"

@@ -209,7 +209,7 @@ export default function LifeCanvas() {
   return (
     <div>
       <div className="page-header">
-        <h2>Life Canvas 🎨</h2>
+        <h1>Life Canvas 🎨</h1>
         <p>Explore your creative side, capture the magic in your travels, and design the life you've always wanted to live.</p>
       </div>
 

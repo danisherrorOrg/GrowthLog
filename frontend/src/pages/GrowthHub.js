@@ -208,7 +208,7 @@ export default function GrowthHub() {
   return (
     <div>
       <div className="page-header">
-        <h2>Growth Hub 🚀</h2>
+        <h1>Growth Hub 🚀</h1>
         <p>Track skills, document learning, log failures, and capture the feedback that shapes your career.</p>
       </div>
 

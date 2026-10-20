@@ -165,3 +165,84 @@ test('nav groups are headings and the bell has a label', () => {
   expect(screen.getByRole('heading', { name: 'Daily Actions' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
 });
+
+test('at exactly 900px the sidebar uses the phone layout, like the CSS', () => {
+  window.innerWidth = 900;
+  renderLayout();
+  expect(sidebar()).toHaveClass('hidden');
+  expect(screen.getByRole('button', { name: 'More pages' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Show sidebar' })).not.toBeInTheDocument();
+});
+
+test.each([
+  ['/checkins', 'Decision Matrix'],
+  ['/checkins/abc', 'Decision Matrix'],
+  ['/books/abc', 'Knowledge Vault'],
+  ['/snapshots/abc', 'Temporal Space'],
+  ['/goals/abc', 'Goals'],
+])('%s highlights %s in the sidebar', (path, label) => {
+  renderLayout(path);
+  const link = screen.getByRole('link', { name: label });
+  expect(link).toHaveClass('active');
+  expect(link).toHaveAttribute('aria-current', 'page');
+  expect(document.querySelectorAll('.nav-item.active')).toHaveLength(1);
+});
+
+test('/growth-hub does not also highlight Growth Analytics', () => {
+  renderLayout('/growth-hub');
+  expect(screen.getByRole('link', { name: 'Growth Analytics' })).not.toHaveClass('active');
+  expect(screen.getByRole('link', { name: 'Growth Hub' })).toHaveClass('active');
+});
+
+test('"More" lights up on phones for pages that are not in the bottom bar', () => {
+  window.innerWidth = 390;
+  const { unmount } = renderLayout('/goals');
+  expect(screen.getByRole('button', { name: 'More pages' })).toHaveClass('active');
+  unmount();
+
+  renderLayout('/todos');
+  expect(screen.getByRole('button', { name: 'More pages' })).not.toHaveClass('active');
+});
+
+test('the profile link keeps a long name on one line and shows it in full on hover', () => {
+  useAuth.mockReturnValue({
+    user: { id: 'u1', name: 'Alexandria Konstantinopoulou-Vanderbilt', is_verified: true },
+    logout: jest.fn(),
+    refreshUser: jest.fn().mockResolvedValue(),
+  });
+  renderLayout();
+  const link = screen.getByRole('link', { name: /Alexandria/ });
+  expect(link.querySelector('.nav-profile-name')).toHaveTextContent('Alexandria Konstantinopoulou-Vanderbilt');
+  expect(link).toHaveAttribute('title', 'Profile: Alexandria Konstantinopoulou-Vanderbilt');
+});
+
+test('the keyboard shortcuts button is only shown on desktop', () => {
+  const { unmount } = renderLayout();
+  expect(screen.getByRole('button', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
+  unmount();
+
+  window.innerWidth = 390;
+  renderLayout();
+  expect(screen.queryByRole('button', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+});
+
+test('"Skip to content" is the first link and moves focus to the page', () => {
+  renderLayout();
+  const skip = screen.getByRole('link', { name: 'Skip to content' });
+  expect(document.querySelector('.app-shell').firstElementChild).toBe(skip);
+  fireEvent.click(skip);
+  expect(document.querySelector('main')).toHaveFocus();
+});
+
+test('"Skip to content" is not offered while the phone drawer is open', () => {
+  window.innerWidth = 390;
+  renderLayout();
+  fireEvent.click(screen.getByRole('button', { name: 'More pages' }));
+  expect(screen.queryByRole('link', { name: 'Skip to content' })).not.toBeInTheDocument();
+});
+
+test('the layout leaves the <h1> to the page, so the logo is not a heading', () => {
+  renderLayout();
+  expect(screen.getByText('GrowthLog').tagName).toBe('P');
+  expect(document.querySelector('.app-shell h1')).toBeNull();
+});

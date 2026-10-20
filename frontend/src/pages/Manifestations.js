@@ -154,7 +154,7 @@ export default function Manifestations() {
   return (
     <div>
       <div className="page-header">
-        <h2>Manifestations ✧</h2>
+        <h1>Manifestations ✧</h1>
         <p>Write your future. Watch it become real.</p>
       </div>
 

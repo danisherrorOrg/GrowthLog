@@ -231,7 +231,7 @@ export default function TaskCheckinDetail() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ fontFamily: 'Fraunces', fontSize: 28, marginBottom: 4 }}>{checkin.task_name}</h2>
+            <h1 style={{ fontFamily: 'Fraunces', fontSize: 28, marginBottom: 4 }}>{checkin.task_name}</h1>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ background: verdict.color, color: 'white', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>
                 {verdict.icon} {verdict.label}

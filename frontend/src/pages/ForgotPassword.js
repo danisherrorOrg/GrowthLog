@@ -33,7 +33,7 @@ export default function ForgotPassword() {
         {sent ? (
           <>
             <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-            <h2>Check your inbox</h2>
+            <h1>Check your inbox</h1>
             <p style={{ marginBottom: 28 }}>
               If an account exists for <strong>{email}</strong>, we've sent a link to reset your password.
               It expires in 1 hour. Don't forget to check your spam folder.
@@ -44,7 +44,7 @@ export default function ForgotPassword() {
           </>
         ) : (
           <>
-            <h2>Forgot your password?</h2>
+            <h1>Forgot your password?</h1>
             <p style={{ marginBottom: 28 }}>Enter your email and we'll send you a link to choose a new one.</p>
             <form onSubmit={handleSubmit}>
               <div className="form-group">

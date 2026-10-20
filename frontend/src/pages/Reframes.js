@@ -306,7 +306,7 @@ export default function Reframes() {
     <div>
       <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Cognitive Reframing Studio 🧠</h2>
+          <h1>Cognitive Reframing Studio 🧠</h1>
           <p>Challenge distortions. Rewire your perspective.</p>
         </div>
         <div className="page-header-actions">

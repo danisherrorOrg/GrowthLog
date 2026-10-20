@@ -33,7 +33,7 @@ export default function PublicProfile() {
   return (
     <div className="container-main" style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px', fontFamily: '"Inter", sans-serif' }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h1 style={{ fontFamily: 'Fraunces', fontSize: 32, marginBottom: 8, color: 'var(--ink)' }}>GrowthLog</h1>
+        <p style={{ fontFamily: 'Fraunces', fontSize: 32, fontWeight: 500, lineHeight: 1.2, marginBottom: 8, color: 'var(--ink)' }}>GrowthLog</p>
         <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', textTransform: 'uppercase', letterSpacing: 2 }}>Public Profile</p>
       </div>
 
@@ -41,7 +41,7 @@ export default function PublicProfile() {
         <div className="public-profile-header" style={{ display: 'flex', gap: 24, alignItems: 'center', marginBottom: 32, paddingBottom: 32, borderBottom: '1px solid rgba(13,13,13,0.05)', flexWrap: 'wrap' }}>
           <div style={{ fontSize: 80, lineHeight: 1, flexShrink: 0 }}>{stats.avatar_emoji}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ fontSize: 28, marginBottom: 4 }}>{stats.name}</h2>
+            <h1 style={{ fontSize: 28, marginBottom: 4 }}>{stats.name}</h1>
             <p style={{ fontSize: 13, color: 'rgba(13,13,13,0.4)', marginBottom: 12 }}>Member since {format(parseISO(stats.created_at), 'MMM d, yyyy')}</p>
             {stats.bio && <p style={{ fontSize: 15, color: 'rgba(13,13,13,0.7)', fontStyle: 'italic' }}>"{stats.bio}"</p>}
           </div>

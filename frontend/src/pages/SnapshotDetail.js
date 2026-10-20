@@ -96,7 +96,7 @@ export default function SnapshotDetail() {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontFamily: 'Fraunces', fontSize: 32 }}>Snapshot Detail ○</h2>
+            <h1 style={{ fontFamily: 'Fraunces', fontSize: 32 }}>Snapshot Detail ○</h1>
             <p style={{ color: 'rgba(13,13,13,0.45)', marginTop: 4 }}>Recorded on {format(parseISO(snap.date), 'EEEE, MMMM d, yyyy')}</p>
           </div>
           <div style={{ textAlign: 'right' }}>

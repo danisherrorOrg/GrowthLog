@@ -172,7 +172,7 @@ export default function Profile() {
   return (
     <div>
       <div className="page-header">
-        <h2>Profile</h2>
+        <h1>Profile</h1>
         <p>Your account & growth stats</p>
       </div>
 

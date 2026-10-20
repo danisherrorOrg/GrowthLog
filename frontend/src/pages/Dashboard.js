@@ -164,7 +164,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="page-header">
-        <h2>Good {getGreeting()}, {user?.name?.split(' ')[0]} ✦</h2>
+        <h1>Good {getGreeting()}, {user?.name?.split(' ')[0]} ✦</h1>
         <p>Here's your growth at a glance</p>
       </div>
 

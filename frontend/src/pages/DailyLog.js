@@ -165,7 +165,7 @@ export default function DailyLog() {
 
   if (categories.length === 0) return (
     <div>
-      <div className="page-header"><h2>Daily Log</h2></div>
+      <div className="page-header"><h1>Daily Log</h1></div>
       <div className="page-body">
         <div className="empty-state">
           <div className="empty-icon">▦</div>
@@ -182,7 +182,7 @@ export default function DailyLog() {
       <div className="page-header">
         <div className="daily-log-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2>Daily Log ✦</h2>
+            <h1>Daily Log ✦</h1>
             <p>{todayDisplay} {todayLog ? '· Already logged today — editing' : '· Reflect on your day'}</p>
           </div>
           {categories.length > 0 && (

@@ -228,7 +228,7 @@ export default function ManifestationDetail() {
             {isReady ? '✧ Vision Day!' : item.status === 'completed' ? '✓ Completed' : item.status === 'archived' ? '📦 Archived' : `${item.target_days}-Day Vision`}
           </span>
         </div>
-        <h2>Vision Detail ✧</h2>
+        <h1>Vision Detail ✧</h1>
         <p style={{ color: 'rgba(13,13,13,0.5)' }}>
           Started {format(parseISO(item.start_date), 'MMM d')} · Target {format(target, 'MMM d, yyyy')}
           {isActive && !isReady && ` · ${Math.max(daysLeft, 0)} days left`}

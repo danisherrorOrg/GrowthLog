@@ -175,7 +175,7 @@ export default function FocusCheck() {
     <div>
       <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Should I Do This? 🧭</h2>
+          <h1>Should I Do This? 🧭</h1>
           <p>Catch time-wasters before they start. Press <kbd className="qc-kbd">Q</kbd> anywhere for a quick check.</p>
         </div>
         <div className="page-header-actions">

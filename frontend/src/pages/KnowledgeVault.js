@@ -15,7 +15,7 @@ export default function KnowledgeVault() {
   return (
     <div>
       <div className="page-header">
-        <h2>Knowledge Vault 🧠</h2>
+        <h1>Knowledge Vault 🧠</h1>
         <p>A central repository for books, quotes, insights, and continuous learning.</p>
       </div>
 

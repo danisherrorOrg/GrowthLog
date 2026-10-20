@@ -191,7 +191,7 @@ export default function Decisions() {
     <div>
       <div className="page-header page-header-inner" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Decision Matrix ⚖️</h2>
+          <h1>Decision Matrix ⚖️</h1>
           <p>For bigger choices: 18 questions, a score, and what to watch out for. Use the 🧭 quick check for everyday impulses.</p>
         </div>
         <div className="page-header-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

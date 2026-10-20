@@ -114,7 +114,7 @@ export default function Growth() {
   return (
     <div>
       <div className="page-header">
-        <h2>Growth ◎</h2>
+        <h1>Growth ◎</h1>
         <p>Your patterns, trends, and progress visualized</p>
       </div>
 
